@@ -235,7 +235,7 @@ static uint32_t CSI_TransferGetEmptyBuffer(csi_handle_t *handle)
 //    handle->emptyBuffer = *(void **)(buf.pvoid);
 
 //    return buf.u32;
-    // Öð·É¿Æ¼¼ÐÞ¸Ä
+    // é€é£žç§‘æŠ€ä¿®æ”¹
     handle->emptyBufferCnt--;
     return handle->frameBufferAddr[handle->emptyBufferCnt];
 }
@@ -244,7 +244,7 @@ static void CSI_TransferPutEmptyBuffer(csi_handle_t *handle, uint32_t buffer)
 {
 //    pvoid_to_u32_t buf;
 //    buf.u32 = buffer;
-    // Öð·É¿Æ¼¼ÐÞ¸Ä
+    // é€é£žç§‘æŠ€ä¿®æ”¹
     handle->frameBufferAddr[handle->emptyBufferCnt] = buffer;
 //    *(void **)(buf.pvoid) = handle->emptyBuffer;
 //    handle->emptyBuffer   = buf.pvoid;

@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈı·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öğ·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºå®˜æ–¹ SDK æ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£ç§‘æŠ€
 * 
-* ±¾ÎÄ¼şÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼ş
-* Äú¿ÉÒÔ¸ù¾İ×ÔÓÉÈí¼ş»ù½ğ»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ğí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØĞÂ·¢²¼ºÍ/»òĞŞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓĞÒşº¬µÄÊÊÏúĞÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·İ GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓĞ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ğí¿ÉÖ¤Ğ­Òé ÒÔÉÏĞí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ğí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼ş¼ĞÏÂµÄ GPL3_permission_statement.txt ÎÄ¼şÖĞ
-* Ğí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼ş¼ĞÏÂ ¼´¸ÃÎÄ¼ş¼ĞÏÂµÄ LICENSE ÎÄ¼ş
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌĞò µ«ĞŞ¸ÄÄÚÈİÊ±±ØĞë±£ÁôÖğ·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜ï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜ä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜è‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿å„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£ç§‘æŠ€çš„ç‰ˆæƒå£°æ˜ï¼ˆå³æœ¬å£°æ˜ï¼‰
 * 
-* ÎÄ¼şÃû³Æ          zf_driver_encoder
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öğ·É¿Æ¼¼ÓĞÏŞ¹«Ë¾
-* °æ±¾ĞÅÏ¢          ²é¿´ libraries/doc ÎÄ¼ş¼ĞÄÚ version ÎÄ¼ş °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          zf_driver_encoder
+* å…¬å¸åç§°          æˆéƒ½é€é£ç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜
+* å¼€å‘ç¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æ¥          https://seekfree.taobao.com/
 * 
-* ĞŞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ              ä½œè€…                å¤‡æ³¨
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -42,7 +42,7 @@
 #include "zf_driver_encoder.h"
 
 #define QTMR_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_IpgClk)
-#define QTIMER_PIN_CONF  SPEED_100MHZ | KEEPER_EN | DSE_R0_6 //ÅäÖÃQTIMERÒı½ÅÄ¬ÈÏÅäÖÃ
+#define QTIMER_PIN_CONF  SPEED_100MHZ | KEEPER_EN | DSE_R0_6 //é…ç½®QTIMERå¼•è„šé»˜è®¤é…ç½®
 
 TMR_Type * qtimer_index[] = TMR_BASE_PTRS;
 
@@ -110,43 +110,43 @@ void qtimer_iomuxc(encoder_index_enum qtimern, encoder_channel1_enum ch1_pin, en
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ENCODER ½Ó¿Ú»ñÈ¡±àÂëÆ÷¼ÆÊı
-// ²ÎÊıËµÃ÷     encoder_n       ENCODER Ä£¿éºÅ ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_index_enum Ã¶¾ÙÌå¶¨Òå
-// ·µ»Ø²ÎÊı     int16           ±àÂëÆ÷ÊıÖµ
-// Ê¹ÓÃÊ¾Àı     encoder_get_count(QTIMER1_ENCOEDER1);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     ENCODER æ¥å£è·å–ç¼–ç å™¨è®¡æ•°
+// å‚æ•°è¯´æ˜     encoder_n       ENCODER æ¨¡å—å· å‚ç…§ zf_driver_encoder.h å†… encoder_index_enum æšä¸¾ä½“å®šä¹‰
+// è¿”å›å‚æ•°     int16           ç¼–ç å™¨æ•°å€¼
+// ä½¿ç”¨ç¤ºä¾‹     encoder_get_count(QTIMER1_ENCOEDER1);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 int16 encoder_get_count (encoder_index_enum encoder_n)
 {
     uint8 qtimer_cha;
-    qtimer_cha = (encoder_n % 2) * 2;                                                           // ¼ÆËãAÍ¨µÀ
+    qtimer_cha = (encoder_n % 2) * 2;                                                           // è®¡ç®—Aé€šé“
     return QTMR_GetCurrentTimerCount(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha));
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ENCODER Çå¿Õ±àÂëÆ÷¼ÆÊı
-// ²ÎÊıËµÃ÷     encoder_n       ENCODER Ä£¿éºÅ ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_index_enum Ã¶¾ÙÌå¶¨Òå
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     encoder_clear_count(QTIMER1_ENCOEDER1);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     ENCODER æ¸…ç©ºç¼–ç å™¨è®¡æ•°
+// å‚æ•°è¯´æ˜     encoder_n       ENCODER æ¨¡å—å· å‚ç…§ zf_driver_encoder.h å†… encoder_index_enum æšä¸¾ä½“å®šä¹‰
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     encoder_clear_count(QTIMER1_ENCOEDER1);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void encoder_clear_count (encoder_index_enum encoder_n)
 {
     uint8 qtimer_cha;
-    qtimer_cha = (encoder_n % 2) * 2;                                                           // ¼ÆËãAÍ¨µÀ
+    qtimer_cha = (encoder_n % 2) * 2;                                                           // è®¡ç®—Aé€šé“
     qtimer_index[encoder_n / 2]->CHANNEL[qtimer_cha].CNTR = 0;
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ENCODER ½Ó¿Ú³õÊ¼»¯ Õı½»±àÂëÆ÷Ê¹ÓÃ
-// ²ÎÊıËµÃ÷     encoder_n       ENCODER Ä£¿éºÅ ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊıËµÃ÷     ch1_pin         ENCODER Í¨µÀ 1 ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_channel1_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊıËµÃ÷     ch2_pin         ENCODER Í¨µÀ 2 ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_channel2_enum Ã¶¾ÙÌå¶¨Òå
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     encoder_quad_init(QTIMER1_ENCOEDER1, QTIMER1_ENCOEDER1_CH1_C0, QTIMER1_ENCOEDER1_CH2_C1);
-// ±¸×¢ĞÅÏ¢     Ê¹ÓÃµÄ±àÂëÆ÷ÊÇÕı½»±àÂëÆ÷²Å¿ÉÒÔÊ¹ÓÃ´Ëº¯Êı½Ó¿Ú
-//              Èç¹ûÊÇËùÎ½µÄ ¡°¼æÈİÕı½»±àÂëÆ÷¡± µÄ±àÂëÆ÷ Âé·³ÏÈÈ·¶¨Ëüµ½µ×ÊÇ²»ÊÇÊä³öµÄÕı½»±àÂëÆ÷
-//              Õâ¸ö½Ó¿ÚÖ»ÄÜ¸øÊä³öÕı½»±àÂëĞÅºÅµÄ±àÂëÆ÷ÓÃ
+// å‡½æ•°ç®€ä»‹     ENCODER æ¥å£åˆå§‹åŒ– æ­£äº¤ç¼–ç å™¨ä½¿ç”¨
+// å‚æ•°è¯´æ˜     encoder_n       ENCODER æ¨¡å—å· å‚ç…§ zf_driver_encoder.h å†… encoder_index_enum æšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜     ch1_pin         ENCODER é€šé“ 1 å‚ç…§ zf_driver_encoder.h å†… encoder_channel1_enum æšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜     ch2_pin         ENCODER é€šé“ 2 å‚ç…§ zf_driver_encoder.h å†… encoder_channel2_enum æšä¸¾ä½“å®šä¹‰
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     encoder_quad_init(QTIMER1_ENCOEDER1, QTIMER1_ENCOEDER1_CH1_C0, QTIMER1_ENCOEDER1_CH2_C1);
+// å¤‡æ³¨ä¿¡æ¯     ä½¿ç”¨çš„ç¼–ç å™¨æ˜¯æ­£äº¤ç¼–ç å™¨æ‰å¯ä»¥ä½¿ç”¨æ­¤å‡½æ•°æ¥å£
+//              å¦‚æœæ˜¯æ‰€è°“çš„ â€œå…¼å®¹æ­£äº¤ç¼–ç å™¨â€ çš„ç¼–ç å™¨ éº»çƒ¦å…ˆç¡®å®šå®ƒåˆ°åº•æ˜¯ä¸æ˜¯è¾“å‡ºçš„æ­£äº¤ç¼–ç å™¨
+//              è¿™ä¸ªæ¥å£åªèƒ½ç»™è¾“å‡ºæ­£äº¤ç¼–ç ä¿¡å·çš„ç¼–ç å™¨ç”¨
 //-------------------------------------------------------------------------------------------------------------------
 void encoder_quad_init (encoder_index_enum encoder_n, encoder_channel1_enum ch1_pin, encoder_channel2_enum ch2_pin)
 {
@@ -154,12 +154,12 @@ void encoder_quad_init (encoder_index_enum encoder_n, encoder_channel1_enum ch1_
     uint8 qtimer_chb;
     qtmr_config_t qtmrConfig;
     
-    zf_assert(encoder_n == (ch1_pin / 2));                                                      // ch1_pin ±ØĞëÓë encoder_n Æ¥Åä
-    zf_assert(encoder_n == (ch2_pin / 2));                                                      // ch2_pin ±ØĞëÓë encoder_n Æ¥Åä
+    zf_assert(encoder_n == (ch1_pin / 2));                                                      // ch1_pin å¿…é¡»ä¸ encoder_n åŒ¹é…
+    zf_assert(encoder_n == (ch2_pin / 2));                                                      // ch2_pin å¿…é¡»ä¸ encoder_n åŒ¹é…
     
     qtimer_iomuxc(encoder_n, ch1_pin, ch2_pin);
 
-    qtimer_cha = (encoder_n % 2) * 2;                                                           // ¼ÆËãAÍ¨µÀ
+    qtimer_cha = (encoder_n % 2) * 2;                                                           // è®¡ç®—Aé€šé“
     if(QTIMER2_ENCODER1_CH2_C25 == ch2_pin)
     {
         qtimer_chb = 3;
@@ -172,28 +172,28 @@ void encoder_quad_init (encoder_index_enum encoder_n, encoder_channel1_enum ch1_
     QTMR_GetDefaultConfig(&qtmrConfig);
     qtmrConfig.primarySource = (qtmr_primary_count_source_t)(qtimer_cha);
     qtmrConfig.secondarySource = (qtmr_input_source_t)(qtimer_chb);
-    QTMR_Init(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha), &qtmrConfig);// µÚÒ»´Î³õÊ¼»¯±ãÓÚ´ò¿ªÊ±ÖÓ
-    QTMR_Deinit(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha));           // ¸´Î»ÍâÉè
-    QTMR_Init(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha), &qtmrConfig);// ÖØĞÂ³õÊ¼»¯ÉèÖÃÕıÈ·µÄ²ÎÊı
+    QTMR_Init(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha), &qtmrConfig);// ç¬¬ä¸€æ¬¡åˆå§‹åŒ–ä¾¿äºæ‰“å¼€æ—¶é’Ÿ
+    QTMR_Deinit(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha));           // å¤ä½å¤–è®¾
+    QTMR_Init(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha), &qtmrConfig);// é‡æ–°åˆå§‹åŒ–è®¾ç½®æ­£ç¡®çš„å‚æ•°
     
     QTMR_StartTimer(qtimer_index[encoder_n / 2], (qtmr_channel_selection_t)(qtimer_cha), kQTMR_PriSrcRiseEdgeSecDir);
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ENCODER ½Ó¿Ú³õÊ¼»¯ ´ø·½Ïò±àÂëÆ÷Ê¹ÓÃ
-// ²ÎÊıËµÃ÷     encoder_n       ENCODER Ä£¿éºÅ ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊıËµÃ÷     ch1_pin         ENCODER Í¨µÀ 1 ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_channel1_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊıËµÃ÷     ch2_pin         ENCODER Í¨µÀ 2 ²ÎÕÕ zf_driver_encoder.h ÄÚ encoder_channel2_enum Ã¶¾ÙÌå¶¨Òå
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     encoder_dir_init(QTIMER1_ENCOEDER1, QTIMER1_ENCOEDER1_CH1_C0, QTIMER1_ENCOEDER1_CH2_C1);
-// ±¸×¢ĞÅÏ¢     Ê¹ÓÃµÄ±àÂëÆ÷ÊÇ´ø·½ÏòÊä³öµÄÔöÁ¿Ê½±àÂëÆ÷²Å¿ÉÒÔÊ¹ÓÃ´Ëº¯Êı½Ó¿Ú
-//              ch1_pin ½«×÷ÎªÂö³åÊäÈë¼ÆÊı ch2_pin ½«×÷Îª¼ÆÊı·½Ïò¿ØÖÆÒı½Å
-//              ´Ë·½Ê½ÏÂ ÔÚ³öÏÖ·´¸´Õı·´×ªµÄÇé¿öÏÂ ¼ÆÊı·½Ïò½«²»ÊÇÍêÈ«¿É¿¿µÄ
-//              Ö»ÓĞ¶ÁÈ¡Ê±¿ÌµÄ ch2_pin µÄµçÆ½¾ö¶¨Õû¸ö¼ÆÊıÖµµÄÕı¸º·ûºÅ
-//              Í¬Ê± ch1_pin Ö»ÄÜÑ¡Ôñ CH1 Í¨µÀµÄÒı½Å
+// å‡½æ•°ç®€ä»‹     ENCODER æ¥å£åˆå§‹åŒ– å¸¦æ–¹å‘ç¼–ç å™¨ä½¿ç”¨
+// å‚æ•°è¯´æ˜     encoder_n       ENCODER æ¨¡å—å· å‚ç…§ zf_driver_encoder.h å†… encoder_index_enum æšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜     ch1_pin         ENCODER é€šé“ 1 å‚ç…§ zf_driver_encoder.h å†… encoder_channel1_enum æšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜     ch2_pin         ENCODER é€šé“ 2 å‚ç…§ zf_driver_encoder.h å†… encoder_channel2_enum æšä¸¾ä½“å®šä¹‰
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     encoder_dir_init(QTIMER1_ENCOEDER1, QTIMER1_ENCOEDER1_CH1_C0, QTIMER1_ENCOEDER1_CH2_C1);
+// å¤‡æ³¨ä¿¡æ¯     ä½¿ç”¨çš„ç¼–ç å™¨æ˜¯å¸¦æ–¹å‘è¾“å‡ºçš„å¢é‡å¼ç¼–ç å™¨æ‰å¯ä»¥ä½¿ç”¨æ­¤å‡½æ•°æ¥å£
+//              ch1_pin å°†ä½œä¸ºè„‰å†²è¾“å…¥è®¡æ•° ch2_pin å°†ä½œä¸ºè®¡æ•°æ–¹å‘æ§åˆ¶å¼•è„š
+//              æ­¤æ–¹å¼ä¸‹ åœ¨å‡ºç°åå¤æ­£åè½¬çš„æƒ…å†µä¸‹ è®¡æ•°æ–¹å‘å°†ä¸æ˜¯å®Œå…¨å¯é çš„
+//              åªæœ‰è¯»å–æ—¶åˆ»çš„ ch2_pin çš„ç”µå¹³å†³å®šæ•´ä¸ªè®¡æ•°å€¼çš„æ­£è´Ÿç¬¦å·
+//              åŒæ—¶ ch1_pin åªèƒ½é€‰æ‹© CH1 é€šé“çš„å¼•è„š
 //-------------------------------------------------------------------------------------------------------------------
 void encoder_dir_init (encoder_index_enum encoder_n, encoder_channel1_enum ch1_pin, encoder_channel2_enum ch2_pin)
 {
-    // RT1064µ¥Æ¬»ú¶ÔÕı½»½âÂëÓë·½ÏòÊä³öµÄÁ½ÖÖ±àÂë¶¼Ö§³Ö£¬Òò´ËÊ¹ÓÃÍ¬Ò»¸öº¯Êı½Ó¿Ú½øĞĞ²É¼¯
+    // RT1064å•ç‰‡æœºå¯¹æ­£äº¤è§£ç ä¸æ–¹å‘è¾“å‡ºçš„ä¸¤ç§ç¼–ç éƒ½æ”¯æŒï¼Œå› æ­¤ä½¿ç”¨åŒä¸€ä¸ªå‡½æ•°æ¥å£è¿›è¡Œé‡‡é›†
     encoder_quad_init(encoder_n, ch1_pin, ch2_pin);
 }

@@ -308,7 +308,7 @@ Reset_Handler:
     orr     r1,r1,#4
     str     r1,[r0]
     
-    //¹Ø±ÕITCM
+    //å…³é—­ITCM
     //ldr r0, =_iomux_gpr16_adr
     //ldr r1, [r0]
     //and r1, r1,#0xFFFFFFFE

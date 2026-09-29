@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ����RT1064DVL6A ��Դ�⣩��һ�����ڹٷ� SDK �ӿڵĵ�������Դ��
-* Copyright (c) 2022 SEEKFREE ��ɿƼ�
+* RT1064DVL6A Opensource Library 即（RT1064DVL6A 开源库）是一个基于官方 SDK 接口的第三方开源库
+* Copyright (c) 2022 SEEKFREE 逐飞科技
 * 
-* ���ļ��� RT1064DVL6A ��Դ���һ����
+* 本文件是 RT1064DVL6A 开源库的一部分
 * 
-* RT1064DVL6A ��Դ�� ���������
-* �����Ը���������������ᷢ���� GPL��GNU General Public License���� GNUͨ�ù�������֤��������
-* �� GPL �ĵ�3�棨�� GPL3.0������ѡ��ģ��κκ����İ汾�����·�����/���޸���
+* RT1064DVL6A 开源库 是免费软件
+* 您可以根据自由软件基金会发布的 GPL（GNU General Public License，即 GNU通用公共许可证）的条款
+* 即 GPL 的第3版（即 GPL3.0）或（您选择的）任何后来的版本，重新发布和/或修改它
 * 
-* ����Դ��ķ�����ϣ�����ܷ������ã�����δ�������κεı�֤
-* ����û�������������Ի��ʺ��ض���;�ı�֤
-* ����ϸ����μ� GPL
+* 本开源库的发布是希望它能发挥作用，但并未对其作任何的保证
+* 甚至没有隐含的适销性或适合特定用途的保证
+* 更多细节请参见 GPL
 * 
-* ��Ӧ�����յ�����Դ���ͬʱ�յ�һ�� GPL �ĸ���
-* ���û�У������<https://www.gnu.org/licenses/>
+* 您应该在收到本开源库的同时收到一份 GPL 的副本
+* 如果没有，请参阅<https://www.gnu.org/licenses/>
 * 
-* ����ע����
-* ����Դ��ʹ�� GPL3.0 ��Դ����֤Э�� ������������Ϊ���İ汾
-* ��������Ӣ�İ��� libraries/doc �ļ����µ� GPL3_permission_statement.txt �ļ���
-* ����֤������ libraries �ļ����� �����ļ����µ� LICENSE �ļ�
-* ��ӭ��λʹ�ò����������� ���޸�����ʱ���뱣����ɿƼ��İ�Ȩ����������������
+* 额外注明：
+* 本开源库使用 GPL3.0 开源许可证协议 以上许可申明为译文版本
+* 许可申明英文版在 libraries/doc 文件夹下的 GPL3_permission_statement.txt 文件中
+* 许可证副本在 libraries 文件夹下 即该文件夹下的 LICENSE 文件
+* 欢迎各位使用并传播本程序 但修改内容时必须保留逐飞科技的版权声明（即本声明）
 * 
-* �ļ�����          zf_driver_pwm
-* ��˾����          �ɶ���ɿƼ����޹�˾
-* �汾��Ϣ          �鿴 libraries/doc �ļ����� version �ļ� �汾˵��
-* ��������          IAR 8.32.4 or MDK 5.33
-* ����ƽ̨          RT1064DVL6A
-* ��������          https://seekfree.taobao.com/
+* 文件名称          zf_driver_pwm
+* 公司名称          成都逐飞科技有限公司
+* 版本信息          查看 libraries/doc 文件夹内 version 文件 版本说明
+* 开发环境          IAR 8.32.4 or MDK 5.33
+* 适用平台          RT1064DVL6A
+* 店铺链接          https://seekfree.taobao.com/
 * 
-* �޸ļ�¼
-* ����              ����                ��ע
+* 修改记录
+* 日期              作者                备注
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -42,8 +42,8 @@
 
 #include "zf_driver_pwm.h"
 
-#define PWM_SRC_CLK_FREQ    CLOCK_GetFreq(kCLOCK_IpgClk)                        // ����PWM����ʱ��ԴƵ��
-#define PWM_PIN_CONF        SPEED_100MHZ | KEEPER_EN | DSE_R0_6                 // ����PWM����Ĭ������   
+#define PWM_SRC_CLK_FREQ    CLOCK_GetFreq(kCLOCK_IpgClk)                        // 定义PWM输入时钟源频率
+#define PWM_PIN_CONF        SPEED_100MHZ | KEEPER_EN | DSE_R0_6                 // 配置PWM引脚默认配置   
 
 static PWM_Type * PWMPTR[] = PWM_BASE_PTRS;
 
@@ -88,47 +88,47 @@ void pwm_iomuxc(pwm_channel_enum pin)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// �������     PWM ����ռ�ձ�
-// ����˵��     pin             ѡ�� PWM ����
-// ����˵��     duty            ����ռ�ձ�
-// ���ز���     void
-// ʹ��ʾ��     pwm_set_duty(PWM1_MODULE0_CHB_D13, PWM_DUTY_MAX / 4);
-// ��ע��Ϣ     
+// 函数简介     PWM 更新占空比
+// 参数说明     pin             选择 PWM 引脚
+// 参数说明     duty            设置占空比
+// 返回参数     void
+// 使用示例     pwm_set_duty(PWM1_MODULE0_CHB_D13, PWM_DUTY_MAX / 4);
+// 备注信息     
 //-------------------------------------------------------------------------------------------------------------------
 void pwm_set_duty (pwm_channel_enum pin, const uint32 duty)
 {
     uint16 temp_duty;
-    // �������һ�б��� �����ȥ�������ռ�ձ����޶��Ķ��� ռ�ձ�д�����
-    zf_assert(PWM_DUTY_MAX >= duty);                                            // ռ�ձ�д�����
+    // 如果是这一行报错 那你得去看看最大占空比是限定的多少 占空比写入错误
+    zf_assert(PWM_DUTY_MAX >= duty);                                            // 占空比写入错误
 
     uint8  pwm_num;
     uint8  pwm_module;
     uint8  pwm_module_ch;
     
-    pwm_num = pin/40;                                                           // ����ģ����
-    pwm_module = pin%40/10;                                                     // ������ģ����
-    pwm_module_ch = pin%40%10/5;                                                // ������ģ���ͨ��
+    pwm_num = pin/40;                                                           // 计算模块编号
+    pwm_module = pin%40/10;                                                     // 计算子模块编号
+    pwm_module_ch = pin%40%10/5;                                                // 计算子模块的通道
     
     temp_duty = (uint32)duty * 65535/ PWM_DUTY_MAX;
-    // ���LOAD OKAYλ  �������µĲ���
+    // 清除LOAD OKAY位  以设置新的参数
     PWM_SetPwmLdok(PWMPTR[pwm_num], (pwm_module_control_t)(1<<(pwm_module)), false);
     PWM_UpdatePwmDutycycleHighAccuracy(PWMPTR[pwm_num], (pwm_submodule_t)pwm_module, (pwm_channels_t)(pwm_module_ch), kPWM_EdgeAligned, temp_duty);
-    // ����LOAD OKAYλ  �Ը�������
+    // 设置LOAD OKAY位  以更新设置
     PWM_SetPwmLdok(PWMPTR[pwm_num], (pwm_module_control_t)(1<<(pwm_module)), true);
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// �������     PWM ��ʼ��
-// ����˵��     pin             ѡ�� PWM ����
-// ����˵��     freq            ����Ƶ�� ͬ��ģ��ֻ�����һ��������Ч
-// ����˵��     duty            ����ռ�ձ�
-// ���ز���     void
-// ʹ��ʾ��     pwm_init(PWM1_MODULE0_CHB_D13, 17000, PWM_DUTY_MAX / 2);
-// ��ע��Ϣ     
+// 函数简介     PWM 初始化
+// 参数说明     pin             选择 PWM 引脚
+// 参数说明     freq            设置频率 同个模块只有最后一次设置生效
+// 参数说明     duty            设置占空比
+// 返回参数     void
+// 使用示例     pwm_init(PWM1_MODULE0_CHB_D13, 17000, PWM_DUTY_MAX / 2);
+// 备注信息     
 //-------------------------------------------------------------------------------------------------------------------
 void pwm_init (pwm_channel_enum pin, const uint32 freq, const uint32 duty)
 {
-    // �������һ�б��� �����ȥ�������ռ�ձ����޶��Ķ��� ռ�ձ�д�����
+    // 如果是这一行报错 那你得去看看最大占空比是限定的多少 占空比写入错误
     zf_assert(PWM_DUTY_MAX >= duty);
 
     uint8  pwm_num;
@@ -159,7 +159,7 @@ void pwm_init (pwm_channel_enum pin, const uint32 freq, const uint32 duty)
     pwmConfig.enableDebugMode = true;
     
 
-    //�����Ƶϵ��
+    //计算分频系数
     temp_prsc = (PWM_SRC_CLK_FREQ/freq)>>16;
 	if(PWM_SRC_CLK_FREQ%(freq<<16))	temp_prsc++;
 
@@ -173,25 +173,25 @@ void pwm_init (pwm_channel_enum pin, const uint32 freq, const uint32 duty)
     else if (128 >= temp_prsc)  pwmConfig.prescale = kPWM_Prescale_Divide_128;
     else
     {
-        zf_assert(0) ;                                                      // Ƶ�ʹ�С ����IPGƵ�ʹ���
+        zf_assert(0) ;                                                      // 频率过小 或者IPG频率过高
     }
 
-    pwm_num = pin/40;                                                       // ����ģ����
-    pwm_module = pin%40/10;                                                 // ������ģ����
-    pwm_module_ch = pin%40%10/5;                                            // ������ģ���ͨ��
+    pwm_num = pin/40;                                                       // 计算模块编号
+    pwm_module = pin%40/10;                                                 // 计算子模块编号
+    pwm_module_ch = pin%40%10/5;                                            // 计算子模块的通道
 
     if (PWM_Init(PWMPTR[pwm_num], (pwm_submodule_t)pwm_module, &pwmConfig) == kStatus_Fail)
     {
-        zf_assert(0) ;                                                      // ��ʼ��ʧ��
+        zf_assert(0) ;                                                      // 初始化失败
     }
     PWM_Deinit(PWMPTR[pwm_num], (pwm_submodule_t)pwm_module);
     
     if (PWM_Init(PWMPTR[pwm_num], (pwm_submodule_t)pwm_module, &pwmConfig) == kStatus_Fail)
     {
-        zf_assert(0) ;                                                      //��ʼ��ʧ��
+        zf_assert(0) ;                                                      //初始化失败
     }
  
-    // ����Ƶ��ռ�ձȵȲ���
+    // 设置频率占空比等参数
     pwm_signal_param_t pwmSignal;
 
     pwmSignal.pwmChannel = (pwm_channels_t)(pwm_module_ch); 
@@ -199,13 +199,13 @@ void pwm_init (pwm_channel_enum pin, const uint32 freq, const uint32 duty)
     pwmSignal.dutyCyclePercent = 0;
     pwmSignal.deadtimeValue = 0;
 
-    // ���LOAD OKAYλ  �������µĲ���
+    // 清除LOAD OKAY位  以设置新的参数
     PWM_SetPwmLdok(PWMPTR[pwm_num], (pwm_module_control_t)(1<<(pwm_module)), false);
     PWM_SetupPwm(PWMPTR[pwm_num], (pwm_submodule_t)pwm_module, &pwmSignal, 1, kPWM_EdgeAligned, freq, PWM_SRC_CLK_FREQ);     
-    //����LOAD OKAYλ  �Ը�������
+    //设置LOAD OKAY位  以更新设置
     PWM_SetPwmLdok(PWMPTR[pwm_num], (pwm_module_control_t)(1<<(pwm_module)), true);
 
-    // ������ʱ��
+    // 启动定时器
     PWM_StartTimer(PWMPTR[pwm_num], (pwm_module_control_t)(1<<(pwm_module)));
     
     PWMPTR[pwm_num]->SM[pwm_module].DISMAP[0]=0;

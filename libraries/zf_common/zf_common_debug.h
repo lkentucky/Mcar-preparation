@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ����RT1064DVL6A ��Դ�⣩��һ�����ڹٷ� SDK �ӿڵĵ�������Դ��
-* Copyright (c) 2022 SEEKFREE ��ɿƼ�
+* RT1064DVL6A Opensource Library 即（RT1064DVL6A 开源库）是一个基于官方 SDK 接口的第三方开源库
+* Copyright (c) 2022 SEEKFREE 逐飞科技
 * 
-* ���ļ��� RT1064DVL6A ��Դ���һ����
+* 本文件是 RT1064DVL6A 开源库的一部分
 * 
-* RT1064DVL6A ��Դ�� ���������
-* �����Ը���������������ᷢ���� GPL��GNU General Public License���� GNUͨ�ù�������֤��������
-* �� GPL �ĵ�3�棨�� GPL3.0������ѡ��ģ��κκ����İ汾�����·�����/���޸���
+* RT1064DVL6A 开源库 是免费软件
+* 您可以根据自由软件基金会发布的 GPL（GNU General Public License，即 GNU通用公共许可证）的条款
+* 即 GPL 的第3版（即 GPL3.0）或（您选择的）任何后来的版本，重新发布和/或修改它
 * 
-* ����Դ��ķ�����ϣ�����ܷ������ã�����δ�������κεı�֤
-* ����û�������������Ի��ʺ��ض���;�ı�֤
-* ����ϸ����μ� GPL
+* 本开源库的发布是希望它能发挥作用，但并未对其作任何的保证
+* 甚至没有隐含的适销性或适合特定用途的保证
+* 更多细节请参见 GPL
 * 
-* ��Ӧ�����յ�����Դ���ͬʱ�յ�һ�� GPL �ĸ���
-* ���û�У������<https://www.gnu.org/licenses/>
+* 您应该在收到本开源库的同时收到一份 GPL 的副本
+* 如果没有，请参阅<https://www.gnu.org/licenses/>
 * 
-* ����ע����
-* ����Դ��ʹ�� GPL3.0 ��Դ����֤Э�� ������������Ϊ���İ汾
-* ��������Ӣ�İ��� libraries/doc �ļ����µ� GPL3_permission_statement.txt �ļ���
-* ����֤������ libraries �ļ����� �����ļ����µ� LICENSE �ļ�
-* ��ӭ��λʹ�ò����������� ���޸�����ʱ���뱣����ɿƼ��İ�Ȩ����������������
+* 额外注明：
+* 本开源库使用 GPL3.0 开源许可证协议 以上许可申明为译文版本
+* 许可申明英文版在 libraries/doc 文件夹下的 GPL3_permission_statement.txt 文件中
+* 许可证副本在 libraries 文件夹下 即该文件夹下的 LICENSE 文件
+* 欢迎各位使用并传播本程序 但修改内容时必须保留逐飞科技的版权声明（即本声明）
 * 
-* �ļ�����          zf_common_debug
-* ��˾����          �ɶ���ɿƼ����޹�˾
-* �汾��Ϣ          �鿴 libraries/doc �ļ����� version �ļ� �汾˵��
-* ��������          IAR 8.32.4 or MDK 5.33
-* ����ƽ̨          RT1064DVL6A
-* ��������          https://seekfree.taobao.com/
+* 文件名称          zf_common_debug
+* 公司名称          成都逐飞科技有限公司
+* 版本信息          查看 libraries/doc 文件夹内 version 文件 版本说明
+* 开发环境          IAR 8.32.4 or MDK 5.33
+* 适用平台          RT1064DVL6A
+* 店铺链接          https://seekfree.taobao.com/
 * 
-* �޸ļ�¼
-* ����              ����                ��ע
+* 修改记录
+* 日期              作者                备注
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -38,57 +38,57 @@
 
 #include "zf_common_typedef.h"
 
-// ����޸Ĵ��ڲ������� debug UART ���жϽ��� ��Ҫͬ������ debug_interrupr_handler ��������Ӧ���жϷ�����
-// ����޸Ĵ��ڲ������� debug UART ���жϽ��� ��Ҫͬ������ debug_interrupr_handler ��������Ӧ���жϷ�����
-// ����޸Ĵ��ڲ������� debug UART ���жϽ��� ��Ҫͬ������ debug_interrupr_handler ��������Ӧ���жϷ�����
-#define DEBUG_UART_INDEX            (UART_1)                                    // ָ�� debug uart ��ʹ�õĵĴ���
-#define DEBUG_UART_BAUDRATE         (115200)                                    // ָ�� debug uart ��ʹ�õĵĴ��ڲ�����
-#define DEBUG_UART_TX_PIN           (UART1_TX_B12 )                             // ָ�� debug uart ��ʹ�õĵĴ�������
-#define DEBUG_UART_RX_PIN           (UART1_RX_B13)                              // ָ�� debug uart ��ʹ�õĵĴ�������
+// 如果修改串口并开启了 debug UART 的中断接收 需要同步更换 debug_interrupr_handler 函数到对应的中断服务函数
+// 如果修改串口并开启了 debug UART 的中断接收 需要同步更换 debug_interrupr_handler 函数到对应的中断服务函数
+// 如果修改串口并开启了 debug UART 的中断接收 需要同步更换 debug_interrupr_handler 函数到对应的中断服务函数
+#define DEBUG_UART_INDEX            (UART_1)                                    // 指定 debug uart 所使用的的串口
+#define DEBUG_UART_BAUDRATE         (115200)                                    // 指定 debug uart 所使用的的串口波特率
+#define DEBUG_UART_TX_PIN           (UART1_TX_B12 )                             // 指定 debug uart 所使用的的串口引脚
+#define DEBUG_UART_RX_PIN           (UART1_RX_B13)                              // 指定 debug uart 所使用的的串口引脚
 
-#define DEBUG_UART_USE_INTERRUPT    (1)                                         // �Ƿ����� debug uart �����ж�
+#define DEBUG_UART_USE_INTERRUPT    (1)                                         // 是否启用 debug uart 接收中断
 
 //-------------------------------------------------------------------------------------------------------------------
-// �������     ����
-// ����˵��     x           �ж��Ƿ񴥷����� 0-�������� 1-����������
-// ���ز���     void
-// ʹ��ʾ��     zf_assert(0);
-// ��ע��Ϣ     һ�����ڲ����ж� zf_assert(0) �Ͷ��Ա���
-//              Ĭ������»��� Debug UART ���
-//              �����ʹ�ÿ�Դ������Ļ�ӿڳ�ʼ������Ļ �������Ļ����ʾ
+// 函数简介     断言
+// 参数说明     x           判断是否触发断言 0-触发断言 1-不触发断言
+// 返回参数     void
+// 使用示例     zf_assert(0);
+// 备注信息     一般用于参数判断 zf_assert(0) 就断言报错
+//              默认情况下会在 Debug UART 输出
+//              但如果使用开源库内屏幕接口初始化了屏幕 则会在屏幕上显示
 //-------------------------------------------------------------------------------------------------------------------
 #define zf_assert(x)                (debug_assert_handler((x), __FILE__, __LINE__))
 
 //-------------------------------------------------------------------------------------------------------------------
-// �������     Log ��Ϣ���
-// ����˵��     x           �ж��Ƿ񴥷���� 0-������� 1-���������
-// ����˵��     *str        ��Ҫ����� Log ��Ϣ
-// ���ز���     void
-// ʹ��ʾ��     zf_log(0, "Error");
-// ��ע��Ϣ     ������Ϣ��� ������һЩ�������߾���֮������
-//              Ĭ������»��� Debug UART ���
-//              �����ʹ�ÿ�Դ������Ļ�ӿڳ�ʼ������Ļ �������Ļ����ʾ
+// 函数简介     Log 信息输出
+// 参数说明     x           判断是否触发输出 0-触发输出 1-不触发输出
+// 参数说明     *str        需要输出的 Log 信息
+// 返回参数     void
+// 使用示例     zf_log(0, "Error");
+// 备注信息     调试信息输出 用来做一些报错或者警告之类的输出
+//              默认情况下会在 Debug UART 输出
+//              但如果使用开源库内屏幕接口初始化了屏幕 则会在屏幕上显示
 //-------------------------------------------------------------------------------------------------------------------
 #define zf_log(x, str)              (debug_log_handler((x), (str), __FILE__, __LINE__))
 
 typedef struct
 {
-    uint16 type_index;                                                          // ��ʾ���� 0-���� 1-��Ļ
+    uint16 type_index;                                                          // 显示类型 0-串口 1-屏幕
 
-    uint16 display_x_max;                                                       // ��Ļ��ʾ��Χ
-    uint16 display_y_max;                                                       // ��Ļ��ʾ��Χ
+    uint16 display_x_max;                                                       // 屏幕显示范围
+    uint16 display_y_max;                                                       // 屏幕显示范围
 
-    uint8 font_x_size;                                                          // ��Ļ��ʾ�����С
-    uint8 font_y_size;                                                          // ��Ļ��ʾ�����С
+    uint8 font_x_size;                                                          // 屏幕显示字体大小
+    uint8 font_y_size;                                                          // 屏幕显示字体大小
 
-    void (*output_uart)             (const char *str);                          // ������ʾ����ָ��
-    void (*output_screen)           (uint16 x, uint16 y, const char *str);      // ��Ļ�ַ�����ʾ����ָ��
-    void (*output_screen_clear)     (void);                                     // ��Ļ��������ָ��
+    void (*output_uart)             (const char *str);                          // 串口显示函数指针
+    void (*output_screen)           (uint16 x, uint16 y, const char *str);      // 屏幕字符串显示函数指针
+    void (*output_screen_clear)     (void);                                     // 屏幕清屏函数指针
 }debug_output_struct;
 
-uint32      debug_send_buffer       (const uint8 *buff, uint32 len);            // ���Դ��ڷ��ͻ�����
-#if DEBUG_UART_USE_INTERRUPT                                                    // ������� debug uart �����ж�
-#define     DEBUG_RING_BUFFER_LEN   (64)                                        // ���廷�λ�������С Ĭ�� 64byte
+uint32      debug_send_buffer       (const uint8 *buff, uint32 len);            // 调试串口发送缓冲区
+#if DEBUG_UART_USE_INTERRUPT                                                    // 如果启用 debug uart 接收中断
+#define     DEBUG_RING_BUFFER_LEN   (64)                                        // 定义环形缓冲区大小 默认 64byte
 void        debug_interrupr_handler (void);
 #endif
 

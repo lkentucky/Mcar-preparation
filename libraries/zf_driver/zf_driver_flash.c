@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈı·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öğ·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºå®˜æ–¹ SDK æ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£ç§‘æŠ€
 * 
-* ±¾ÎÄ¼şÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼ş
-* Äú¿ÉÒÔ¸ù¾İ×ÔÓÉÈí¼ş»ù½ğ»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ğí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØĞÂ·¢²¼ºÍ/»òĞŞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓĞÒşº¬µÄÊÊÏúĞÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·İ GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓĞ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ğí¿ÉÖ¤Ğ­Òé ÒÔÉÏĞí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ğí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼ş¼ĞÏÂµÄ GPL3_permission_statement.txt ÎÄ¼şÖĞ
-* Ğí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼ş¼ĞÏÂ ¼´¸ÃÎÄ¼ş¼ĞÏÂµÄ LICENSE ÎÄ¼ş
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌĞò µ«ĞŞ¸ÄÄÚÈİÊ±±ØĞë±£ÁôÖğ·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜ï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜ä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜è‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿å„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£ç§‘æŠ€çš„ç‰ˆæƒå£°æ˜ï¼ˆå³æœ¬å£°æ˜ï¼‰
 * 
-* ÎÄ¼şÃû³Æ          zf_driver_flash
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öğ·É¿Æ¼¼ÓĞÏŞ¹«Ë¾
-* °æ±¾ĞÅÏ¢          ²é¿´ libraries/doc ÎÄ¼ş¼ĞÄÚ version ÎÄ¼ş °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          zf_driver_flash
+* å…¬å¸åç§°          æˆéƒ½é€é£ç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜
+* å¼€å‘ç¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æ¥          https://seekfree.taobao.com/
 * 
-* ĞŞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ              ä½œè€…                å¤‡æ³¨
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -44,30 +44,30 @@ flexspi_nor_config_t config;
 
 uint32 flash_instance = 1;
 
-flash_data_union flash_union_buffer[FLASH_DATA_BUFFER_SIZE];               // FLASH ²Ù×÷µÄÊı¾İ»º³åÇø
+flash_data_union flash_union_buffer[FLASH_DATA_BUFFER_SIZE];               // FLASH æ“ä½œçš„æ•°æ®ç¼“å†²åŒº
 
 
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     Ğ£Ñé FLASH ÊÇ·ñÓĞÊı¾İ
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒªĞ´ÈëµÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ·µ»Ø²ÎÊı     uint8           1-ÓĞÊı¾İ 0-Ã»ÓĞÊı¾İ Èç¹ûĞèÒª¶ÔÓĞÊı¾İµÄÇøÓòĞ´ÈëĞÂµÄÊı¾İÔòÓ¦¸Ã¶ÔËùÔÚÉÈÇø½øĞĞ²Á³ı²Ù×÷
-// Ê¹ÓÃÊ¾Àı     flash_check(FLASH_SECTION_127, FLASH_PAGE_3);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     æ ¡éªŒ FLASH æ˜¯å¦æœ‰æ•°æ®
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦å†™å…¥çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// è¿”å›å‚æ•°     uint8           1-æœ‰æ•°æ® 0-æ²¡æœ‰æ•°æ® å¦‚æœéœ€è¦å¯¹æœ‰æ•°æ®çš„åŒºåŸŸå†™å…¥æ–°çš„æ•°æ®åˆ™åº”è¯¥å¯¹æ‰€åœ¨æ‰‡åŒºè¿›è¡Œæ“¦é™¤æ“ä½œ
+// ä½¿ç”¨ç¤ºä¾‹     flash_check(FLASH_SECTION_127, FLASH_PAGE_3);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_check (uint32 sector_num, flash_page_enum page_num)
 {
     uint16 i;
     
     status_t state = kStatus_Success;
-    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE, FLASH_PAGE_SIZE);//¶ÁÈ¡flashÇ°£¬×îºÃÏÈÇå¿Õ»º´æ
+    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE, FLASH_PAGE_SIZE);//è¯»å–flashå‰ï¼Œæœ€å¥½å…ˆæ¸…ç©ºç¼“å­˜
     
     for(i=0; i<FLASH_PAGE_SIZE/4; i++)
     {
         if(0xFFFFFFFF != flash_read(sector_num, page_num, i, uint32))
         {
-            state =  kStatus_Fail;//flashĞèÒª²Á³ı
+            state =  kStatus_Fail;//flashéœ€è¦æ“¦é™¤
             break;
         }
     }
@@ -76,12 +76,12 @@ uint8 flash_check (uint32 sector_num, flash_page_enum page_num)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ²Á³ıÉÈÇø
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒª²Á³ıµÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ·µ»Ø²ÎÊı     uint8           1-±íÊ¾Ê§°Ü 0-±íÊ¾³É¹¦
-// Ê¹ÓÃÊ¾Àı     flash_erase_page(FLASH_SECTION_127, FLASH_PAGE_3);
-// ±¸×¢ĞÅÏ¢     º¯ÊıÃû³ÆËäÈ»ÊÇ²Á³ıÒ³£¬Êµ¼ÊÉÏÊÇ²Á³ıµÄÒ»¸öÉ¾³ı£¬ÔÚÕâ¸öÇı¶¯ÖĞÊÇ½«ÉÈÇøµ±×öÒ³À´Ê¹ÓÃµÄ
+// å‡½æ•°ç®€ä»‹     æ“¦é™¤æ‰‡åŒº
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦æ“¦é™¤çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// è¿”å›å‚æ•°     uint8           1-è¡¨ç¤ºå¤±è´¥ 0-è¡¨ç¤ºæˆåŠŸ
+// ä½¿ç”¨ç¤ºä¾‹     flash_erase_page(FLASH_SECTION_127, FLASH_PAGE_3);
+// å¤‡æ³¨ä¿¡æ¯     å‡½æ•°åç§°è™½ç„¶æ˜¯æ“¦é™¤é¡µï¼Œå®é™…ä¸Šæ˜¯æ“¦é™¤çš„ä¸€ä¸ªåˆ é™¤ï¼Œåœ¨è¿™ä¸ªé©±åŠ¨ä¸­æ˜¯å°†æ‰‡åŒºå½“åšé¡µæ¥ä½¿ç”¨çš„
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_erase_page (uint32 sector_num, flash_page_enum page_num)
 {
@@ -99,51 +99,51 @@ uint8 flash_erase_page (uint32 sector_num, flash_page_enum page_num)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ¶ÁÈ¡Ò»Ò³
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒª¶ÁÈ¡µÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ²ÎÊıËµÃ÷     buf             ĞèÒª¶ÁÈ¡µÄÊı¾İµØÖ·   ´«ÈëµÄÊı×éÀàĞÍ±ØĞëÎªuint32
-// ²ÎÊıËµÃ÷     len             ĞèÒªĞ´ÈëµÄÊı¾İ³¤¶È   ²ÎÊı·¶Î§ 1-1024
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     flash_read_page(FLASH_SECTION_127, FLASH_PAGE_3, data_buffer, 256);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     è¯»å–ä¸€é¡µ
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦è¯»å–çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// å‚æ•°è¯´æ˜     buf             éœ€è¦è¯»å–çš„æ•°æ®åœ°å€   ä¼ å…¥çš„æ•°ç»„ç±»å‹å¿…é¡»ä¸ºuint32
+// å‚æ•°è¯´æ˜     len             éœ€è¦å†™å…¥çš„æ•°æ®é•¿åº¦   å‚æ•°èŒƒå›´ 1-1024
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     flash_read_page(FLASH_SECTION_127, FLASH_PAGE_3, data_buffer, 256);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void flash_read_page (uint32 sector_num, flash_page_enum page_num, uint32 *buf, uint16 len)
 {
-    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE, len * 4);//¶ÁÈ¡flashÇ°£¬×îºÃÏÈÇå¿Õ»º´æ
+    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE, len * 4);//è¯»å–flashå‰ï¼Œæœ€å¥½å…ˆæ¸…ç©ºç¼“å­˜
     
     rom_api_flexspi_nor_flash_read(flash_instance, &config, buf, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE, len * 4);
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ±à³ÌÒ»Ò³
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒªĞ´ÈëµÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ²ÎÊıËµÃ÷     buf             ĞèÒªĞ´ÈëµÄÊı¾İµØÖ·   ´«ÈëµÄÊı×éÀàĞÍ±ØĞëÎªuint32
-// ²ÎÊıËµÃ÷     len             ĞèÒªĞ´ÈëµÄÊı¾İ³¤¶È   ²ÎÊı·¶Î§ 1-1024
-// ·µ»Ø²ÎÊı     uint8           1-±íÊ¾Ê§°Ü 0-±íÊ¾³É¹¦
-// Ê¹ÓÃÊ¾Àı     flash_write_page(FLASH_SECTION_127, FLASH_PAGE_3, data_buffer, 256);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     ç¼–ç¨‹ä¸€é¡µ
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦å†™å…¥çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// å‚æ•°è¯´æ˜     buf             éœ€è¦å†™å…¥çš„æ•°æ®åœ°å€   ä¼ å…¥çš„æ•°ç»„ç±»å‹å¿…é¡»ä¸ºuint32
+// å‚æ•°è¯´æ˜     len             éœ€è¦å†™å…¥çš„æ•°æ®é•¿åº¦   å‚æ•°èŒƒå›´ 1-1024
+// è¿”å›å‚æ•°     uint8           1-è¡¨ç¤ºå¤±è´¥ 0-è¡¨ç¤ºæˆåŠŸ
+// ä½¿ç”¨ç¤ºä¾‹     flash_write_page(FLASH_SECTION_127, FLASH_PAGE_3, data_buffer, 256);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_write_page (uint32 sector_num, flash_page_enum page_num, const uint32 *buf, uint16 len)
 {
-#define PAGE_BUFFER_SIZE 64                                                     // ¶¨ÒåĞ´Èë»º³åÇøµÄ´óĞ¡
+#define PAGE_BUFFER_SIZE 64                                                     // å®šä¹‰å†™å…¥ç¼“å†²åŒºçš„å¤§å°
     uint8 i = 0;
     uint32 primask;
     status_t state = kStatus_Success;
-    flash_data_union block[PAGE_BUFFER_SIZE] = {0};                             // Ã¿´ÎĞ´ÈëĞèÒªĞ´Èë64¸öuint32Êı¾İ
+    flash_data_union block[PAGE_BUFFER_SIZE] = {0};                             // æ¯æ¬¡å†™å…¥éœ€è¦å†™å…¥64ä¸ªuint32æ•°æ®
     
-    zf_assert(len <= FLASH_DATA_BUFFER_SIZE);                                   // ÅĞ¶ÏÊÇ·ñ´óÓÚÒ»Ò³µÄ´óĞ¡ 1024¸öuint32Êı¾İ         
+    zf_assert(len <= FLASH_DATA_BUFFER_SIZE);                                   // åˆ¤æ–­æ˜¯å¦å¤§äºä¸€é¡µçš„å¤§å° 1024ä¸ªuint32æ•°æ®         
     
-    if(flash_check(sector_num, page_num))                                       // ÅĞ¶ÏÊÇ·ñÓĞÊı¾İ ÕâÀïÊÇÈßÓàµÄ±£»¤ ·ÀÖ¹ÓĞÈËÃ»²Á³ı¾ÍĞ´Èë
+    if(flash_check(sector_num, page_num))                                       // åˆ¤æ–­æ˜¯å¦æœ‰æ•°æ® è¿™é‡Œæ˜¯å†—ä½™çš„ä¿æŠ¤ é˜²æ­¢æœ‰äººæ²¡æ“¦é™¤å°±å†™å…¥
     {
-        flash_erase_page(sector_num, page_num);                                 // ²Á³ıÕâÒ»Ò³
+        flash_erase_page(sector_num, page_num);                                 // æ“¦é™¤è¿™ä¸€é¡µ
     }
     
-    for(i=0; i < (len / PAGE_BUFFER_SIZE); i++)                                 // Ğ´ÈëÓÃ»§Êı¾İ
+    for(i=0; i < (len / PAGE_BUFFER_SIZE); i++)                                 // å†™å…¥ç”¨æˆ·æ•°æ®
     {
         primask = interrupt_global_disable();
-                                                                                // Ñ­»·Ğ´ÈëÓÃ»§Êı¾İ
+                                                                                // å¾ªç¯å†™å…¥ç”¨æˆ·æ•°æ®
         state = rom_api_flexspi_nor_flash_page_program(flash_instance, &config, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE + (i * (FLASH_PAGE_SIZE / FLASH_PAGE_NUM_DRIVER)),(uint32 *)(buf+i * PAGE_BUFFER_SIZE));
         interrupt_global_enable(primask);
         if(state != kStatus_Success)
@@ -152,13 +152,13 @@ uint8 flash_write_page (uint32 sector_num, flash_page_enum page_num, const uint3
             break;
         }
     }
-    if(0 != len % PAGE_BUFFER_SIZE)                                             // ÅĞ¶Ï³¤¶ÈÈç¹û²»ÊÇ»º³åÇø´óĞ¡µÄÕûÊı±¶
+    if(0 != len % PAGE_BUFFER_SIZE)                                             // åˆ¤æ–­é•¿åº¦å¦‚æœä¸æ˜¯ç¼“å†²åŒºå¤§å°çš„æ•´æ•°å€
     {
-        memset(block, 0, sizeof(block));                                        // Çå¿Õ»º³åÇø
-                                                                                // ½«ÓÃ»§Êı¾İ³¬¹ı»º³åÇøÕûÊı±¶²¿·ÖµÄ×îºóÊı¾İ´«Èë»º³åÇø£¬²¢²¹0
+        memset(block, 0, sizeof(block));                                        // æ¸…ç©ºç¼“å†²åŒº
+                                                                                // å°†ç”¨æˆ·æ•°æ®è¶…è¿‡ç¼“å†²åŒºæ•´æ•°å€éƒ¨åˆ†çš„æœ€åæ•°æ®ä¼ å…¥ç¼“å†²åŒºï¼Œå¹¶è¡¥0
         memcpy(block, (uint32 *)(buf + (i * PAGE_BUFFER_SIZE)), (len - (i * PAGE_BUFFER_SIZE)) * 4);
         primask = interrupt_global_disable();
-                                                                                // Ğ´Èë»º³åÇøÊı¾İ
+                                                                                // å†™å…¥ç¼“å†²åŒºæ•°æ®
         state = rom_api_flexspi_nor_flash_page_program(flash_instance, &config, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE + (i * (FLASH_PAGE_SIZE / FLASH_PAGE_NUM_DRIVER)),(uint32 *)block);
         interrupt_global_enable(primask);
         if(state != kStatus_Success)
@@ -170,27 +170,27 @@ uint8 flash_write_page (uint32 sector_num, flash_page_enum page_num, const uint3
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ´ÓÖ¸¶¨ FLASH µÄÉÈÇøµÄÖ¸¶¨Ò³Âë¶ÁÈ¡Êı¾İµ½»º³åÇø
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒª¶ÁÈ¡µÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     flash_read_page_to_buffer(FLASH_SECTION_127, FLASH_PAGE_3);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     ä»æŒ‡å®š FLASH çš„æ‰‡åŒºçš„æŒ‡å®šé¡µç è¯»å–æ•°æ®åˆ°ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦è¯»å–çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     flash_read_page_to_buffer(FLASH_SECTION_127, FLASH_PAGE_3);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void flash_read_page_to_buffer (uint32 sector_num, flash_page_enum page_num)
 {
-    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE, FLASH_PAGE_SIZE);//¶ÁÈ¡flashÇ°£¬×îºÃÏÈÇå¿Õ»º´æ
+    DCACHE_CleanInvalidateByRange(FLASH_BASE_ADDR + sector_num * FLASH_SECTOR_SIZE, FLASH_PAGE_SIZE);//è¯»å–flashå‰ï¼Œæœ€å¥½å…ˆæ¸…ç©ºç¼“å­˜
     
     rom_api_flexspi_nor_flash_read(flash_instance, &config, (uint32 *)&flash_union_buffer[0], sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE, FLASH_PAGE_SIZE);
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     ÏòÖ¸¶¨ FLASH µÄÉÈÇøµÄÖ¸¶¨Ò³ÂëĞ´Èë»º³åÇøµÄÊı¾İ
-// ²ÎÊıËµÃ÷     sector_num      ĞèÒªĞ´ÈëµÄÉÈÇø±àºÅ ²ÎÊı·¶Î§ <0 - 127>
-// ²ÎÊıËµÃ÷     page_num        µ±Ç°ÉÈÇøÒ³µÄ±àºÅ   ²ÎÊı·¶Î§ <FLASH_PAGE_0-FLASH_PAGE_7>
-// ·µ»Ø²ÎÊı     uint8           1-±íÊ¾Ê§°Ü 0-±íÊ¾³É¹¦
-// Ê¹ÓÃÊ¾Àı     flash_write_page_from_buffer(FLASH_SECTION_127, FLASH_PAGE_3);
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     å‘æŒ‡å®š FLASH çš„æ‰‡åŒºçš„æŒ‡å®šé¡µç å†™å…¥ç¼“å†²åŒºçš„æ•°æ®
+// å‚æ•°è¯´æ˜     sector_num      éœ€è¦å†™å…¥çš„æ‰‡åŒºç¼–å· å‚æ•°èŒƒå›´ <0 - 127>
+// å‚æ•°è¯´æ˜     page_num        å½“å‰æ‰‡åŒºé¡µçš„ç¼–å·   å‚æ•°èŒƒå›´ <FLASH_PAGE_0-FLASH_PAGE_7>
+// è¿”å›å‚æ•°     uint8           1-è¡¨ç¤ºå¤±è´¥ 0-è¡¨ç¤ºæˆåŠŸ
+// ä½¿ç”¨ç¤ºä¾‹     flash_write_page_from_buffer(FLASH_SECTION_127, FLASH_PAGE_3);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_write_page_from_buffer (uint32 sector_num, flash_page_enum page_num)
 {
@@ -203,11 +203,11 @@ uint8 flash_write_page_from_buffer (uint32 sector_num, flash_page_enum page_num)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     Çå¿ÕÊı¾İ»º³åÇø
-// ²ÎÊıËµÃ÷     void
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     flash_buffer_clear();
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     æ¸…ç©ºæ•°æ®ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜     void
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     flash_buffer_clear();
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void flash_buffer_clear (void)
 {
@@ -215,11 +215,11 @@ void flash_buffer_clear (void)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êı¼ò½é     flash³õÊ¼»¯
-// ²ÎÊıËµÃ÷     void
-// ·µ»Ø²ÎÊı     void
-// Ê¹ÓÃÊ¾Àı     flash_init();
-// ±¸×¢ĞÅÏ¢     
+// å‡½æ•°ç®€ä»‹     flashåˆå§‹åŒ–
+// å‚æ•°è¯´æ˜     void
+// è¿”å›å‚æ•°     void
+// ä½¿ç”¨ç¤ºä¾‹     flash_init();
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_init (void)
 {

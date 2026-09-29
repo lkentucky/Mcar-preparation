@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈý·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öð·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºŽå®˜æ–¹ SDK æŽ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£žç§‘æŠ€
 * 
-* ±¾ÎÄ¼þÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼þ
-* Äú¿ÉÒÔ¸ù¾Ý×ÔÓÉÈí¼þ»ù½ð»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ðí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØÐÂ·¢²¼ºÍ/»òÐÞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åŽæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓÐÒþº¬µÄÊÊÏúÐÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·Ý GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓÐ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æžœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ðí¿ÉÖ¤Ð­Òé ÒÔÉÏÐí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ðí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼þ¼ÐÏÂµÄ GPL3_permission_statement.txt ÎÄ¼þÖÐ
-* Ðí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼þ¼ÐÏÂ ¼´¸ÃÎÄ¼þ¼ÐÏÂµÄ LICENSE ÎÄ¼þ
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò µ«ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜Žï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜Žä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜Žè‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿Žå„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£žç§‘æŠ€çš„ç‰ˆæƒå£°æ˜Žï¼ˆå³æœ¬å£°æ˜Žï¼‰
 * 
-* ÎÄ¼þÃû³Æ          zf_driver_iic
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
-* °æ±¾ÐÅÏ¢          ²é¿´ libraries/doc ÎÄ¼þ¼ÐÄÚ version ÎÄ¼þ °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          zf_driver_iic
+* å…¬å¸åç§°          æˆéƒ½é€é£žç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜Ž
+* å¼€å‘çŽ¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æŽ¥          https://seekfree.taobao.com/
 * 
-* ÐÞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ              ä½œè€…                å¤‡æ³¨
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -47,7 +47,7 @@ static  LPI2C_Type *iic_index[]      = LPI2C_BASE_PTRS;
 
 #define LPI2C_CLOCK_SOURCE_DIVIDER (0x05)
 #define LPI2C_CLOCK_FREQUENCY ((CLOCK_GetFreq(kCLOCK_Usb1PllClk) / 8) / (LPI2C_CLOCK_SOURCE_DIVIDER + 1))
-#define IIC_PIN_CONF  SPEED_100MHZ | KEEPER_EN | PULLUP_22K | DSE_R0_6 | OD_EN  //ÅäÖÃIICÒý½ÅÄ¬ÈÏÅäÖÃ
+#define IIC_PIN_CONF  SPEED_100MHZ | KEEPER_EN | PULLUP_22K | DSE_R0_6 | OD_EN  //é…ç½®IICå¼•è„šé»˜è®¤é…ç½®
 
 void iic_iomuxc(iic_index_enum iic_n, iic_scl_pin_enum scl_pin, iic_sda_pin_enum sda_pin)
 {
@@ -88,13 +88,13 @@ void iic_iomuxc(iic_index_enum iic_n, iic_scl_pin_enum scl_pin, iic_sda_pin_enum
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÐ´ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     data            ÒªÐ´ÈëµÄÊý¾Ý
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_8bit(IIC_1, 0x7A, 0x01);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å†™ 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     data            è¦å†™å…¥çš„æ•°æ®
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_8bit(IIC_1, 0x7A, 0x01);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_8bit (iic_index_enum iic_n, uint8 target_addr, const uint8 data)
 {
@@ -121,14 +121,14 @@ void iic_write_8bit (iic_index_enum iic_n, uint8 target_addr, const uint8 data)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÐ´ 8bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_8bit_array(IIC_1, 0x7A, data, 64);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å†™ 8bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_8bit_array(IIC_1, 0x7A, data, 64);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_8bit_array (iic_index_enum iic_n, uint8 target_addr, const uint8 *data, uint32 len)
 {
@@ -155,13 +155,13 @@ void iic_write_8bit_array (iic_index_enum iic_n, uint8 target_addr, const uint8 
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÐ´ 16bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     data            ÒªÐ´ÈëµÄÊý¾Ý
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_16bit(IIC_1, 0x7A, 0x0101);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å†™ 16bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     data            è¦å†™å…¥çš„æ•°æ®
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_16bit(IIC_1, 0x7A, 0x0101);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_16bit (iic_index_enum iic_n, uint8 target_addr, const uint16 data)
 {
@@ -189,14 +189,14 @@ void iic_write_16bit (iic_index_enum iic_n, uint8 target_addr, const uint16 data
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÐ´ 16bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_16bit_array(IIC_1, 0x7A, data, 6);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å†™ 16bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_16bit_array(IIC_1, 0x7A, data, 6);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_16bit_array (iic_index_enum iic_n, uint8 target_addr, const uint16 *data, uint32 len)
 {
@@ -229,14 +229,14 @@ void iic_write_16bit_array (iic_index_enum iic_n, uint8 target_addr, const uint1
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÏò´«¸ÐÆ÷¼Ä´æÆ÷Ð´ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     data            ÒªÐ´ÈëµÄÊý¾Ý
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_8bit_register(IIC_1, 0x7A, 0x01, 0x01);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å‘ä¼ æ„Ÿå™¨å¯„å­˜å™¨å†™ 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     data            è¦å†™å…¥çš„æ•°æ®
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_8bit_register(IIC_1, 0x7A, 0x01, 0x01);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_8bit_register (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name, const uint8 data)
 {
@@ -272,15 +272,15 @@ void iic_write_8bit_register (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÏò´«¸ÐÆ÷¼Ä´æÆ÷Ð´ 8bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_8bit_registers(IIC_1, 0x7A, 0x01, data, 6);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å‘ä¼ æ„Ÿå™¨å¯„å­˜å™¨å†™ 8bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_8bit_registers(IIC_1, 0x7A, 0x01, data, 6);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_8bit_registers (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name, const uint8 *data, uint32 len)
 {
@@ -316,14 +316,14 @@ void iic_write_8bit_registers (iic_index_enum iic_n, uint8 target_addr, const ui
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÏò´«¸ÐÆ÷¼Ä´æÆ÷Ð´ 16bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     data            ÒªÐ´ÈëµÄÊý¾Ý
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_16bit_register(IIC_1, 0x7A, 0x0101, 0x0101);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å‘ä¼ æ„Ÿå™¨å¯„å­˜å™¨å†™ 16bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     data            è¦å†™å…¥çš„æ•°æ®
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_16bit_register(IIC_1, 0x7A, 0x0101, 0x0101);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_16bit_register (iic_index_enum iic_n, uint8 target_addr, const uint16 register_name, const uint16 data)
 {
@@ -360,15 +360,15 @@ void iic_write_16bit_register (iic_index_enum iic_n, uint8 target_addr, const ui
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿ÚÏò´«¸ÐÆ÷¼Ä´æÆ÷Ð´ 16bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_write_16bit_registers(IIC_1, 0x7A, 0x0101, data, 6);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£å‘ä¼ æ„Ÿå™¨å¯„å­˜å™¨å†™ 16bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_write_16bit_registers(IIC_1, 0x7A, 0x0101, data, 6);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_write_16bit_registers (iic_index_enum iic_n, uint8 target_addr, const uint16 register_name, const uint16 *data, uint32 len)
 {
@@ -406,12 +406,12 @@ void iic_write_16bit_registers (iic_index_enum iic_n, uint8 target_addr, const u
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú¶ÁÈ¡ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ·µ»Ø²ÎÊý     uint8           ·µ»Ø¶ÁÈ¡µÄ 8bit Êý¾Ý
-// Ê¹ÓÃÊ¾Àý     iic_read_8bit(IIC_1, 0x7A);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£è¯»å– 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// è¿”å›žå‚æ•°     uint8           è¿”å›žè¯»å–çš„ 8bit æ•°æ®
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_8bit(IIC_1, 0x7A);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 iic_read_8bit (iic_index_enum iic_n, uint8 target_addr)
 {
@@ -439,14 +439,14 @@ uint8 iic_read_8bit (iic_index_enum iic_n, uint8 target_addr)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú¶ÁÈ¡ 8bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_read_8bit_array(IIC_1, 0x7A, data, 64);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£è¯»å– 8bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_8bit_array(IIC_1, 0x7A, data, 64);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_read_8bit_array (iic_index_enum iic_n, uint8 target_addr, uint8 *data, uint32 len)
 {
@@ -472,12 +472,12 @@ void iic_read_8bit_array (iic_index_enum iic_n, uint8 target_addr, uint8 *data, 
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú¶ÁÈ¡ 16bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ·µ»Ø²ÎÊý     uint16          ·µ»Ø¶ÁÈ¡µÄ 16bit Êý¾Ý
-// Ê¹ÓÃÊ¾Àý     iic_read_16bit(IIC_1, 0x7A);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£è¯»å– 16bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// è¿”å›žå‚æ•°     uint16          è¿”å›žè¯»å–çš„ 16bit æ•°æ®
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_16bit(IIC_1, 0x7A);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint16 iic_read_16bit (iic_index_enum iic_n, uint8 target_addr)
 {
@@ -507,14 +507,14 @@ uint16 iic_read_16bit (iic_index_enum iic_n, uint8 target_addr)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú¶ÁÈ¡ 16bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_read_16bit_array(IIC_1, 0x7A, data, 8);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£è¯»å– 16bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_16bit_array(IIC_1, 0x7A, data, 8);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_read_16bit_array (iic_index_enum iic_n, uint8 target_addr, uint16 *data, uint32 len)
 {
@@ -545,13 +545,13 @@ void iic_read_16bit_array (iic_index_enum iic_n, uint8 target_addr, uint16 *data
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´Ó´«¸ÐÆ÷¼Ä´æÆ÷¶ÁÈ¡ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ·µ»Ø²ÎÊý     uint8           ·µ»Ø¶ÁÈ¡µÄ 8bit Êý¾Ý
-// Ê¹ÓÃÊ¾Àý     iic_read_8bit_register(IIC_1, 0x7A, 0x01);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä»Žä¼ æ„Ÿå™¨å¯„å­˜å™¨è¯»å– 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// è¿”å›žå‚æ•°     uint8           è¿”å›žè¯»å–çš„ 8bit æ•°æ®
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_8bit_register(IIC_1, 0x7A, 0x01);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 iic_read_8bit_register (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name)
 {
@@ -581,15 +581,15 @@ uint8 iic_read_8bit_register (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´Ó´«¸ÐÆ÷¼Ä´æÆ÷¶ÁÈ¡ 8bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_read_8bit_registers(IIC_1, 0x7A, 0x01, data, 8);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä»Žä¼ æ„Ÿå™¨å¯„å­˜å™¨è¯»å– 8bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_8bit_registers(IIC_1, 0x7A, 0x01, data, 8);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_read_8bit_registers (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name, uint8 *data, uint32 len)
 {
@@ -617,13 +617,13 @@ void iic_read_8bit_registers (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´Ó´«¸ÐÆ÷¼Ä´æÆ÷¶ÁÈ¡ 16bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ·µ»Ø²ÎÊý     uint16          ·µ»Ø¶ÁÈ¡µÄ 16bit Êý¾Ý
-// Ê¹ÓÃÊ¾Àý     iic_read_16bit_register(IIC_1, 0x7A, 0x0101);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä»Žä¼ æ„Ÿå™¨å¯„å­˜å™¨è¯»å– 16bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// è¿”å›žå‚æ•°     uint16          è¿”å›žè¯»å–çš„ 16bit æ•°æ®
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_16bit_register(IIC_1, 0x7A, 0x0101);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint16 iic_read_16bit_register (iic_index_enum iic_n, uint8 target_addr, const uint16 register_name)
 {
@@ -663,15 +663,15 @@ uint16 iic_read_16bit_register (iic_index_enum iic_n, uint8 target_addr, const u
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´Ó´«¸ÐÆ÷¼Ä´æÆ÷¶ÁÈ¡ 16bit Êý×é
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     *data           Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     len             »º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_read_16bit_registers(IIC_1, 0x7A, 0x0101, data, 8);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä»Žä¼ æ„Ÿå™¨å¯„å­˜å™¨è¯»å– 16bit æ•°ç»„
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     *data           æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     len             ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_read_16bit_registers(IIC_1, 0x7A, 0x0101, data, 8);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_read_16bit_registers (iic_index_enum iic_n, uint8 target_addr, const uint16 register_name, uint16 *data, uint32 len)
 {
@@ -711,16 +711,16 @@ void iic_read_16bit_registers (iic_index_enum iic_n, uint8 target_addr, const ui
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´«Êä 8bit Êý×é ÏÈÐ´ºó¶ÁÈ¡
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êÆ÷¼þµØÖ·
-// ²ÎÊýËµÃ÷     *write_data     ·¢ËÍÊý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     write_len       ·¢ËÍ»º³åÇø³¤¶È
-// ²ÎÊýËµÃ÷     *read_data      ¶ÁÈ¡Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     read_len        ¶ÁÈ¡»º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_transfer_8bit_array(IIC_1, addr, data, 64, data, 64);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä¼ è¾“ 8bit æ•°ç»„ å…ˆå†™åŽè¯»å–
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡å™¨ä»¶åœ°å€
+// å‚æ•°è¯´æ˜Ž     *write_data     å‘é€æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     write_len       å‘é€ç¼“å†²åŒºé•¿åº¦
+// å‚æ•°è¯´æ˜Ž     *read_data      è¯»å–æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     read_len        è¯»å–ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_transfer_8bit_array(IIC_1, addr, data, 64, data, 64);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_transfer_8bit_array (iic_index_enum iic_n, uint8 target_addr, const uint8 *write_data, uint32 write_len, uint8 *read_data, uint32 read_len)
 {
@@ -748,16 +748,16 @@ void iic_transfer_8bit_array (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú´«Êä 16bit Êý×é ÏÈÐ´ºó¶ÁÈ¡
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êÆ÷¼þµØÖ·
-// ²ÎÊýËµÃ÷     *write_data     ·¢ËÍÊý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     write_len       ·¢ËÍ»º³åÇø³¤¶È
-// ²ÎÊýËµÃ÷     *read_data      ¶ÁÈ¡Êý¾Ý´æ·Å»º³åÇø
-// ²ÎÊýËµÃ÷     read_len        ¶ÁÈ¡»º³åÇø³¤¶È
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_transfer_16bit_array(IIC_1, addr, data, 64, data, 64);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ä¼ è¾“ 16bit æ•°ç»„ å…ˆå†™åŽè¯»å–
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡å™¨ä»¶åœ°å€
+// å‚æ•°è¯´æ˜Ž     *write_data     å‘é€æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     write_len       å‘é€ç¼“å†²åŒºé•¿åº¦
+// å‚æ•°è¯´æ˜Ž     *read_data      è¯»å–æ•°æ®å­˜æ”¾ç¼“å†²åŒº
+// å‚æ•°è¯´æ˜Ž     read_len        è¯»å–ç¼“å†²åŒºé•¿åº¦
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_transfer_16bit_array(IIC_1, addr, data, 64, data, 64);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_transfer_16bit_array (iic_index_enum iic_n, uint8 target_addr, const uint16 *write_data, uint32 write_len, uint16 *read_data, uint32 read_len)
 {
@@ -799,14 +799,14 @@ void iic_transfer_16bit_array (iic_index_enum iic_n, uint8 target_addr, const ui
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú SCCB Ä£Ê½Ïò´«¸ÐÆ÷¼Ä´æÆ÷Ð´ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ²ÎÊýËµÃ÷     data            ÒªÐ´ÈëµÄÊý¾Ý
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_sccb_write_register(IIC_1, 0x7A, 0x01, 0x01);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ SCCB æ¨¡å¼å‘ä¼ æ„Ÿå™¨å¯„å­˜å™¨å†™ 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// å‚æ•°è¯´æ˜Ž     data            è¦å†™å…¥çš„æ•°æ®
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_sccb_write_register(IIC_1, 0x7A, 0x01, 0x01);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_sccb_write_register (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name, uint8 data)
 {
@@ -842,13 +842,13 @@ void iic_sccb_write_register (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú SCCB Ä£Ê½´Ó´«¸ÐÆ÷¼Ä´æÆ÷¶ÁÈ¡ 8bit Êý¾Ý
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     target_addr     Ä¿±êµØÖ·
-// ²ÎÊýËµÃ÷     register_name   ´«¸ÐÆ÷µÄ¼Ä´æÆ÷µØÖ·
-// ·µ»Ø²ÎÊý     uint8           ·µ»Ø¶ÁÈ¡µÄ 8bit Êý¾Ý
-// Ê¹ÓÃÊ¾Àý     iic_sccb_read_register(IIC_1, 0x7A, 0x01);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£ SCCB æ¨¡å¼ä»Žä¼ æ„Ÿå™¨å¯„å­˜å™¨è¯»å– 8bit æ•°æ®
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     target_addr     ç›®æ ‡åœ°å€
+// å‚æ•°è¯´æ˜Ž     register_name   ä¼ æ„Ÿå™¨çš„å¯„å­˜å™¨åœ°å€
+// è¿”å›žå‚æ•°     uint8           è¿”å›žè¯»å–çš„ 8bit æ•°æ®
+// ä½¿ç”¨ç¤ºä¾‹     iic_sccb_read_register(IIC_1, 0x7A, 0x01);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 uint8 iic_sccb_read_register (iic_index_enum iic_n, uint8 target_addr, const uint8 register_name)
 {
@@ -900,20 +900,20 @@ uint8 iic_sccb_read_register (iic_index_enum iic_n, uint8 target_addr, const uin
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// º¯Êý¼ò½é     IIC ½Ó¿Ú³õÊ¼»¯ Ä¬ÈÏ MASTER Ä£Ê½ ²»Ìá¹© SLAVE Ä£Ê½
-// ²ÎÊýËµÃ÷     iic_n           IIC Ä£¿éºÅ ²ÎÕÕ zf_driver_iic.h ÄÚ iic_index_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     addr            IIC µØÖ· ÕâÀïÐèÒª×¢Òâ ±ê×¼ÆßÎ»µØÖ· ×î¸ßÎ»ºöÂÔ Ð´ÈëÊ±ÇëÎñ±ØÈ·ÈÏÎÞÎó
-// ²ÎÊýËµÃ÷     baud            IIC ²¨ÌØÂÊ ²»³¬¹ý 1000Khz ²»µÍÓÚ 1KHz 
-// ²ÎÊýËµÃ÷     scl_pin         IIC Ê±ÖÓÒý½Å ²ÎÕÕ zf_driver_iic.h ÄÚ iic_scl_pin_enum Ã¶¾ÙÌå¶¨Òå
-// ²ÎÊýËµÃ÷     sda_pin         IIC Êý¾ÝÒý½Å ²ÎÕÕ zf_driver_iic.h ÄÚ iic_sda_pin_enum Ã¶¾ÙÌå¶¨Òå
-// ·µ»Ø²ÎÊý     void            
-// Ê¹ÓÃÊ¾Àý     iic_init(IIC_1, 0x7A, 100000, IIC1_SCL_D10, IIC1_SDA_D11);
-// ±¸×¢ÐÅÏ¢     
+// å‡½æ•°ç®€ä»‹     IIC æŽ¥å£åˆå§‹åŒ– é»˜è®¤ MASTER æ¨¡å¼ ä¸æä¾› SLAVE æ¨¡å¼
+// å‚æ•°è¯´æ˜Ž     iic_n           IIC æ¨¡å—å· å‚ç…§ zf_driver_iic.h å†… iic_index_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     addr            IIC åœ°å€ è¿™é‡Œéœ€è¦æ³¨æ„ æ ‡å‡†ä¸ƒä½åœ°å€ æœ€é«˜ä½å¿½ç•¥ å†™å…¥æ—¶è¯·åŠ¡å¿…ç¡®è®¤æ— è¯¯
+// å‚æ•°è¯´æ˜Ž     baud            IIC æ³¢ç‰¹çŽ‡ ä¸è¶…è¿‡ 1000Khz ä¸ä½ŽäºŽ 1KHz 
+// å‚æ•°è¯´æ˜Ž     scl_pin         IIC æ—¶é’Ÿå¼•è„š å‚ç…§ zf_driver_iic.h å†… iic_scl_pin_enum æžšä¸¾ä½“å®šä¹‰
+// å‚æ•°è¯´æ˜Ž     sda_pin         IIC æ•°æ®å¼•è„š å‚ç…§ zf_driver_iic.h å†… iic_sda_pin_enum æžšä¸¾ä½“å®šä¹‰
+// è¿”å›žå‚æ•°     void            
+// ä½¿ç”¨ç¤ºä¾‹     iic_init(IIC_1, 0x7A, 100000, IIC1_SCL_D10, IIC1_SDA_D11);
+// å¤‡æ³¨ä¿¡æ¯     
 //-------------------------------------------------------------------------------------------------------------------
 void iic_init(iic_index_enum iic_n, uint8 addr, uint32 baud, iic_scl_pin_enum scl_pin, iic_sda_pin_enum sda_pin)
 {
-    zf_assert((baud >= 1000)&&(baud <= 1000000));                             // ÖÁÉÙ 1KHz ÖÁ¶à 400KHz ËÙÂÊ
-    zf_assert((scl_pin / 16) == (sda_pin / 16));                                // scl_pin Óë sda_pin ±ØÐëÓë iic_n Æ¥Åä
+    zf_assert((baud >= 1000)&&(baud <= 1000000));                             // è‡³å°‘ 1KHz è‡³å¤š 400KHz é€ŸçŽ‡
+    zf_assert((scl_pin / 16) == (sda_pin / 16));                                // scl_pin ä¸Ž sda_pin å¿…é¡»ä¸Ž iic_n åŒ¹é…
 
     lpi2c_master_config_t masterConfig;
     
@@ -934,7 +934,7 @@ void iic_init(iic_index_enum iic_n, uint8 addr, uint32 baud, iic_scl_pin_enum sc
      */
     LPI2C_MasterGetDefaultConfig(&masterConfig);
     masterConfig.baudRate_Hz = baud;
-    LPI2C_MasterInit(iic_index[iic_n], &masterConfig, LPI2C_CLOCK_FREQUENCY);   // µÚÒ»´Î³õÊ¼»¯±ãÓÚ´ò¿ªÊ±ÖÓ
-    LPI2C_MasterReset(iic_index[iic_n]);                                        // ¸´Î»ÍâÉè
-    LPI2C_MasterInit(iic_index[iic_n], &masterConfig, LPI2C_CLOCK_FREQUENCY);   // ÖØÐÂ³õÊ¼»¯ÉèÖÃÕýÈ·µÄ²ÎÊý
+    LPI2C_MasterInit(iic_index[iic_n], &masterConfig, LPI2C_CLOCK_FREQUENCY);   // ç¬¬ä¸€æ¬¡åˆå§‹åŒ–ä¾¿äºŽæ‰“å¼€æ—¶é’Ÿ
+    LPI2C_MasterReset(iic_index[iic_n]);                                        // å¤ä½å¤–è®¾
+    LPI2C_MasterInit(iic_index[iic_n], &masterConfig, LPI2C_CLOCK_FREQUENCY);   // é‡æ–°åˆå§‹åŒ–è®¾ç½®æ­£ç¡®çš„å‚æ•°
 }

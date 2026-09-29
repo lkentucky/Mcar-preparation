@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈý·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öð·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºŽå®˜æ–¹ SDK æŽ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£žç§‘æŠ€
 * 
-* ±¾ÎÄ¼þÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼þ
-* Äú¿ÉÒÔ¸ù¾Ý×ÔÓÉÈí¼þ»ù½ð»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ðí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØÐÂ·¢²¼ºÍ/»òÐÞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åŽæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓÐÒþº¬µÄÊÊÏúÐÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·Ý GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓÐ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æžœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ðí¿ÉÖ¤Ð­Òé ÒÔÉÏÐí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ðí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼þ¼ÐÏÂµÄ GPL3_permission_statement.txt ÎÄ¼þÖÐ
-* Ðí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼þ¼ÐÏÂ ¼´¸ÃÎÄ¼þ¼ÐÏÂµÄ LICENSE ÎÄ¼þ
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò µ«ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜Žï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜Žä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜Žè‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿Žå„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£žç§‘æŠ€çš„ç‰ˆæƒå£°æ˜Žï¼ˆå³æœ¬å£°æ˜Žï¼‰
 * 
-* ÎÄ¼þÃû³Æ          zf_driver_csi
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
-* °æ±¾ÐÅÏ¢          ²é¿´ libraries/doc ÎÄ¼þ¼ÐÄÚ version ÎÄ¼þ °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          zf_driver_csi
+* å…¬å¸åç§°          æˆéƒ½é€é£žç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜Ž
+* å¼€å‘çŽ¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æŽ¥          https://seekfree.taobao.com/
 * 
-* ÐÞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ              ä½œè€…                å¤‡æ³¨
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -38,14 +38,14 @@
 
 #include "zf_driver_csi.h"
 
-#define CSI_PIN_CONF    SPEED_100MHZ | KEEPER_EN | DSE_R0_6 //ÅäÖÃCSIÒý½ÅÄ¬ÈÏÅäÖÃ   
+#define CSI_PIN_CONF    SPEED_100MHZ | KEEPER_EN | DSE_R0_6 //é…ç½®CSIå¼•è„šé»˜è®¤é…ç½®   
 
-csi_handle_t            csi_handle;                         //csiÊÂÎñ½á¹¹Ìå
+csi_handle_t            csi_handle;                         //csiäº‹åŠ¡ç»“æž„ä½“
 
 
 void csi_iomuxc(vsync_pin_enum vsync, pixclk_pin_enum pixclk)
 {
-    //Êý¾Ý¶Ë¿ÚÒý½Å¸´ÓÃÉèÖÃ
+    //æ•°æ®ç«¯å£å¼•è„šå¤ç”¨è®¾ç½®
     afio_init(IOMUXC_GPIO_AD_B1_08_CSI_DATA09, 0, CSI_PIN_CONF);
     afio_init(IOMUXC_GPIO_AD_B1_09_CSI_DATA08, 0, CSI_PIN_CONF);
     afio_init(IOMUXC_GPIO_AD_B1_10_CSI_DATA07, 0, CSI_PIN_CONF);
@@ -64,9 +64,9 @@ void csi_iomuxc(vsync_pin_enum vsync, pixclk_pin_enum pixclk)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      CSIÌí¼Ó¿Õ»º³åÇøµØÖ·
-//  @param      handle      CSIµÄhandle½á¹¹Ìå ÔÚMT9V032_CSIÒÑ¾­¶¨ÒåºÃÁË
-//  @param      *buff       »º³åÇøµÄÊ×µØÖ·
+//  @brief      CSIæ·»åŠ ç©ºç¼“å†²åŒºåœ°å€
+//  @param      handle      CSIçš„handleç»“æž„ä½“ åœ¨MT9V032_CSIå·²ç»å®šä¹‰å¥½äº†
+//  @param      *buff       ç¼“å†²åŒºçš„é¦–åœ°å€
 //  @return     void			
 //  @since      v1.0
 //  Sample usage:           
@@ -77,9 +77,9 @@ void csi_add_empty_buffer(csi_handle_t *handle, uint8 *buff)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      CSI»ñÈ¡²É¼¯Íê³ÉµÄ»º³åÇøµØÖ·
-//  @param      handle      CSIµÄhandle½á¹¹Ìå ÔÚMT9V032_CSIÒÑ¾­¶¨ÒåºÃÁË
-//  @param      buffaddr    »ñÈ¡µ½µÄµØÖ·
+//  @brief      CSIèŽ·å–é‡‡é›†å®Œæˆçš„ç¼“å†²åŒºåœ°å€
+//  @param      handle      CSIçš„handleç»“æž„ä½“ åœ¨MT9V032_CSIå·²ç»å®šä¹‰å¥½äº†
+//  @param      buffaddr    èŽ·å–åˆ°çš„åœ°å€
 //  @return     void			
 //  @since      v1.0
 //  Sample usage:           
@@ -88,14 +88,14 @@ uint8 csi_get_full_buffer(csi_handle_t *handle, uint32 *buffaddr)
 {
     if(kStatus_Success == CSI_TransferGetFullBuffer(CSI,handle,(uint32_t *)buffaddr))
     {
-        return 1;//»ñÈ¡µ½²É¼¯Íê³ÉµÄBUFFER
+        return 1;//èŽ·å–åˆ°é‡‡é›†å®Œæˆçš„BUFFER
     }
-    return 0;    //Î´²É¼¯Íê³É
+    return 0;    //æœªé‡‡é›†å®Œæˆ
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      CSIÆô¶¯
-//  @param      handle      CSIµÄhandle½á¹¹Ìå ÔÚMT9V032_CSIÒÑ¾­¶¨ÒåºÃÁË
+//  @brief      CSIå¯åŠ¨
+//  @param      handle      CSIçš„handleç»“æž„ä½“ åœ¨MT9V032_CSIå·²ç»å®šä¹‰å¥½äº†
 //  @return     void			
 //  @since      v1.0
 //  Sample usage:           
@@ -106,8 +106,8 @@ void csi_start(csi_handle_t *handle)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      CSIÍ£Ö¹
-//  @param      handle      CSIµÄhandle½á¹¹Ìå ÔÚMT9V032_CSIÒÑ¾­¶¨ÒåºÃÁË
+//  @brief      CSIåœæ­¢
+//  @param      handle      CSIçš„handleç»“æž„ä½“ åœ¨MT9V032_CSIå·²ç»å®šä¹‰å¥½äº†
 //  @return     void			
 //  @since      v1.0
 //  Sample usage:           
@@ -118,11 +118,11 @@ void csi_stop(csi_handle_t *handle)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      CSI³õÊ¼»¯
-//  @param      width       Í¼ÏñµÄÁÐ
-//  @param      height      Í¼ÏñµÄÐÐ
-//  @param      handle      CSIµÄhandle½á¹¹Ìå ÔÚMT9V032_CSIÒÑ¾­¶¨ÒåºÃÁË
-//  @param      callback    ÖÐ¶ÏµÄÊ±ºòµÄ»Øµ÷º¯Êý
+//  @brief      CSIåˆå§‹åŒ–
+//  @param      width       å›¾åƒçš„åˆ—
+//  @param      height      å›¾åƒçš„è¡Œ
+//  @param      handle      CSIçš„handleç»“æž„ä½“ åœ¨MT9V032_CSIå·²ç»å®šä¹‰å¥½äº†
+//  @param      callback    ä¸­æ–­çš„æ—¶å€™çš„å›žè°ƒå‡½æ•°
 //  @return     void			
 //  @since      v1.0
 //  Sample usage:           
@@ -137,22 +137,22 @@ void csi_init(uint16 width, uint16 height, csi_handle_t *handle, csi_transfer_ca
 
     csi_iomuxc(vsync,pixclk);
     
-    //CSI ²É¼¯³õÊ¼»¯
+    //CSI é‡‡é›†åˆå§‹åŒ–
     CLOCK_SetMux(kCLOCK_CsiMux, 2);
     CLOCK_SetDiv(kCLOCK_CsiDiv, 0);
         
-    //ÉãÏñÍ·²É¼¯³õÊ¼»¯
+    //æ‘„åƒå¤´é‡‡é›†åˆå§‹åŒ–
     pixel_num = width*height;
-    if(pixel_num%8) assert(0);//ÏñËØµã²»ÊÇ8µÄ±¶Êý ÎÞ·¨²É¼¯
+    if(pixel_num%8) assert(0);//åƒç´ ç‚¹ä¸æ˜¯8çš„å€æ•° æ— æ³•é‡‡é›†
     if(width%8)
     {
-        temp_width = width - width%8;//´¢´æÁÙÊ±¿í¶È
+        temp_width = width - width%8;//å‚¨å­˜ä¸´æ—¶å®½åº¦
         i=1;
         while(pixel_num>(temp_width+(i*8)))
         {
             if(!(pixel_num%((temp_width+(i*8))))) 
             {
-                temp_width += (i*8);//´¢´æÁÙÊ±¿í¶È
+                temp_width += (i*8);//å‚¨å­˜ä¸´æ—¶å®½åº¦
                 temp_height = pixel_num/temp_width;
                 break;
             }
@@ -160,13 +160,13 @@ void csi_init(uint16 width, uint16 height, csi_handle_t *handle, csi_transfer_ca
         }
         if(!temp_height)
         {
-            //Èç¹ûÃ»ÓÐÕÒµ½Ôò´ÓÁÙÊ±¿í¶ÈÍùÏÂÕÒ
+            //å¦‚æžœæ²¡æœ‰æ‰¾åˆ°åˆ™ä»Žä¸´æ—¶å®½åº¦å¾€ä¸‹æ‰¾
             i=1;
             while((temp_width-(i*8)))
             {
                 if(!(pixel_num%((temp_width-(i*8))))) 
                 {
-                    temp_width -= (i*8);//´¢´æÁÙÊ±¿í¶È
+                    temp_width -= (i*8);//å‚¨å­˜ä¸´æ—¶å®½åº¦
                     temp_height = pixel_num/temp_width;
                     break;
                 }
@@ -175,7 +175,7 @@ void csi_init(uint16 width, uint16 height, csi_handle_t *handle, csi_transfer_ca
         }
         if(!temp_height)
         {
-            //Èç¹û»¹ÊÇÃ»ÓÐÕÒµ½
+            //å¦‚æžœè¿˜æ˜¯æ²¡æœ‰æ‰¾åˆ°
             temp_width = pixel_num;
             temp_height = 1;
         }
