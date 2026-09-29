@@ -72,7 +72,7 @@ Reset_Handler
         ORR R1,R1,#4
         STR R1,[R0]
         
-        ;¹Ø±ÕITCM
+        ;å…³é—­ITCM
         ;LDR R0,=_iomux_gpr16_adr
         ;LDR R1,[R0]
         ;AND R1,R1,#0xFFFFFFFE

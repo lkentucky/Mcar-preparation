@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ����RT1064DVL6A ��Դ�⣩��һ�����ڹٷ� SDK �ӿڵĵ�������Դ��
-* Copyright (c) 2022 SEEKFREE ��ɿƼ�
+* RT1064DVL6A Opensource Library 即（RT1064DVL6A 开源库）是一个基于官方 SDK 接口的第三方开源库
+* Copyright (c) 2022 SEEKFREE 逐飞科技
 * 
-* ���ļ��� RT1064DVL6A ��Դ���һ����
+* 本文件是 RT1064DVL6A 开源库的一部分
 * 
-* RT1064DVL6A ��Դ�� ���������
-* �����Ը���������������ᷢ���� GPL��GNU General Public License���� GNUͨ�ù�������֤��������
-* �� GPL �ĵ�3�棨�� GPL3.0������ѡ��ģ��κκ����İ汾�����·�����/���޸���
+* RT1064DVL6A 开源库 是免费软件
+* 您可以根据自由软件基金会发布的 GPL（GNU General Public License，即 GNU通用公共许可证）的条款
+* 即 GPL 的第3版（即 GPL3.0）或（您选择的）任何后来的版本，重新发布和/或修改它
 * 
-* ����Դ��ķ�����ϣ�����ܷ������ã�����δ�������κεı�֤
-* ����û�������������Ի��ʺ��ض���;�ı�֤
-* ����ϸ����μ� GPL
+* 本开源库的发布是希望它能发挥作用，但并未对其作任何的保证
+* 甚至没有隐含的适销性或适合特定用途的保证
+* 更多细节请参见 GPL
 * 
-* ��Ӧ�����յ�����Դ���ͬʱ�յ�һ�� GPL �ĸ���
-* ���û�У������<https://www.gnu.org/licenses/>
+* 您应该在收到本开源库的同时收到一份 GPL 的副本
+* 如果没有，请参阅<https://www.gnu.org/licenses/>
 * 
-* ����ע����
-* ����Դ��ʹ�� GPL3.0 ��Դ����֤Э�� ������������Ϊ���İ汾
-* ��������Ӣ�İ��� libraries/doc �ļ����µ� GPL3_permission_statement.txt �ļ���
-* ����֤������ libraries �ļ����� �����ļ����µ� LICENSE �ļ�
-* ��ӭ��λʹ�ò����������� ���޸�����ʱ���뱣����ɿƼ��İ�Ȩ����������������
+* 额外注明：
+* 本开源库使用 GPL3.0 开源许可证协议 以上许可申明为译文版本
+* 许可申明英文版在 libraries/doc 文件夹下的 GPL3_permission_statement.txt 文件中
+* 许可证副本在 libraries 文件夹下 即该文件夹下的 LICENSE 文件
+* 欢迎各位使用并传播本程序 但修改内容时必须保留逐飞科技的版权声明（即本声明）
 * 
-* �ļ�����          zf_driver_spi
-* ��˾����          �ɶ���ɿƼ����޹�˾
-* �汾��Ϣ          �鿴 libraries/doc �ļ����� version �ļ� �汾˵��
-* ��������          IAR 8.32.4 or MDK 5.33
-* ����ƽ̨          RT1064DVL6A
-* ��������          https://seekfree.taobao.com/
+* 文件名称          zf_driver_spi
+* 公司名称          成都逐飞科技有限公司
+* 版本信息          查看 libraries/doc 文件夹内 version 文件 版本说明
+* 开发环境          IAR 8.32.4 or MDK 5.33
+* 适用平台          RT1064DVL6A
+* 店铺链接          https://seekfree.taobao.com/
 * 
-* �޸ļ�¼
-* ����              ����                ��ע
+* 修改记录
+* 日期              作者                备注
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -38,49 +38,49 @@
 
 #include "zf_common_typedef.h"
 
-#define SPI_SPEED_PRIORITY                                                      // SPI ͨ���ٶ�����
+#define SPI_SPEED_PRIORITY                                                      // SPI 通信速度优先
 
-typedef enum                                                                    // ö�ٴ������� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举串口引脚 此枚举定义不允许用户修改
 {
-    // SPI1 ���� SCK
+    // SPI1 引脚 SCK
     SPI1_SCK_D12    = 1 * 16, 
     
-    // SPI3 ���� SCK
+    // SPI3 引脚 SCK
     SPI3_SCK_B0     = 3 * 16, SPI3_SCK_B31, 
     
-    // SPI4 ���� SCK
+    // SPI4 引脚 SCK
     SPI4_SCK_C3     = 4 * 16, SPI4_SCK_C23 ,
 }spi_sck_pin_enum;
 
-typedef enum                                                                    // ö�ٴ������� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举串口引脚 此枚举定义不允许用户修改
 {
-    // SPI1 ���� MOSI
+    // SPI1 引脚 MOSI
     SPI1_MOSI_D14   = 1 * 16,
    
-    // SPI3 ���� MOSI
+    // SPI3 引脚 MOSI
     SPI3_MOSI_B1    = 3 * 16, SPI3_MOSI_B30,
     
-    // SPI4 ���� MOSI
+    // SPI4 引脚 MOSI
     SPI4_MOSI_C2    = 4 * 16, SPI4_MOSI_C22,
 }spi_mosi_pin_enum;
 
-typedef enum                                                                    // ö�ٴ������� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举串口引脚 此枚举定义不允许用户修改
 {
-    SPI_MISO_NULL   = 0xFFFF,                                                   // ��ʹ��Ӳ�� MISO ���ž������
+    SPI_MISO_NULL   = 0xFFFF,                                                   // 不使用硬件 MISO 引脚就填这个
     
-    // SPI1 ���� MISO
+    // SPI1 引脚 MISO
     SPI1_MISO_D15   = 1 * 16, 
     
-    // SPI3 ���� MISO
+    // SPI3 引脚 MISO
     SPI3_MISO_B2    = 3 * 16, SPI3_MISO_B29,
     
-    // SPI4 ���� MISO
+    // SPI4 引脚 MISO
     SPI4_MISO_C1    = 4 * 16, SPI4_MISO_C21,
 }spi_miso_pin_enum;
 
-typedef enum                                                                    // ö�ٴ������� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举串口引脚 此枚举定义不允许用户修改
 {
-    SPI_CS_NULL     = 0xFFFF,                                                   // ��ʹ��Ӳ�� CS ���ž������
+    SPI_CS_NULL     = 0xFFFF,                                                   // 不使用硬件 CS 引脚就填这个
     
     SPI1_CS0_D13    = 1 * 16 + 2 * 0,
     SPI1_CS2_D26    = 1 * 16 + 2 * 2,
@@ -94,7 +94,7 @@ typedef enum                                                                    
     SPI4_CS3_C27    = 4 * 16 + 2 * 3,
 }spi_cs_pin_enum;
 
-typedef enum                                                                    // ö�� SPI ģʽ ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举 SPI 模式 此枚举定义不允许用户修改
 {
     SPI_MODE0,
     SPI_MODE1,
@@ -102,13 +102,13 @@ typedef enum                                                                    
     SPI_MODE3,
 }spi_mode_enum;
 
-typedef enum                                                                    // ö�� SPI λ�� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举 SPI 位数 此枚举定义不允许用户修改
 {
     SPI_8BIT,
     SPI_16BIT,
 }spi_bit_enum;
 
-typedef enum                                                                    // ö�� SPI ��� ��ö�ٶ��岻�����û��޸�
+typedef enum                                                                    // 枚举 SPI 编号 此枚举定义不允许用户修改
 {
     SPI_1 = 1,
     SPI_3 = 3,
@@ -145,7 +145,7 @@ void        spi_transfer_16bit              (spi_index_enum spi_n, const uint16 
 
 void        spi_init                        (spi_index_enum spi_n, spi_mode_enum mode, uint32 baud, spi_sck_pin_enum sck_pin, spi_mosi_pin_enum mosi_pin, spi_miso_pin_enum miso_pin, spi_cs_pin_enum cs_pin);
 
-#ifdef COMPATIBLE_WITH_OLDER_VERSIONS                                           // ���ݾɰ汾��Դ��ӿ�����
+#ifdef COMPATIBLE_WITH_OLDER_VERSIONS                                           // 兼容旧版本开源库接口名称
 #define spi_mosi(spi_n, mosi, miso, len)    (spi_transfer_8bit((spi_n), (mosi), (miso), (len)))
 #endif
 

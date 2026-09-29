@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈý·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öð·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºŽå®˜æ–¹ SDK æŽ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£žç§‘æŠ€
 * 
-* ±¾ÎÄ¼þÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼þ
-* Äú¿ÉÒÔ¸ù¾Ý×ÔÓÉÈí¼þ»ù½ð»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ðí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØÐÂ·¢²¼ºÍ/»òÐÞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åŽæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓÐÒþº¬µÄÊÊÏúÐÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·Ý GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓÐ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æžœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ðí¿ÉÖ¤Ð­Òé ÒÔÉÏÐí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ðí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼þ¼ÐÏÂµÄ GPL3_permission_statement.txt ÎÄ¼þÖÐ
-* Ðí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼þ¼ÐÏÂ ¼´¸ÃÎÄ¼þ¼ÐÏÂµÄ LICENSE ÎÄ¼þ
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò µ«ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜Žï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜Žä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜Žè‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿Žå„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£žç§‘æŠ€çš„ç‰ˆæƒå£°æ˜Žï¼ˆå³æœ¬å£°æ˜Žï¼‰
 * 
-* ÎÄ¼þÃû³Æ          zf_driver_flexio_csi
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
-* °æ±¾ÐÅÏ¢          ²é¿´ libraries/doc ÎÄ¼þ¼ÐÄÚ version ÎÄ¼þ °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          zf_driver_flexio_csi
+* å…¬å¸åç§°          æˆéƒ½é€é£žç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜Ž
+* å¼€å‘çŽ¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æŽ¥          https://seekfree.taobao.com/
 * 
-* ÐÞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ              ä½œè€…                å¤‡æ³¨
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -43,7 +43,7 @@
 
 #include "zf_driver_flexio_csi.h"
 
-#define FLEXIO_PIN_CONF         SPEED_100MHZ | KEEPER_EN | DSE_R0_6             // ÅäÖÃFLEXIOÒý½ÅÄ¬ÈÏÅäÖÃ
+#define FLEXIO_PIN_CONF         SPEED_100MHZ | KEEPER_EN | DSE_R0_6             // é…ç½®FLEXIOå¼•è„šé»˜è®¤é…ç½®
 
 
 #define DMA_CHN                 0u
@@ -61,10 +61,10 @@ void flexio_iomuxc(flexio_pin_enum dat_pin_start, flexio_pin_enum pclk_pin, flex
 {
     uint8 i;
     uint32 temp_config[5] = {IOMUXC_GPIO_B0_00_FLEXIO2_FLEXIO00};
-    zf_assert(FLEXIO2_D24_C24 >= dat_pin_start);                                // Êý¾ÝÒý½Å²ÎÊý´íÎó  ÆðÊ¼Òý½Å²»µÃ´óÓÚ24
-    zf_assert((pclk_pin < dat_pin_start) || (pclk_pin > (dat_pin_start + 7)));  // ÏñËØÊ±ÖÓÒý½Å²»Ó¦¸ÃÔÚÊý¾ÝÒý½Å·¶Î§ÄÚ
-    zf_assert((href_pin < dat_pin_start) || (href_pin > (dat_pin_start + 7)));  // ÐÐÐÅºÅÒý½Å²»Ó¦¸ÃÔÚÊý¾ÝÒý½Å·¶Î§ÄÚ
-    zf_assert(href_pin != pclk_pin);                                            // ÐÐÐÅºÅÒý½Å²»Ó¦¸ÃÓëÏñËØÊ±ÖÓÒý½ÅÒ»Ñù
+    zf_assert(FLEXIO2_D24_C24 >= dat_pin_start);                                // æ•°æ®å¼•è„šå‚æ•°é”™è¯¯  èµ·å§‹å¼•è„šä¸å¾—å¤§äºŽ24
+    zf_assert((pclk_pin < dat_pin_start) || (pclk_pin > (dat_pin_start + 7)));  // åƒç´ æ—¶é’Ÿå¼•è„šä¸åº”è¯¥åœ¨æ•°æ®å¼•è„šèŒƒå›´å†…
+    zf_assert((href_pin < dat_pin_start) || (href_pin > (dat_pin_start + 7)));  // è¡Œä¿¡å·å¼•è„šä¸åº”è¯¥åœ¨æ•°æ®å¼•è„šèŒƒå›´å†…
+    zf_assert(href_pin != pclk_pin);                                            // è¡Œä¿¡å·å¼•è„šä¸åº”è¯¥ä¸Žåƒç´ æ—¶é’Ÿå¼•è„šä¸€æ ·
     
     afio_init(temp_config[0] + pclk_pin * 4, temp_config[1], temp_config[2], temp_config[3], temp_config[4] + pclk_pin * 4, 0, FLEXIO_PIN_CONF);
     afio_init(temp_config[0] + href_pin * 4, temp_config[1], temp_config[2], temp_config[3], temp_config[4] + href_pin * 4, 0, FLEXIO_PIN_CONF);
@@ -78,8 +78,8 @@ void flexio_iomuxc(flexio_pin_enum dat_pin_start, flexio_pin_enum pclk_pin, flex
 
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      FLEXIO Ê¹ÄÜ
-//  @param      enable          1£ºÊ¹ÄÜFLEXIO   0£º¹Ø±ÕFLEXIO
+//  @brief      FLEXIO ä½¿èƒ½
+//  @param      enable          1ï¼šä½¿èƒ½FLEXIO   0ï¼šå…³é—­FLEXIO
 //  @return     void
 //  Sample usage:
 //-------------------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ void flexio_csi_enable(uint8 enable)
 
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      FLEXIO ±êÖ¾Î»Çå³ý
+//  @brief      FLEXIO æ ‡å¿—ä½æ¸…é™¤
 //  @param      void
 //  @return     void
 //  Sample usage:
@@ -109,8 +109,8 @@ void flexio_csi_flag_clear(void)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      DMA¿ªÆô
-//  @param      dest_addr       Ä¿µÄµØÖ·
+//  @brief      DMAå¼€å¯
+//  @param      dest_addr       ç›®çš„åœ°å€
 //  @return     void
 //  Sample usage:
 //-------------------------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ void flexio_csi_dma_restart(uint8 *dest_addr)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      FLEXIO RXÆôÓÃDMA´¥·¢
+//  @brief      FLEXIO RXå¯ç”¨DMAè§¦å‘
 //  @param      void
 //  @return     void
 //  Sample usage:
@@ -133,10 +133,10 @@ void flexio_csi_enable_rxdma(void)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      DMA³õÊ¼»¯
-//  @param      dest_addr       Ä¿µÄµØÖ·
-//  @param      count           DMA´«Êä´ÎÊý
-//  @param      callback        DMAÖÐ¶Ï»Øµ÷º¯Êý
+//  @brief      DMAåˆå§‹åŒ–
+//  @param      dest_addr       ç›®çš„åœ°å€
+//  @param      count           DMAä¼ è¾“æ¬¡æ•°
+//  @param      callback        DMAä¸­æ–­å›žè°ƒå‡½æ•°
 //  @return     void
 //  Sample usage:
 //-------------------------------------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ void flexio_csi_dma_init(uint8 *dest_addr, uint32 count, edma_callback callback)
         case 8:     s_addr_modulo = kEDMA_Modulo8bytes;break;
         case 16:    s_addr_modulo = kEDMA_Modulo16bytes;break;
         case 32:    s_addr_modulo = kEDMA_Modulo32bytes;break;
-        default:assert(0);  //²ÎÊýÓÐÎó
+        default:assert(0);  //å‚æ•°æœ‰è¯¯
     }
     
     
@@ -183,10 +183,10 @@ void flexio_csi_dma_init(uint8 *dest_addr, uint32 count, edma_callback callback)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      FLEXIO³õÊ¼»¯ÎªCSI(ÉãÏñÍ·)½Ó¿Ú
-//  @param      dat_pin_start   ÉãÏñÍ·Êý¾Ý½Ó¿ÚµÄÆðÊ¼Î»
-//  @param      pclk_pin        ÏñËØÊ±ÖÓµÄÒý½Å
-//  @param      href_pin        ÐÐÐÅºÅµÄÒý½Å
+//  @brief      FLEXIOåˆå§‹åŒ–ä¸ºCSI(æ‘„åƒå¤´)æŽ¥å£
+//  @param      dat_pin_start   æ‘„åƒå¤´æ•°æ®æŽ¥å£çš„èµ·å§‹ä½
+//  @param      pclk_pin        åƒç´ æ—¶é’Ÿçš„å¼•è„š
+//  @param      href_pin        è¡Œä¿¡å·çš„å¼•è„š
 //  @return     void
 //  Sample usage:
 //-------------------------------------------------------------------------------------------------------------------
@@ -197,13 +197,13 @@ void flexio_csi_init(flexio_pin_enum dat_pin_start, flexio_pin_enum pclk_pin, fl
     if(width * height>=(376*240))   flexio_shift_count = 2;
     else                            flexio_shift_count = 1;
     
-    s_FlexioCameraDevice.flexioBase = FLEXIO2;                  // ÉèÖÃ»ùµØÖ·
-    s_FlexioCameraDevice.datPinStartIdx = dat_pin_start;        // ÉèÖÃÊý¾ÝÒý½ÅÆðÊ¼Î»
-    s_FlexioCameraDevice.pclkPinIdx = pclk_pin;                 // ÉèÖÃÏñËØÊ±ÖÓÒý½Å
-    s_FlexioCameraDevice.hrefPinIdx = href_pin;                 // ÉèÖÃÐÐÐÅºÅÒý½Å
-    s_FlexioCameraDevice.shifterStartIdx = 4-flexio_shift_count;// ÉèÖÃ»·ÒÆÆ÷ÆðÊ¼±àºÅ  ÓÉÓÚ1064µÄ»º³åÇøÖ»ÓÐËÄ¸öÒò´ËÕâÀïÐ´µÄÊÇ4-
-    s_FlexioCameraDevice.shifterCount = flexio_shift_count;     // ÉèÖÃ»º³åÇøÊýÁ¿
-    s_FlexioCameraDevice.timerIdx = 3;                          // ÉèÖÃ¶¨Ê±Æ÷±àºÅ
+    s_FlexioCameraDevice.flexioBase = FLEXIO2;                  // è®¾ç½®åŸºåœ°å€
+    s_FlexioCameraDevice.datPinStartIdx = dat_pin_start;        // è®¾ç½®æ•°æ®å¼•è„šèµ·å§‹ä½
+    s_FlexioCameraDevice.pclkPinIdx = pclk_pin;                 // è®¾ç½®åƒç´ æ—¶é’Ÿå¼•è„š
+    s_FlexioCameraDevice.hrefPinIdx = href_pin;                 // è®¾ç½®è¡Œä¿¡å·å¼•è„š
+    s_FlexioCameraDevice.shifterStartIdx = 4-flexio_shift_count;// è®¾ç½®çŽ¯ç§»å™¨èµ·å§‹ç¼–å·  ç”±äºŽ1064çš„ç¼“å†²åŒºåªæœ‰å››ä¸ªå› æ­¤è¿™é‡Œå†™çš„æ˜¯4-
+    s_FlexioCameraDevice.shifterCount = flexio_shift_count;     // è®¾ç½®ç¼“å†²åŒºæ•°é‡
+    s_FlexioCameraDevice.timerIdx = 3;                          // è®¾ç½®å®šæ—¶å™¨ç¼–å·
     
     CLOCK_EnableClock(kCLOCK_Flexio2);
     FLEXIO_Reset(FLEXIO2);

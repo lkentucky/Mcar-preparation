@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensource Library ¼´£¨RT1064DVL6A ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈı·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öğ·É¿Æ¼¼
+* RT1064DVL6A Opensource Library å³ï¼ˆRT1064DVL6A å¼€æºåº“ï¼‰æ˜¯ä¸€ä¸ªåŸºäºå®˜æ–¹ SDK æ¥å£çš„ç¬¬ä¸‰æ–¹å¼€æºåº“
+* Copyright (c) 2022 SEEKFREE é€é£ç§‘æŠ€
 * 
-* ±¾ÎÄ¼şÊÇ RT1064DVL6A ¿ªÔ´¿âµÄÒ»²¿·Ö
+* æœ¬æ–‡ä»¶æ˜¯ RT1064DVL6A å¼€æºåº“çš„ä¸€éƒ¨åˆ†
 * 
-* RT1064DVL6A ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼ş
-* Äú¿ÉÒÔ¸ù¾İ×ÔÓÉÈí¼ş»ù½ğ»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ğí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØĞÂ·¢²¼ºÍ/»òĞŞ¸ÄËü
+* RT1064DVL6A å¼€æºåº“ æ˜¯å…è´¹è½¯ä»¶
+* æ‚¨å¯ä»¥æ ¹æ®è‡ªç”±è½¯ä»¶åŸºé‡‘ä¼šå‘å¸ƒçš„ GPLï¼ˆGNU General Public Licenseï¼Œå³ GNUé€šç”¨å…¬å…±è®¸å¯è¯ï¼‰çš„æ¡æ¬¾
+* å³ GPL çš„ç¬¬3ç‰ˆï¼ˆå³ GPL3.0ï¼‰æˆ–ï¼ˆæ‚¨é€‰æ‹©çš„ï¼‰ä»»ä½•åæ¥çš„ç‰ˆæœ¬ï¼Œé‡æ–°å‘å¸ƒå’Œ/æˆ–ä¿®æ”¹å®ƒ
 * 
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓĞÒşº¬µÄÊÊÏúĞÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* æœ¬å¼€æºåº“çš„å‘å¸ƒæ˜¯å¸Œæœ›å®ƒèƒ½å‘æŒ¥ä½œç”¨ï¼Œä½†å¹¶æœªå¯¹å…¶ä½œä»»ä½•çš„ä¿è¯
+* ç”šè‡³æ²¡æœ‰éšå«çš„é€‚é”€æ€§æˆ–é€‚åˆç‰¹å®šç”¨é€”çš„ä¿è¯
+* æ›´å¤šç»†èŠ‚è¯·å‚è§ GPL
 * 
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·İ GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓĞ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* æ‚¨åº”è¯¥åœ¨æ”¶åˆ°æœ¬å¼€æºåº“çš„åŒæ—¶æ”¶åˆ°ä¸€ä»½ GPL çš„å‰¯æœ¬
+* å¦‚æœæ²¡æœ‰ï¼Œè¯·å‚é˜…<https://www.gnu.org/licenses/>
 * 
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ğí¿ÉÖ¤Ğ­Òé ÒÔÉÏĞí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ğí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼ş¼ĞÏÂµÄ GPL3_permission_statement.txt ÎÄ¼şÖĞ
-* Ğí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼ş¼ĞÏÂ ¼´¸ÃÎÄ¼ş¼ĞÏÂµÄ LICENSE ÎÄ¼ş
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌĞò µ«ĞŞ¸ÄÄÚÈİÊ±±ØĞë±£ÁôÖğ·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* é¢å¤–æ³¨æ˜ï¼š
+* æœ¬å¼€æºåº“ä½¿ç”¨ GPL3.0 å¼€æºè®¸å¯è¯åè®® ä»¥ä¸Šè®¸å¯ç”³æ˜ä¸ºè¯‘æ–‡ç‰ˆæœ¬
+* è®¸å¯ç”³æ˜è‹±æ–‡ç‰ˆåœ¨ libraries/doc æ–‡ä»¶å¤¹ä¸‹çš„ GPL3_permission_statement.txt æ–‡ä»¶ä¸­
+* è®¸å¯è¯å‰¯æœ¬åœ¨ libraries æ–‡ä»¶å¤¹ä¸‹ å³è¯¥æ–‡ä»¶å¤¹ä¸‹çš„ LICENSE æ–‡ä»¶
+* æ¬¢è¿å„ä½ä½¿ç”¨å¹¶ä¼ æ’­æœ¬ç¨‹åº ä½†ä¿®æ”¹å†…å®¹æ—¶å¿…é¡»ä¿ç•™é€é£ç§‘æŠ€çš„ç‰ˆæƒå£°æ˜ï¼ˆå³æœ¬å£°æ˜ï¼‰
 * 
-* ÎÄ¼şÃû³Æ          seekfree_assistant
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öğ·É¿Æ¼¼ÓĞÏŞ¹«Ë¾
-* °æ±¾ĞÅÏ¢          ²é¿´ libraries/doc ÎÄ¼ş¼ĞÄÚ version ÎÄ¼ş °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 8.32.4 or MDK 5.33
-* ÊÊÓÃÆ½Ì¨          RT1064DVL6A
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* æ–‡ä»¶åç§°          seekfree_assistant
+* å…¬å¸åç§°          æˆéƒ½é€é£ç§‘æŠ€æœ‰é™å…¬å¸
+* ç‰ˆæœ¬ä¿¡æ¯          æŸ¥çœ‹ libraries/doc æ–‡ä»¶å¤¹å†… version æ–‡ä»¶ ç‰ˆæœ¬è¯´æ˜
+* å¼€å‘ç¯å¢ƒ          IAR 8.32.4 or MDK 5.33
+* é€‚ç”¨å¹³å°          RT1064DVL6A
+* åº—é“ºé“¾æ¥          https://seekfree.taobao.com/
 * 
-* ĞŞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ             ×÷Õß             ±¸×¢
+* ä¿®æ”¹è®°å½•
+* æ—¥æœŸ             ä½œè€…             å¤‡æ³¨
 * 2024-1-11        SeekFree         first version
 ********************************************************************************************************************/
 #ifndef _seekfree_assistant_h_
@@ -39,119 +39,119 @@
 #include "zf_common_typedef.h"
 
 
-// 1£ºÊ¹ÄÜ²ÎÊıµ÷½ÚµÄ¹¦ÄÜ  0£º¹Ø±Õ²ÎÊıµ÷½ÚµÄ¹¦ÄÜ
+// 1ï¼šä½¿èƒ½å‚æ•°è°ƒèŠ‚çš„åŠŸèƒ½  0ï¼šå…³é—­å‚æ•°è°ƒèŠ‚çš„åŠŸèƒ½
 #define SEEKFREE_ASSISTANT_SET_PARAMETR_ENABLE      ( 1 )
 
 
 
-// ¶¨Òå½ÓÊÕFIFO´óĞ¡
+// å®šä¹‰æ¥æ”¶FIFOå¤§å°
 #define SEEKFREE_ASSISTANT_BUFFER_SIZE              ( 0x80 )
     
-// ¶¨ÒåÊ¾²¨Æ÷µÄ×î´óÍ¨µÀÊıÁ¿ 
+// å®šä¹‰ç¤ºæ³¢å™¨çš„æœ€å¤§é€šé“æ•°é‡ 
 #define SEEKFREE_ASSISTANT_SET_OSCILLOSCOPE_COUNT   ( 0x08 )
     
-// ¶¨Òå²ÎÊıµ÷ÊÔµÄ×î´óÍ¨µÀÊıÁ¿    
+// å®šä¹‰å‚æ•°è°ƒè¯•çš„æœ€å¤§é€šé“æ•°é‡    
 #define SEEKFREE_ASSISTANT_SET_PARAMETR_COUNT       ( 0x08 )
     
-// ¶¨ÒåÍ¼Ïñ±ßÏß×î´óÊıÁ¿   
+// å®šä¹‰å›¾åƒè¾¹çº¿æœ€å¤§æ•°é‡   
 #define SEEKFREE_ASSISTANT_CAMERA_MAX_BOUNDARY      ( 0x08 )
     
-// µ¥Æ¬»úÍùÉÏÎ»»ú·¢ËÍµÄÖ¡Í· 
+// å•ç‰‡æœºå¾€ä¸Šä½æœºå‘é€çš„å¸§å¤´ 
 #define SEEKFREE_ASSISTANT_SEND_HEAD                ( 0xAA )
     
-// ÉãÏñÍ·Àà 
+// æ‘„åƒå¤´ç±» 
 #define SEEKFREE_ASSISTANT_CAMERA_FUNCTION          ( 0x02 )
 #define SEEKFREE_ASSISTANT_CAMERA_DOT_FUNCTION      ( 0x03 )
 #define SEEKFREE_ASSISTANT_CAMERA_OSCILLOSCOPE      ( 0x10 )
     
-// ÉÏÎ»»úÍùµ¥Æ¬»ú·¢ËÍµÄÖ¡Í· 
+// ä¸Šä½æœºå¾€å•ç‰‡æœºå‘é€çš„å¸§å¤´ 
 #define SEEKFREE_ASSISTANT_RECEIVE_HEAD             ( 0x55 )
     
-// ²ÎÊıÉèÖÃÀà    
+// å‚æ•°è®¾ç½®ç±»    
 #define SEEKFREE_ASSISTANT_RECEIVE_SET_PARAMETER    ( 0x20 )
 
 
-// ÉãÏñÍ·ÀàĞÍÃ¶¾Ù
+// æ‘„åƒå¤´ç±»å‹æšä¸¾
 typedef enum
 {
-    // °´ÕÕÉãÏñÍ·ĞÍºÅ¶¨Òå
+    // æŒ‰ç…§æ‘„åƒå¤´å‹å·å®šä¹‰
     SEEKFREE_ASSISTANT_OV7725_BIN = 1,
     SEEKFREE_ASSISTANT_MT9V03X,
     SEEKFREE_ASSISTANT_SCC8660,
 
-    // °´ÕÕÍ¼ÏñÀàĞÍ¶¨Òå
+    // æŒ‰ç…§å›¾åƒç±»å‹å®šä¹‰
     SEEKFREE_ASSISTANT_BINARY = 1,
     SEEKFREE_ASSISTANT_GRAY,
     SEEKFREE_ASSISTANT_RGB565,
 }seekfree_assistant_image_type_enum;
 
-// ÉãÏñÍ·ÀàĞÍÃ¶¾Ù
+// æ‘„åƒå¤´ç±»å‹æšä¸¾
 typedef enum
 {
-    // °´ÕÕÉãÏñÍ·ĞÍºÅ¶¨Òå
-    X_BOUNDARY,     // ·¢ËÍµÄÍ¼ÏñÖĞ±ß½çĞÅÏ¢Ö»°üº¬X£¬Ò²¾ÍÊÇÖ»ÓĞºá×ø±êĞÅÏ¢£¬×İ×ø±ê¸ù¾İÍ¼Ïñ¸ß¶ÈµÃµ½
-    Y_BOUNDARY,     // ·¢ËÍµÄÍ¼ÏñÖĞ±ß½çĞÅÏ¢Ö»°üº¬Y£¬Ò²¾ÍÊÇÖ»ÓĞ×İ×ø±êĞÅÏ¢£¬ºá×ø±ê¸ù¾İÍ¼Ïñ¿í¶ÈµÃµ½£¬Í¨³£ºÜÉÙÓĞÕâÑùµÄĞèÇó
-    XY_BOUNDARY,    // ·¢ËÍµÄÍ¼ÏñÖĞ±ß½çĞÅÏ¢°üº¬XÓëY£¬ÕâÑù¿ÉÒÔÖ¸¶¨µãÔÚÈÎÒâÎ»ÖÃ£¬¾Í¿ÉÒÔ·½±ãÏÔÊ¾³ö»ØÍäµÄĞ§¹û
-    NO_BOUNDARY,    // ·¢ËÍµÄÍ¼ÏñÖĞÃ»ÓĞ±ßÏßĞÅÏ¢
+    // æŒ‰ç…§æ‘„åƒå¤´å‹å·å®šä¹‰
+    X_BOUNDARY,     // å‘é€çš„å›¾åƒä¸­è¾¹ç•Œä¿¡æ¯åªåŒ…å«Xï¼Œä¹Ÿå°±æ˜¯åªæœ‰æ¨ªåæ ‡ä¿¡æ¯ï¼Œçºµåæ ‡æ ¹æ®å›¾åƒé«˜åº¦å¾—åˆ°
+    Y_BOUNDARY,     // å‘é€çš„å›¾åƒä¸­è¾¹ç•Œä¿¡æ¯åªåŒ…å«Yï¼Œä¹Ÿå°±æ˜¯åªæœ‰çºµåæ ‡ä¿¡æ¯ï¼Œæ¨ªåæ ‡æ ¹æ®å›¾åƒå®½åº¦å¾—åˆ°ï¼Œé€šå¸¸å¾ˆå°‘æœ‰è¿™æ ·çš„éœ€æ±‚
+    XY_BOUNDARY,    // å‘é€çš„å›¾åƒä¸­è¾¹ç•Œä¿¡æ¯åŒ…å«Xä¸Yï¼Œè¿™æ ·å¯ä»¥æŒ‡å®šç‚¹åœ¨ä»»æ„ä½ç½®ï¼Œå°±å¯ä»¥æ–¹ä¾¿æ˜¾ç¤ºå‡ºå›å¼¯çš„æ•ˆæœ
+    NO_BOUNDARY,    // å‘é€çš„å›¾åƒä¸­æ²¡æœ‰è¾¹çº¿ä¿¡æ¯
 }seekfree_assistant_boundary_type_enum;
 
 typedef struct
 {
-    uint8 head;                                                 // Ö¡Í·
-    uint8 channel_num;                                          // ¸ßËÄÎ»Îª¹¦ÄÜ×Ö  µÍËÄÎ»ÎªÍ¨µÀÊıÁ¿
-    uint8 check_sum;                                            // ºÍĞ£Ñé
-    uint8 length;                                               // °ü³¤¶È
-    float data[SEEKFREE_ASSISTANT_SET_OSCILLOSCOPE_COUNT];      // Í¨µÀÊı¾İ
+    uint8 head;                                                 // å¸§å¤´
+    uint8 channel_num;                                          // é«˜å››ä½ä¸ºåŠŸèƒ½å­—  ä½å››ä½ä¸ºé€šé“æ•°é‡
+    uint8 check_sum;                                            // å’Œæ ¡éªŒ
+    uint8 length;                                               // åŒ…é•¿åº¦
+    float data[SEEKFREE_ASSISTANT_SET_OSCILLOSCOPE_COUNT];      // é€šé“æ•°æ®
 }seekfree_assistant_oscilloscope_struct;
 
 
 typedef struct
 {
-    uint8 head;                                                 // Ö¡Í·
-    uint8 function;                                             // ¹¦ÄÜ×Ö
-    uint8 camera_type;                                          // µÍËÄÎ»±íÊ¾±ß½çÊıÁ¿ µÚËÄÎ»±íÊ¾ÊÇ·ñÓĞÍ¼ÏñÊı¾İ  ÀıÈç0x13£ºÆäÖĞ3±íÊ¾Ò»¸±Í¼ÏñÓĞÈıÌõ±ß½ç£¨Í¨³£ÊÇ×ó±ß½ç¡¢ÖĞÏß¡¢ÓÒ±ß½ç£©¡¢1±íÊ¾Ã»ÓĞÍ¼ÏñÊı¾İ
-    uint8 length;                                               // °ü³¤¶È£¨½ö°üº¬Ğ­Òé²¿·Ö£©
-    uint16 image_width;                                         // Í¼Ïñ¿í¶È
-    uint16 image_height;                                        // Í¼Ïñ¸ß¶È
+    uint8 head;                                                 // å¸§å¤´
+    uint8 function;                                             // åŠŸèƒ½å­—
+    uint8 camera_type;                                          // ä½å››ä½è¡¨ç¤ºè¾¹ç•Œæ•°é‡ ç¬¬å››ä½è¡¨ç¤ºæ˜¯å¦æœ‰å›¾åƒæ•°æ®  ä¾‹å¦‚0x13ï¼šå…¶ä¸­3è¡¨ç¤ºä¸€å‰¯å›¾åƒæœ‰ä¸‰æ¡è¾¹ç•Œï¼ˆé€šå¸¸æ˜¯å·¦è¾¹ç•Œã€ä¸­çº¿ã€å³è¾¹ç•Œï¼‰ã€1è¡¨ç¤ºæ²¡æœ‰å›¾åƒæ•°æ®
+    uint8 length;                                               // åŒ…é•¿åº¦ï¼ˆä»…åŒ…å«åè®®éƒ¨åˆ†ï¼‰
+    uint16 image_width;                                         // å›¾åƒå®½åº¦
+    uint16 image_height;                                        // å›¾åƒé«˜åº¦
 }seekfree_assistant_camera_struct;          
             
             
 typedef struct          
 {           
-    uint8 head;                                                 // Ö¡Í·
-    uint8 function;                                             // ¹¦ÄÜ×Ö
-    uint8 dot_type;                                             // µãÀàĞÍ  BIT5£º1£º×ø±êÊÇ16Î»µÄ 0£º×ø±êÊÇ8Î»µÄ    BIT7-BIT6£º0£ºÖ»ÓĞX×ø±ê 1£ºÖ»ÓĞY×ø±ê 2£ºXºÍY×ø±ê¶¼ÓĞ    BIT3-BIT0£º±ß½çÊıÁ¿
-    uint8 length;                                               // °ü³¤¶È£¨½ö°üº¬Ğ­Òé²¿·Ö£©
-    uint16 dot_num;                                             // »­µãÊıÁ¿
-    uint8  valid_flag;                                          // Í¨µÀ±êÊ¶
-    uint8  reserve;                                             // ±£Áô
+    uint8 head;                                                 // å¸§å¤´
+    uint8 function;                                             // åŠŸèƒ½å­—
+    uint8 dot_type;                                             // ç‚¹ç±»å‹  BIT5ï¼š1ï¼šåæ ‡æ˜¯16ä½çš„ 0ï¼šåæ ‡æ˜¯8ä½çš„    BIT7-BIT6ï¼š0ï¼šåªæœ‰Xåæ ‡ 1ï¼šåªæœ‰Yåæ ‡ 2ï¼šXå’ŒYåæ ‡éƒ½æœ‰    BIT3-BIT0ï¼šè¾¹ç•Œæ•°é‡
+    uint8 length;                                               // åŒ…é•¿åº¦ï¼ˆä»…åŒ…å«åè®®éƒ¨åˆ†ï¼‰
+    uint16 dot_num;                                             // ç”»ç‚¹æ•°é‡
+    uint8  valid_flag;                                          // é€šé“æ ‡è¯†
+    uint8  reserve;                                             // ä¿ç•™
 }seekfree_assistant_camera_dot_struct;          
             
 typedef struct          
 {           
-    void *image_addr;                                           // ÉãÏñÍ·µØÖ·
-    uint16 width;                                               // Í¼Ïñ¿í¶È
-    uint16 height;                                              // Í¼Ïñ¸ß¶È
-    seekfree_assistant_image_type_enum camera_type;             // ÉãÏñÍ·ÀàĞÍ
-    void *boundary_x[SEEKFREE_ASSISTANT_CAMERA_MAX_BOUNDARY];   // ±ß½çºá×ø±êÊı×éµØÖ·
-    void *boundary_y[SEEKFREE_ASSISTANT_CAMERA_MAX_BOUNDARY];   // ±ß½ç×İ×ø±êÊı×éµØÖ·
+    void *image_addr;                                           // æ‘„åƒå¤´åœ°å€
+    uint16 width;                                               // å›¾åƒå®½åº¦
+    uint16 height;                                              // å›¾åƒé«˜åº¦
+    seekfree_assistant_image_type_enum camera_type;             // æ‘„åƒå¤´ç±»å‹
+    void *boundary_x[SEEKFREE_ASSISTANT_CAMERA_MAX_BOUNDARY];   // è¾¹ç•Œæ¨ªåæ ‡æ•°ç»„åœ°å€
+    void *boundary_y[SEEKFREE_ASSISTANT_CAMERA_MAX_BOUNDARY];   // è¾¹ç•Œçºµåæ ‡æ•°ç»„åœ°å€
 }seekfree_assistant_camera_buffer_struct;
 
 typedef struct
 {
-    uint8 head;                                                 // Ö¡Í·
-    uint8 function;                                             // ¹¦ÄÜ×Ö
-    uint8 channel;                                              // Í¨µÀ
-    uint8 check_sum;                                            // ºÍĞ£Ñé
-    float data;                                                 // Êı¾İ
+    uint8 head;                                                 // å¸§å¤´
+    uint8 function;                                             // åŠŸèƒ½å­—
+    uint8 channel;                                              // é€šé“
+    uint8 check_sum;                                            // å’Œæ ¡éªŒ
+    float data;                                                 // æ•°æ®
 }seekfree_assistant_parameter_struct;
 
 typedef uint32 (*seekfree_assistant_transfer_callback_function) (const uint8 *buff, uint32 length);
 typedef uint32 (*seekfree_assistant_receive_callback_function)  (uint8 *buff, uint32 length);
 
-extern seekfree_assistant_oscilloscope_struct                   seekfree_assistant_oscilloscope_data;                                               // ĞéÄâÊ¾²¨Æ÷Êı¾İ
-extern float                                                    seekfree_assistant_parameter[SEEKFREE_ASSISTANT_SET_PARAMETR_COUNT];                // ±£´æ½ÓÊÕµ½µÄ²ÎÊı
-extern vuint8                                                   seekfree_assistant_parameter_update_flag[SEEKFREE_ASSISTANT_SET_PARAMETR_COUNT];    // ²ÎÊı¸üĞÂ±êÖ¾Î»
+extern seekfree_assistant_oscilloscope_struct                   seekfree_assistant_oscilloscope_data;                                               // è™šæ‹Ÿç¤ºæ³¢å™¨æ•°æ®
+extern float                                                    seekfree_assistant_parameter[SEEKFREE_ASSISTANT_SET_PARAMETR_COUNT];                // ä¿å­˜æ¥æ”¶åˆ°çš„å‚æ•°
+extern vuint8                                                   seekfree_assistant_parameter_update_flag[SEEKFREE_ASSISTANT_SET_PARAMETR_COUNT];    // å‚æ•°æ›´æ–°æ ‡å¿—ä½
     
     
 void    seekfree_assistant_oscilloscope_send                    (seekfree_assistant_oscilloscope_struct *seekfree_assistant_oscilloscope);

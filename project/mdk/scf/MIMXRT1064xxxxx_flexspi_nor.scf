@@ -124,13 +124,13 @@ LR_m_text m_flash_config_start m_text_start+m_text_size-m_flash_config_start {  
   }
 
 
-  ; ÔÚFALSHÖĞµÄÖĞ¶ÏÏòÁ¿±í
+  ; åœ¨FALSHä¸­çš„ä¸­æ–­å‘é‡è¡¨
   VECTOR_ROM m_interrupts_start FIXED m_interrupts_size { ; load address = execution address
   * (.isr_vector,+FIRST)
   }
   
-  ; * (InRoot$$Sections)ÊÇ__mainÖĞ´Ó¼ÓÔØÓò¸´ÖÆ´úÂëµ½Ö´ĞĞÓòµÄ³ÌĞòscatter_copy£¬
-  ; Æô¶¯Ê±ÔËĞĞµÄstartup_mimxrt1064tºÍsystem_mimxrt1064ÖĞµÄ´úÂëÒª´æ·ÅÔÚFLASHÖĞ
+  ; * (InRoot$$Sections)æ˜¯__mainä¸­ä»åŠ è½½åŸŸå¤åˆ¶ä»£ç åˆ°æ‰§è¡ŒåŸŸçš„ç¨‹åºscatter_copy,
+  ; å¯åŠ¨æ—¶è¿è¡Œçš„startup_mimxrt1064tå’Œsystem_mimxrt1064ä¸­çš„ä»£ç è¦å­˜æ”¾åœ¨FLASHä¸­
   ER_m_text m_text_start FIXED m_text_size { ; load address = execution address
 	* (InRoot$$Sections)
 	startup_mimxrt1064.o(+RO)
@@ -138,12 +138,12 @@ LR_m_text m_flash_config_start m_text_start+m_text_size-m_flash_config_start {  
 	
   } 
 
-  ;	EMPTY±íÊ¾Õâ¶Î¿Õ¼äÁô¿Õ£¬·ÀÖ¹ÆäËüÓ¦ÓÃÕ¼ÓÃ»ò±àÒëÌáÊ¾warning
+  ;	EMPTYè¡¨ç¤ºè¿™æ®µç©ºé—´ç•™ç©º, é˜²æ­¢å…¶å®ƒåº”ç”¨å ç”¨æˆ–ç¼–è¯‘æç¤ºwarning
   VECTOR_RAM m_ram_interrupts_start EMPTY m_ram_interrupts_size { ;execution address
 
   }
 
-  ;´æ·ÅÖ÷Ìå³ÌĞòµÄSDRAM¿Õ¼ä£¬ÓÉ__mainº¯Êı´ÓFLASHÖĞ¼ÓÔØ
+  ;å­˜æ”¾ä¸»ä½“ç¨‹åºçš„SDRAMç©ºé—´, ç”±__mainå‡½æ•°ä»FLASHä¸­åŠ è½½
   ER_m_ram_text m_ram_text_start m_ram_text_size { ;execution address
     .ANY (+RO)
 	* (SDRAM_CACHE.init)

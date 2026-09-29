@@ -80,13 +80,13 @@ void SystemInit (void) {
 //    SCB->VTOR = (uint32_t)g_pfnVectors;
 //#endif
     
-    //¿½±´ÖÐ¶ÏÏòÁ¿±íµ½SDRAM
+    //æ‹·è´ä¸­æ–­å‘é‡è¡¨åˆ°SDRAM
 #if (defined(__ICCARM__))
-    extern uint32_t __VECTOR_RAM[];  //»ñÈ¡ÔÚRAMÖÐµÄÖÐ¶ÏÏòÁ¿±íÆðÊ¼µØÖ·
-    extern uint32_t __VECTOR_TABLE[];//»ñÈ¡ÔÚFLASHÖÐµÄÖÐ¶ÏÏòÁ¿±íÆðÊ¼µØÖ·
+    extern uint32_t __VECTOR_RAM[];  //èŽ·å–åœ¨RAMä¸­çš„ä¸­æ–­å‘é‡è¡¨èµ·å§‹åœ°å€
+    extern uint32_t __VECTOR_TABLE[];//èŽ·å–åœ¨FLASHä¸­çš„ä¸­æ–­å‘é‡è¡¨èµ·å§‹åœ°å€
     extern uint32_t __RAM_VECTOR_TABLE_SIZE[];
 
-    uint32_t vector_size = ((uint32_t)__RAM_VECTOR_TABLE_SIZE)/4;//»ñÈ¡ÖÐ¶ÏÏòÁ¿±í´óÐ¡
+    uint32_t vector_size = ((uint32_t)__RAM_VECTOR_TABLE_SIZE)/4;//èŽ·å–ä¸­æ–­å‘é‡è¡¨å¤§å°
     
     while(vector_size--)
     {
@@ -96,14 +96,14 @@ void SystemInit (void) {
     SCB->VTOR = (uint32_t)__VECTOR_RAM;
 	
 #elif(defined(__CC_ARM) || defined(__ARMCC_VERSION))
-	uint32_t * VECTOR_RAM ;  //»ñÈ¡ÔÚRAMÖÐµÄÖÐ¶ÏÏòÁ¿±íÆðÊ¼µØÖ·
-    uint32_t * VECTOR_TABLE;//»ñÈ¡ÔÚFLASHÖÐµÄÖÐ¶ÏÏòÁ¿±íÆðÊ¼µØÖ·
+	uint32_t * VECTOR_RAM ;  //èŽ·å–åœ¨RAMä¸­çš„ä¸­æ–­å‘é‡è¡¨èµ·å§‹åœ°å€
+    uint32_t * VECTOR_TABLE;//èŽ·å–åœ¨FLASHä¸­çš„ä¸­æ–­å‘é‡è¡¨èµ·å§‹åœ°å€
     uint32_t RAM_VECTOR_TABLE_SIZE = 0x400;
 
 	VECTOR_RAM = (uint32_t *)0x80000000;
 	VECTOR_TABLE = (uint32_t *)0x70002000;
 	
-    uint32_t vector_size = ((uint32_t)RAM_VECTOR_TABLE_SIZE)/4;//»ñÈ¡ÖÐ¶ÏÏòÁ¿±í´óÐ¡
+    uint32_t vector_size = ((uint32_t)RAM_VECTOR_TABLE_SIZE)/4;//èŽ·å–ä¸­æ–­å‘é‡è¡¨å¤§å°
     
     while(vector_size--)
     {

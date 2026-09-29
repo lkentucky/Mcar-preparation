@@ -239,7 +239,7 @@ struct _csi_handle
     uint32_t frameBufferAddr[CSI_DRIVER_ACTUAL_QUEUE_SIZE];
     volatile uint8_t queueWriteIdx;  /*!< Pointer to save incoming item. */
     volatile uint8_t queueReadIdx;   /*!< Pointer to read out the item. */
-    // Öð·É¿Æ¼¼ÐÞ¸Ä
+    // é€é£žç§‘æŠ€ä¿®æ”¹
     //void *volatile emptyBuffer;      /*!< Pointer to maintain the empty frame buffers. */
     volatile uint8_t emptyBufferCnt; /*!< Empty frame buffers count. */
 
