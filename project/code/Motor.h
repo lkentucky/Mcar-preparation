@@ -3,65 +3,46 @@
 
 #include "zf_common_typedef.h"
 
-#define MOTOR1_DIR              (C7)                           //上左
-#define MOTOR1_PWM              (PWM2_MODULE0_CHA_C6)
+#define MOTOR1_DIR              (D13)                  //上左
+#define MOTOR1_PWM              (PWM1_MODULE1_CHB_D15)
 
-#define MOTOR2_DIR              (C9)                          //上右
-#define MOTOR2_PWM              (PWM2_MODULE1_CHA_C8)
+#define MOTOR2_DIR              (D12)                          //上右
+#define MOTOR2_PWM              (PWM1_MODULE1_CHA_D14)
 
-#define MOTOR3_DIR              (C11)                          //下左
-#define MOTOR3_PWM              (PWM2_MODULE2_CHA_C10)
+#define MOTOR3_DIR              (D0)                          //下左
+#define MOTOR3_PWM              (PWM2_MODULE3_CHA_D2)
 
-#define MOTOR4_DIR              (D3)                           //下右
-#define MOTOR4_PWM              (PWM2_MODULE3_CHA_D2)
+#define MOTOR4_DIR              (D1)                           //下右
+#define MOTOR4_PWM              (PWM2_MODULE3_CHB_D3)
 
-// Motor board selection (the new board remains the default build):
-// 0: old board wiring and board-specific motor parameters.
-// 1: new board wiring and the current validated parameters.
-#define MOTOR_BOARD_USE_NEW          (1)
+/* Positive wheel speed uses these DIR levels. Keep wheel polarity explicit. */
+#define MOTOR1_FORWARD_LEVEL         (GPIO_LOW)
+#define MOTOR2_FORWARD_LEVEL         (GPIO_LOW)
+#define MOTOR3_FORWARD_LEVEL         (GPIO_HIGH)
+#define MOTOR4_FORWARD_LEVEL         (GPIO_HIGH)
 
-#if MOTOR_BOARD_USE_NEW
-// Remap logical wheels UL, UR, DL, DR to the measured physical motor channels.
-#define MOTOR_BOARD_REMAP_LOGICAL_WHEELS (1)
-#define MOTOR_BOARD_REVERSE_ALL_DIR  (1)
-// Extra logical-wheel direction correction for the new board.
-#define MOTOR_BOARD_REVERSE_UL_DIR   (0)
-#define MOTOR_BOARD_REVERSE_UR_DIR   (0)
-#define MOTOR_BOARD_REVERSE_DL_DIR   (1)
-#define MOTOR_BOARD_REVERSE_DR_DIR   (1)
-#define MOTOR_BOARD_REVERSE_ENCODER_ALL_DIR (1)
-#else
-/*
- * UART8/D16/D17 is shared on the old board:
- * 0 = recognition camera (normal competition firmware).
- * 1 = Bluetooth tuning (recognition camera disabled).
- */
-#define MOTOR_OLD_BOARD_UART8_USE_BLUETOOTH (0)
-
-#define MOTOR_BOARD_REMAP_LOGICAL_WHEELS (0)
-#define MOTOR_BOARD_REVERSE_ALL_DIR  (0)
-#define MOTOR_BOARD_REVERSE_UL_DIR   (0)
-#define MOTOR_BOARD_REVERSE_UR_DIR   (0)
-#define MOTOR_BOARD_REVERSE_DL_DIR   (0)
-#define MOTOR_BOARD_REVERSE_DR_DIR   (0)
-#define MOTOR_BOARD_REVERSE_ENCODER_ALL_DIR (0)
-#endif
-
-#define ENCODER_1                   (QTIMER1_ENCODER2)
-#define ENCODER_1_A                 (QTIMER1_ENCODER2_CH1_C2)
-#define ENCODER_1_B                 (QTIMER1_ENCODER2_CH2_C24)
-
-#define ENCODER_2                   (QTIMER2_ENCODER2)
-#define ENCODER_2_A                 (QTIMER2_ENCODER2_CH1_C5)
-#define ENCODER_2_B                 (QTIMER2_ENCODER2_CH2_C25)
-
+//下左
+#define ENCODER_1                   (QTIMER1_ENCODER1)
+#define ENCODER_1_A                 (QTIMER1_ENCODER1_CH1_C0)
+#define ENCODER_1_B                 (QTIMER1_ENCODER1_CH2_C1)
+//下右
+#define ENCODER_2                   (QTIMER1_ENCODER2)
+#define ENCODER_2_A                 (QTIMER1_ENCODER2_CH1_C2)
+#define ENCODER_2_B                 (QTIMER1_ENCODER2_CH2_C24)
+//上右
 #define ENCODER_3                   (QTIMER2_ENCODER1)
 #define ENCODER_3_A                 (QTIMER2_ENCODER1_CH1_C3)
-#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C4)
+#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C25)
+//上左
+#define ENCODER_4                   (QTIMER3_ENCODER2)
+#define ENCODER_4_A                 (QTIMER3_ENCODER2_CH1_B18)
+#define ENCODER_4_B                 (QTIMER3_ENCODER2_CH2_B19)
 
-#define ENCODER_4                   (QTIMER1_ENCODER1)
-#define ENCODER_4_A                 (QTIMER1_ENCODER1_CH1_C0)
-#define ENCODER_4_B                 (QTIMER1_ENCODER1_CH2_C1)
+/* Convert physical counts to positive forward wheel feedback. */
+#define ENCODER_1_FORWARD_SIGN       (1)
+#define ENCODER_2_FORWARD_SIGN       (-1)
+#define ENCODER_3_FORWARD_SIGN       (-1)
+#define ENCODER_4_FORWARD_SIGN       (1)
 
 //参数宏定义
 #define ENCODER_RESOLUTION      2390.0   //编码器分辨率, 轮子转一圈，编码器产生的脉冲数
@@ -72,16 +53,12 @@
 #define D_Y                     0.20     //底盘X轴上两轮中心的间距
 #define PID_RATE                100       //PID调节PWM值的频率
 
-#define LIMIT_PWM_MIN              -6000
-#define LIMIT_PWM_MAX               6000
+#define LIMIT_PWM_MIN              -2000
+#define LIMIT_PWM_MAX               2000
 
-/* Board-specific closed-loop motor parameters. */
+/* Closed-loop motor parameters in logical order: UL, UR, DL, DR. */
 #define MOTOR_DEADZONE_TARGET_MIN_COUNTS  2
-#define MOTOR_DEADZONE_BLEND_PWM          120
-#define MOTOR_STARTUP_MOVING_MIN_COUNTS    1
-#define MOTOR_STARTUP_KICK_MAX_TICKS       8U
 
-#if MOTOR_BOARD_USE_NEW
 #define MOTOR_UL_DEADZONE_FWD             420
 #define MOTOR_UL_DEADZONE_REV             390
 #define MOTOR_UR_DEADZONE_FWD             495
@@ -90,34 +67,6 @@
 #define MOTOR_DL_DEADZONE_REV             390
 #define MOTOR_DR_DEADZONE_FWD             550
 #define MOTOR_DR_DEADZONE_REV             637
-#define MOTOR_UL_STARTUP_FWD              MOTOR_UL_DEADZONE_FWD
-#define MOTOR_UL_STARTUP_REV              MOTOR_UL_DEADZONE_REV
-#define MOTOR_UR_STARTUP_FWD              MOTOR_UR_DEADZONE_FWD
-#define MOTOR_UR_STARTUP_REV              MOTOR_UR_DEADZONE_REV
-#define MOTOR_DL_STARTUP_FWD              MOTOR_DL_DEADZONE_FWD
-#define MOTOR_DL_STARTUP_REV              MOTOR_DL_DEADZONE_REV
-#define MOTOR_DR_STARTUP_FWD              MOTOR_DR_DEADZONE_FWD
-#define MOTOR_DR_STARTUP_REV              MOTOR_DR_DEADZONE_REV
-#else
-/* Old-board kinetic-friction compensation measured by descending PWM sweeps. */
-#define MOTOR_UL_DEADZONE_FWD             380
-#define MOTOR_UL_DEADZONE_REV             420
-#define MOTOR_UR_DEADZONE_FWD             360
-#define MOTOR_UR_DEADZONE_REV             370
-#define MOTOR_DL_DEADZONE_FWD             440
-#define MOTOR_DL_DEADZONE_REV             410
-#define MOTOR_DR_DEADZONE_FWD             390
-#define MOTOR_DR_DEADZONE_REV             380
-/* Old-board static breakaway kicks; running compensation is separate. */
-#define MOTOR_UL_STARTUP_FWD              850
-#define MOTOR_UL_STARTUP_REV              800
-#define MOTOR_UR_STARTUP_FWD              800
-#define MOTOR_UR_STARTUP_REV              750
-#define MOTOR_DL_STARTUP_FWD              1050
-#define MOTOR_DL_STARTUP_REV              1100
-#define MOTOR_DR_STARTUP_FWD              800
-#define MOTOR_DR_STARTUP_REV              900
-#endif
 
 /* Right-strafe launch compensation.
  * 1 target count is about 0.82 cm/s with the current encoder calibration.
@@ -160,6 +109,7 @@ extern int16 down_R_all;
 
 extern int32 encoder_all;
 extern int16 encoders_average;
+/* Logical wheel counts after direction correction: UL, UR, DL, DR. */
 extern int16 encoder_data_quaddec1;
 extern int16 encoder_data_quaddec2;
 extern int16 encoder_data_quaddec3;
@@ -180,7 +130,6 @@ void encoder_get(void);
 int Limit_int(int left_limit, int target_num, int right_limit);
 void motor_pwm(int up_left_speed,int up_right_speed,int down_left_speed,int down_right_speed);
 void motor_control(int* input_speed_encoder);
-void motor_control_reset_state(void);
 void motor_limit_right_start_forward_offset(const int *input_speed_encoder,
                                             int *limited_speed_encoder);
 void motor_right_start_compensation_reset(void);

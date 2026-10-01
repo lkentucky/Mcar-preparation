@@ -13,7 +13,7 @@
 #include "config.h"
 #include <math.h>
 #include "imu_numeric.h"
-#include "attitude_math.h"
+#include "imu_attitude.h"
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     限幅

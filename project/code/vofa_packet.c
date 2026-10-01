@@ -1,10 +1,9 @@
 /*********************************************************************************************************************
 * 文件名称          vofa_packet
-* 功能说明          VOFA+ JustFloat 协议打包（流水线 STEP 8 的一部分）。把 10 个 float 通道按小端序拼成定长字节帧，
-*                   供 imu_usb_send_frame() 经 USB CDC 发出。
+* 功能说明          VOFA+ JustFloat 协议打包，把调用处指定的 float 通道按小端序拼成字节帧。
 * 开发环境          MDK / armclang
 * 适用平台          RT1064 Lite 核心板
-* 备注信息          帧格式：10 通道 × 4 字节 + 4 字节帧尾，共 44 字节。帧尾固定 0x7f800000，
+* 备注信息          帧格式：N 通道 × 4 字节 + 4 字节帧尾。帧尾固定 0x7f800000，
 *                   是 JustFloat 的帧结束标志（float 的 +Inf），上位机据此切分数据。
 ********************************************************************************************************************/
 
@@ -13,10 +12,12 @@
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     将通道数据打包为 JustFloat 帧
-// 参数说明     out             输出缓冲区，长度须不小于 VOFA_FRAME_BYTES
-// 参数说明     channels        输入通道数据，含义见 vofa_packet.h
-// 返回参数     void
-// 使用示例     vofa_pack(s_txFrame, channels);
+// 参数说明     out             输出缓冲区
+// 参数说明     out_capacity    输出缓冲区长度，单位字节
+// 参数说明     channels        输入通道数据，顺序即上位机 CH0、CH1……
+// 参数说明     count           输入通道数，范围 1~VOFA_MAX_CHANNELS
+// 返回参数     size_t          实际帧长；参数非法或空间不足返回 0
+// 使用示例     vofa_pack(frame, sizeof(frame), channels, sizeof(channels) / sizeof(channels[0]));
 // 备注信息     按位拷贝后显式写小端，避免结构体填充和指针别名问题。
 //             末尾写入固定帧尾 0x7f800000，上位机以此识别一帧的结束。
 //-------------------------------------------------------------------------------------------------------------------
@@ -29,17 +30,29 @@ static void pack_float32_le(uint8_t *out, float value)
     for (j=0; j<4; ++j) out[j]=(uint8_t)(bits>>(8*j));
 }
 
-void vofa_pack(uint8_t out[VOFA_FRAME_BYTES], const float channels[VOFA_CHANNELS])
+size_t vofa_pack(uint8_t *out, size_t out_capacity,
+                 const float *channels, size_t count)
 {
-    unsigned i;
-    for (i=0; i<VOFA_CHANNELS; ++i) pack_float32_le(&out[4*i], channels[i]);
-    out[4*VOFA_CHANNELS]=0; out[4*VOFA_CHANNELS+1]=0;
-    out[4*VOFA_CHANNELS+2]=0x80; out[4*VOFA_CHANNELS+3]=0x7f;    /* JustFloat 帧尾 0x7f800000 */
-}
+    size_t i;
+    size_t frame_bytes;
 
-/* UDP 自带报文边界，因此不附加 JustFloat 帧尾；上位机偏移 0/4/8 直接读取。 */
-void imu_udp_pack_angles(uint8_t out[IMU_UDP_ANGLES_BYTES], const float angles[3])
-{
-    unsigned i;
-    for (i=0; i<3; ++i) pack_float32_le(&out[4*i], angles[i]);
+    if (out == NULL || channels == NULL || count == 0u || count > VOFA_MAX_CHANNELS)
+    {
+        return 0u;
+    }
+    frame_bytes = VOFA_FRAME_BYTES(count);
+    if (out_capacity < frame_bytes)
+    {
+        return 0u;
+    }
+
+    for (i = 0u; i < count; ++i)
+    {
+        pack_float32_le(&out[4u * i], channels[i]);
+    }
+    out[4u * count] = 0x00u;
+    out[4u * count + 1u] = 0x00u;
+    out[4u * count + 2u] = 0x80u;
+    out[4u * count + 3u] = 0x7fu;
+    return frame_bytes;
 }

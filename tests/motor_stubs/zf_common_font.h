@@ -1,0 +1,4 @@
+#ifndef HOST_TEST_FONT_H
+#define HOST_TEST_FONT_H
+enum { RGB565_WHITE = 0xFFFF, RGB565_BLACK = 0 };
+#endif

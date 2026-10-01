@@ -28,4 +28,10 @@ void imu_attitude_update_5ms(void);
 void imu_attitude_request_recalibration(void);
 void imu_attitude_service(void);
 
+/* Mahony/Madgwick 共用的几何接口，实现统一放在 imu_attitude.c。
+ * 输入四元数顺序 w,x,y,z，加速度单位 g，欧拉角输出单位度。 */
+int attitude_init(float q[4], float *accel_norm, const float accel_g[3]);
+void attitude_euler(const float q[4], float rpy_deg[3]);
+void attitude_cube_euler(const float q[4], float xyz_deg[3]);
+
 #endif

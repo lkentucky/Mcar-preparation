@@ -30,9 +30,16 @@
 #define IMU_TIMEOUT_MS           100u
 
 /* WiFi-SPI2.0 UDP settings ported from rt1064_imu_vofa. */
+/* Current SPI1 wiring D12-D15 conflicts with the front motors. */
+#ifndef IMU_WIFI_ENABLED
+#define IMU_WIFI_ENABLED         0
+#endif
+#if IMU_WIFI_ENABLED != 0 && IMU_WIFI_ENABLED != 1
+#error IMU_WIFI_ENABLED must be 0 or 1
+#endif
 #define IMU_WIFI_SSID            "HDUASC"
 #define IMU_WIFI_PASSWORD        "zyz520520"
-#define IMU_WIFI_TARGET_IP       "192.168.0.105"
+#define IMU_WIFI_TARGET_IP       "192.168.0.108"
 #define IMU_WIFI_TARGET_PORT     "8081"
 #define IMU_WIFI_LOCAL_PORT      "5001"
 #define IMU_WIFI_STARTUP_DELAY_MS 300u

@@ -40,39 +40,18 @@ static uint8 g_motor_right_start_tracking;
 static uint8 g_motor_right_start_inactive_ticks;
 static uint16 g_motor_right_start_ticks;
 static int32 g_motor_right_start_lateral_sum4;
-
-#if !MOTOR_BOARD_USE_NEW
-static const int g_motor_startup_fwd[MOTOR_WHEEL_COUNT] =
-{
-    MOTOR_UL_STARTUP_FWD,
-    MOTOR_UR_STARTUP_FWD,
-    MOTOR_DL_STARTUP_FWD,
-    MOTOR_DR_STARTUP_FWD
-};
-static const int g_motor_startup_rev[MOTOR_WHEEL_COUNT] =
-{
-    MOTOR_UL_STARTUP_REV,
-    MOTOR_UR_STARTUP_REV,
-    MOTOR_DL_STARTUP_REV,
-    MOTOR_DR_STARTUP_REV
-};
-static uint8 g_motor_running[MOTOR_WHEEL_COUNT];
-static uint8 g_motor_startup_ticks[MOTOR_WHEEL_COUNT];
-static int8 g_motor_last_target_sign[MOTOR_WHEEL_COUNT];
-#endif
-
 void motor_init(void)
 {
-	gpio_init(MOTOR1_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);                            // GPIO 初始化为输出 默认上拉输出高
+	gpio_init(MOTOR1_DIR, GPO, MOTOR1_FORWARD_LEVEL, GPO_PUSH_PULL);                            // DIR 初始化为正转电平
     pwm_init(MOTOR1_PWM, 17000, 0);                                                  // PWM 通道初始化频率 17KHz 占空比初始为 0
     
-    gpio_init(MOTOR2_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);                            // GPIO 初始化为输出 默认上拉输出高
+    gpio_init(MOTOR2_DIR, GPO, MOTOR2_FORWARD_LEVEL, GPO_PUSH_PULL);                            // DIR 初始化为正转电平
     pwm_init(MOTOR2_PWM, 17000, 0);                                                  // PWM 通道初始化频率 17KHz 占空比初始为 0
 
-    gpio_init(MOTOR3_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);                            // GPIO 初始化为输出 默认上拉输出高
+    gpio_init(MOTOR3_DIR, GPO, MOTOR3_FORWARD_LEVEL, GPO_PUSH_PULL);                            // DIR 初始化为正转电平
     pwm_init(MOTOR3_PWM, 17000, 0);                                                  // PWM 通道初始化频率 17KHz 占空比初始为 0
 
-    gpio_init(MOTOR4_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);                            // GPIO 初始化为输出 默认上拉输出高
+    gpio_init(MOTOR4_DIR, GPO, MOTOR4_FORWARD_LEVEL, GPO_PUSH_PULL);                            // DIR 初始化为正转电平
     pwm_init(MOTOR4_PWM, 17000, 0);                                                  // PWM 通道初始化频率 17KHz 占空比初始为 0
 }
 
@@ -113,30 +92,17 @@ void encoder_get(void)
 	int16 encoder_raw_quaddec3 = encoder_get_count(ENCODER_3);
 	int16 encoder_raw_quaddec4 = encoder_get_count(ENCODER_4);
 
-#if MOTOR_BOARD_USE_NEW
-	encoder_data_quaddec1 = -encoder_raw_quaddec4;                  // 获取编码器计数 左上
-	encoder_data_quaddec2 = -encoder_raw_quaddec3;                  // 获取编码器计数 右上
-	encoder_data_quaddec3 = -encoder_raw_quaddec1;                  // 获取编码器计数 左下
-	encoder_data_quaddec4 = -encoder_raw_quaddec2;                  // 获取编码器计数 右下
-#else
-	encoder_data_quaddec1 = -encoder_raw_quaddec1;                  // 获取编码器计数 左上
-	encoder_data_quaddec2 = -encoder_raw_quaddec2;                  // 获取编码器计数 右上
-	encoder_data_quaddec3 = -encoder_raw_quaddec3;                  // 获取编码器计数 左下
-	encoder_data_quaddec4 = -encoder_raw_quaddec4;                  // 获取编码器计数 右下
-#endif
-
-#if MOTOR_BOARD_REVERSE_ENCODER_ALL_DIR
-	encoder_data_quaddec1 = -encoder_data_quaddec1;
-	encoder_data_quaddec2 = -encoder_data_quaddec2;
-	encoder_data_quaddec3 = -encoder_data_quaddec3;
-	encoder_data_quaddec4 = -encoder_data_quaddec4;
-#endif
+    /* Physical encoder order is DL, DR, UR, UL; normalize once here. */
+    encoder_data_quaddec1 = (int16)(encoder_raw_quaddec4 * ENCODER_4_FORWARD_SIGN);
+    encoder_data_quaddec2 = (int16)(encoder_raw_quaddec3 * ENCODER_3_FORWARD_SIGN);
+    encoder_data_quaddec3 = (int16)(encoder_raw_quaddec1 * ENCODER_1_FORWARD_SIGN);
+    encoder_data_quaddec4 = (int16)(encoder_raw_quaddec2 * ENCODER_2_FORWARD_SIGN);
 
 	/* Logical wheel order and sign before filtering: UL, UR, DL, DR. */
 	g_motor_debug_raw[MOTOR_WHEEL_UL] = encoder_data_quaddec1;
-	g_motor_debug_raw[MOTOR_WHEEL_UR] = -encoder_data_quaddec2;
+	g_motor_debug_raw[MOTOR_WHEEL_UR] = encoder_data_quaddec2;
 	g_motor_debug_raw[MOTOR_WHEEL_DL] = encoder_data_quaddec3;
-	g_motor_debug_raw[MOTOR_WHEEL_DR] = -encoder_data_quaddec4;
+	g_motor_debug_raw[MOTOR_WHEEL_DR] = encoder_data_quaddec4;
 	g_motor_debug_cumulative_raw[MOTOR_WHEEL_UL] += g_motor_debug_raw[MOTOR_WHEEL_UL];
 	g_motor_debug_cumulative_raw[MOTOR_WHEEL_UR] += g_motor_debug_raw[MOTOR_WHEEL_UR];
 	g_motor_debug_cumulative_raw[MOTOR_WHEEL_DL] += g_motor_debug_raw[MOTOR_WHEEL_DL];
@@ -156,7 +122,7 @@ void encoder_get(void)
 	encoder_R_up[3]=encoder_R_up[2];
 	encoder_R_up[2]=encoder_R_up[1];
 	encoder_R_up[1]=encoder_R_up[0];
-	encoder_R_up[0]=-encoder_data_quaddec2;
+	encoder_R_up[0]=encoder_data_quaddec2;
 	speed_R_up[1]=speed_R_up[0];
 	speed_R_up[0]=(encoder_R_up[4]*0.5f+encoder_R_up[3]*0.5f+encoder_R_up[2]*2+encoder_R_up[1]*3.0f+encoder_R_up[0]*4.0f)/10.0f;
 	up_R_all=(int16)lroundf(Lowpass(speed_R_up[1],speed_R_up[0]));
@@ -174,7 +140,7 @@ void encoder_get(void)
 	encoder_R_down[3]=encoder_R_down[2];
 	encoder_R_down[2]=encoder_R_down[1];
 	encoder_R_down[1]=encoder_R_down[0];
-	encoder_R_down[0]=-encoder_data_quaddec4;
+	encoder_R_down[0]=encoder_data_quaddec4;
 	speed_R_down[1]=speed_R_down[0];
 	speed_R_down[0]=(encoder_R_down[4]*0.5f+encoder_R_down[3]*0.5f+encoder_R_down[2]*2+encoder_R_down[1]*3.0f+encoder_R_down[0]*4.0f)/10.0f;
 	down_R_all=(int16)lroundf(Lowpass(speed_R_down[1],speed_R_down[0]));
@@ -206,123 +172,45 @@ float Lowpass(float X_last, float X_new)
 	return X_last + (X_new - X_last) * 0.7f;
 }
 
-void motor_pwm(int up_left_speed,int up_right_speed,int down_left_speed,int down_right_speed)
+static void motor_write_pwm(gpio_pin_enum dir_pin,
+                            pwm_channel_enum pwm_pin,
+                            uint8 forward_level,
+                            int speed)
 {
-	g_motor_debug_final_pwm[MOTOR_WHEEL_UL] = up_left_speed;
-	g_motor_debug_final_pwm[MOTOR_WHEEL_UR] = up_right_speed;
-	g_motor_debug_final_pwm[MOTOR_WHEEL_DL] = down_left_speed;
-	g_motor_debug_final_pwm[MOTOR_WHEEL_DR] = down_right_speed;
-
-	/* A fully disabled output is a definite motion boundary.  Rearm the launch
-	 * compensation even if motor_control() was bypassed while the car was idle. */
-	if (up_left_speed == 0 && up_right_speed == 0 &&
-		down_left_speed == 0 && down_right_speed == 0)
-	{
-		motor_right_start_compensation_reset();
-#if !MOTOR_BOARD_USE_NEW
-		motor_control_reset_state();
-#endif
-	}
-
-#if MOTOR_BOARD_REMAP_LOGICAL_WHEELS
-	int logical_ul = up_left_speed;
-	int logical_ur = up_right_speed;
-	int logical_dl = down_left_speed;
-	int logical_dr = down_right_speed;
-
-#if MOTOR_BOARD_REVERSE_UL_DIR
-	logical_ul = -logical_ul;
-#endif
-#if MOTOR_BOARD_REVERSE_UR_DIR
-	logical_ur = -logical_ur;
-#endif
-#if MOTOR_BOARD_REVERSE_DL_DIR
-	logical_dl = -logical_dl;
-#endif
-#if MOTOR_BOARD_REVERSE_DR_DIR
-	logical_dr = -logical_dr;
-#endif
-
-	/* Physical channels: M1=UL, M2=UR, M3=DR, M4=DL. */
-	up_left_speed = logical_ul;
-	up_right_speed = logical_ur;
-	down_left_speed = logical_dr;
-	down_right_speed = logical_dl;
-#endif
-
-#if MOTOR_BOARD_REVERSE_ALL_DIR
-	up_left_speed = -up_left_speed;
-	up_right_speed = -up_right_speed;
-	down_left_speed = -down_left_speed;
-	down_right_speed = -down_right_speed;
-#endif
-
-	if(up_left_speed > 0)                                                           // 正转
-    {
-		gpio_set_level(MOTOR1_DIR, GPIO_LOW);                     // DIR输出高电平
-        pwm_set_duty(MOTOR1_PWM, up_left_speed);                   // 计算占空比
-     }
-     else if (up_left_speed < 0)                                                                  // 反转
-     {
-		gpio_set_level(MOTOR1_DIR, GPIO_HIGH);                    // DIR输出低电平
-        pwm_set_duty(MOTOR1_PWM, -up_left_speed);                // 计算占空比
-
-     }
-	 else if (up_left_speed == 0)
-	 {
-		gpio_set_level(MOTOR1_DIR, GPIO_LOW);                     // DIR输出高电平
-		 pwm_set_duty(MOTOR1_PWM, 0);                                 // 停止
-	 }
-
-	 if (up_right_speed > 0)
-	 {
-		 gpio_set_level(MOTOR2_DIR, GPIO_HIGH);                       // DIR输出高电平
-         pwm_set_duty(MOTOR2_PWM, up_right_speed);                   // 计算占空比
-	 }
-	 else if (up_right_speed < 0)
-	 {
-		 gpio_set_level(MOTOR2_DIR, GPIO_LOW);                     // DIR输出低电平
-         pwm_set_duty(MOTOR2_PWM, -up_right_speed);                // 计算占空比
-	 }
-	 else if (up_right_speed == 0)
-	 {
-		 gpio_set_level(MOTOR2_DIR, GPIO_HIGH);                       // DIR输出高电平
-		 pwm_set_duty(MOTOR2_PWM, 0);                                 // 停止
-	 }
-
-	 if (down_left_speed > 0)
-	 {
-		 gpio_set_level(MOTOR3_DIR, GPIO_LOW);                       // DIR输出高电平
-         pwm_set_duty(MOTOR3_PWM, down_left_speed);                   // 计算占空比
-	 }
-	 else if (down_left_speed < 0)
-	 {
-		 gpio_set_level(MOTOR3_DIR, GPIO_HIGH);                      // DIR输出低电平
-         pwm_set_duty(MOTOR3_PWM, -down_left_speed);                // 计算占空比
-	 }
-	 else if (down_left_speed == 0)
-	 {
-		 gpio_set_level(MOTOR3_DIR, GPIO_LOW);                       // DIR输出高电平
-		 pwm_set_duty(MOTOR3_PWM, 0);                                 // 停止
-	 }
-
-	 if (down_right_speed > 0)
-	 {
-		 gpio_set_level(MOTOR4_DIR, GPIO_HIGH);                       // DIR输出高电平
-         pwm_set_duty(MOTOR4_PWM, down_right_speed);                  // 计算占空比
-	 }
-	 else if (down_right_speed < 0)
-	 {
-		 gpio_set_level(MOTOR4_DIR, GPIO_LOW);                       // DIR输出低电平
-         pwm_set_duty(MOTOR4_PWM, -down_right_speed);                // 计算占空比
-	 }
-	 else if (down_right_speed == 0)
-	 {
-		 gpio_set_level(MOTOR4_DIR, GPIO_HIGH);                       // DIR输出高电平
-		 pwm_set_duty(MOTOR4_PWM, 0);                                 // 停止	
-	 }
+    /* Clamp before negating so even an extreme direct command is bounded. */
+    speed = Limit_int(LIMIT_PWM_MIN, speed, LIMIT_PWM_MAX);
+    gpio_set_level(dir_pin, speed < 0 ?
+                   (forward_level == GPIO_HIGH ? GPIO_LOW : GPIO_HIGH) :
+                   forward_level);
+    pwm_set_duty(pwm_pin, (uint32)(speed < 0 ? -speed : speed));
 }
 
+void motor_pwm(int up_left_speed,int up_right_speed,int down_left_speed,int down_right_speed)
+{
+    up_left_speed = Limit_int(LIMIT_PWM_MIN, up_left_speed, LIMIT_PWM_MAX);
+    up_right_speed = Limit_int(LIMIT_PWM_MIN, up_right_speed, LIMIT_PWM_MAX);
+    down_left_speed = Limit_int(LIMIT_PWM_MIN, down_left_speed, LIMIT_PWM_MAX);
+    down_right_speed = Limit_int(LIMIT_PWM_MIN, down_right_speed, LIMIT_PWM_MAX);
+
+    g_motor_debug_final_pwm[MOTOR_WHEEL_UL] = up_left_speed;
+    g_motor_debug_final_pwm[MOTOR_WHEEL_UR] = up_right_speed;
+    g_motor_debug_final_pwm[MOTOR_WHEEL_DL] = down_left_speed;
+    g_motor_debug_final_pwm[MOTOR_WHEEL_DR] = down_right_speed;
+
+    if (up_left_speed == 0 && up_right_speed == 0 &&
+        down_left_speed == 0 && down_right_speed == 0)
+    {
+        motor_right_start_compensation_reset();
+    }
+
+    /* Motor channels are already defined in logical order: UL, UR, DL, DR. */
+    motor_write_pwm(MOTOR1_DIR, MOTOR1_PWM, MOTOR1_FORWARD_LEVEL, up_left_speed);
+    motor_write_pwm(MOTOR2_DIR, MOTOR2_PWM, MOTOR2_FORWARD_LEVEL, up_right_speed);
+    motor_write_pwm(MOTOR3_DIR, MOTOR3_PWM, MOTOR3_FORWARD_LEVEL, down_left_speed);
+    motor_write_pwm(MOTOR4_DIR, MOTOR4_PWM, MOTOR4_FORWARD_LEVEL, down_right_speed);
+}
+
+//限幅函数
 int Limit_int(int left_limit, int target_num, int right_limit)
 {
 	if (left_limit > right_limit )
@@ -350,7 +238,6 @@ static int motor_apply_deadzone_compensation(int pid_output,
                                              int deadzone_fwd,
                                              int deadzone_rev)
 {
-#if MOTOR_BOARD_USE_NEW
     if (target_speed > 0 &&
         target_speed >= motor_deadzone_target_min_counts)
     {
@@ -361,54 +248,8 @@ static int motor_apply_deadzone_compensation(int pid_output,
     {
         pid_output -= deadzone_rev;
     }
-#else
-    int compensation;
-    int magnitude;
-
-    if (target_speed < motor_deadzone_target_min_counts &&
-        target_speed > -motor_deadzone_target_min_counts)
-    {
-        return Limit_int(LIMIT_PWM_MIN, pid_output, LIMIT_PWM_MAX);
-    }
-
-    if (pid_output > 0)
-    {
-        compensation = deadzone_fwd;
-        if (MOTOR_DEADZONE_BLEND_PWM > 0)
-        {
-            compensation = (deadzone_fwd * pid_output) /
-                           (pid_output + MOTOR_DEADZONE_BLEND_PWM);
-        }
-        pid_output += compensation;
-    }
-    else if (pid_output < 0)
-    {
-        magnitude = -pid_output;
-        compensation = deadzone_rev;
-        if (MOTOR_DEADZONE_BLEND_PWM > 0)
-        {
-            compensation = (deadzone_rev * magnitude) /
-                           (magnitude + MOTOR_DEADZONE_BLEND_PWM);
-        }
-        pid_output -= compensation;
-    }
-#endif
 
     return Limit_int(LIMIT_PWM_MIN, pid_output, LIMIT_PWM_MAX);
-}
-
-void motor_control_reset_state(void)
-{
-#if !MOTOR_BOARD_USE_NEW
-	uint8 i;
-
-	for (i = 0U; i < MOTOR_WHEEL_COUNT; ++i)
-	{
-		g_motor_running[i] = 0U;
-		g_motor_startup_ticks[i] = 0U;
-		g_motor_last_target_sign[i] = 0;
-	}
-#endif
 }
 
 void motor_right_start_compensation_reset(void)
@@ -512,115 +353,6 @@ void motor_limit_right_start_forward_offset(const int *input_speed_encoder,
 		g_motor_right_start_ticks++;
 	}
 }
-
-#if !MOTOR_BOARD_USE_NEW
-static tagPID_T *motor_old_board_get_pid(uint8 wheel)
-{
-	switch (wheel)
-	{
-		case MOTOR_WHEEL_UL: return &ULpid;
-		case MOTOR_WHEEL_UR: return &URpid;
-		case MOTOR_WHEEL_DL: return &DLpid;
-		default:             return &DRpid;
-	}
-}
-
-static int motor_old_board_get_filtered_speed(uint8 wheel)
-{
-	switch (wheel)
-	{
-		case MOTOR_WHEEL_UL: return up_L_all;
-		case MOTOR_WHEEL_UR: return up_R_all;
-		case MOTOR_WHEEL_DL: return down_L_all;
-		default:             return down_R_all;
-	}
-}
-
-static uint8 motor_old_board_use_startup_kick(uint8 wheel, int target_speed)
-{
-	int target_sign;
-	int directed_raw;
-	tagPID_T *pid = motor_old_board_get_pid(wheel);
-
-	if (target_speed >= motor_deadzone_target_min_counts)
-	{
-		target_sign = 1;
-	}
-	else if (target_speed <= -motor_deadzone_target_min_counts)
-	{
-		target_sign = -1;
-	}
-	else
-	{
-		g_motor_running[wheel] = 0U;
-		g_motor_startup_ticks[wheel] = 0U;
-		g_motor_last_target_sign[wheel] = 0;
-		PID_Clear(pid);
-		return 0U;
-	}
-
-	if (g_motor_last_target_sign[wheel] != target_sign)
-	{
-		g_motor_running[wheel] = 0U;
-		g_motor_startup_ticks[wheel] = 0U;
-		g_motor_last_target_sign[wheel] = (int8)target_sign;
-		PID_Clear(pid);
-	}
-
-	directed_raw = g_motor_debug_raw[wheel] * target_sign;
-	if (directed_raw >= MOTOR_STARTUP_MOVING_MIN_COUNTS)
-	{
-		if (!g_motor_running[wheel])
-		{
-			PID_Clear(pid);
-		}
-		g_motor_running[wheel] = 1U;
-		g_motor_startup_ticks[wheel] = 0U;
-		return 0U;
-	}
-
-	if (g_motor_running[wheel])
-	{
-		return 0U;
-	}
-
-	if (g_motor_startup_ticks[wheel] < MOTOR_STARTUP_KICK_MAX_TICKS)
-	{
-		g_motor_startup_ticks[wheel]++;
-		return 1U;
-	}
-
-	g_motor_running[wheel] = 1U;
-	PID_Clear(pid);
-	return 0U;
-}
-
-static int motor_old_board_calculate_output(uint8 wheel, int target_speed)
-{
-	tagPID_T *pid;
-	int output;
-
-	if (motor_old_board_use_startup_kick(wheel, target_speed))
-	{
-		g_motor_debug_pid_pwm[wheel] = 0;
-		return (target_speed > 0) ? g_motor_startup_fwd[wheel] :
-		       (target_speed < 0) ? -g_motor_startup_rev[wheel] : 0;
-	}
-
-	pid = motor_old_board_get_pid(wheel);
-	output = Limit_int(LIMIT_PWM_MIN,
-	                   PID_Add_Calculate(pid,
-	                                     motor_old_board_get_filtered_speed(wheel),
-	                                     target_speed),
-	                   LIMIT_PWM_MAX);
-	g_motor_debug_pid_pwm[wheel] = output;
-	return motor_apply_deadzone_compensation(output,
-	                                         target_speed,
-	                                         motor_deadzone_fwd[wheel],
-	                                         motor_deadzone_rev[wheel]);
-}
-#endif
-
 void motor_control(int* input_speed_encoder)
 {
 	int limited_speed_encoder[MOTOR_WHEEL_COUNT];
@@ -640,7 +372,6 @@ void motor_control(int* input_speed_encoder)
 	g_motor_debug_cumulative_target[MOTOR_WHEEL_DR] += limited_speed_encoder[MOTOR_WHEEL_DR];
 	g_motor_debug_control_ticks++;
 
-#if MOTOR_BOARD_USE_NEW
 	motorUL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&ULpid, up_L_all, limited_speed_encoder[0]), LIMIT_PWM_MAX);   //上左
 	motorUR_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&URpid, up_R_all, limited_speed_encoder[1]), LIMIT_PWM_MAX);   //上右
 	motorDL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&DLpid, down_L_all, limited_speed_encoder[2]), LIMIT_PWM_MAX);   //下左
@@ -653,16 +384,6 @@ void motor_control(int* input_speed_encoder)
 	motorUR_pwm_value = motor_apply_deadzone_compensation(motorUR_pwm_value, limited_speed_encoder[1], motor_deadzone_fwd[MOTOR_WHEEL_UR], motor_deadzone_rev[MOTOR_WHEEL_UR]);
 	motorDL_pwm_value = motor_apply_deadzone_compensation(motorDL_pwm_value, limited_speed_encoder[2], motor_deadzone_fwd[MOTOR_WHEEL_DL], motor_deadzone_rev[MOTOR_WHEEL_DL]);
 	motorDR_pwm_value = motor_apply_deadzone_compensation(motorDR_pwm_value, limited_speed_encoder[3], motor_deadzone_fwd[MOTOR_WHEEL_DR], motor_deadzone_rev[MOTOR_WHEEL_DR]);
-#else
-	motorUL_pwm_value = motor_old_board_calculate_output(
-		MOTOR_WHEEL_UL, limited_speed_encoder[MOTOR_WHEEL_UL]);
-	motorUR_pwm_value = motor_old_board_calculate_output(
-		MOTOR_WHEEL_UR, limited_speed_encoder[MOTOR_WHEEL_UR]);
-	motorDL_pwm_value = motor_old_board_calculate_output(
-		MOTOR_WHEEL_DL, limited_speed_encoder[MOTOR_WHEEL_DL]);
-	motorDR_pwm_value = motor_old_board_calculate_output(
-		MOTOR_WHEEL_DR, limited_speed_encoder[MOTOR_WHEEL_DR]);
-#endif
 	motor_pwm(motorUL_pwm_value, motorUR_pwm_value,motorDL_pwm_value,motorDR_pwm_value);
 }
 

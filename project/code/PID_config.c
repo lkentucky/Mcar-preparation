@@ -1,5 +1,4 @@
 #include "PID_config.h"
-#include "Motor.h"
 
 
 tagPID_T ULpid;
@@ -11,7 +10,6 @@ tagPID_T Camera_x_pid;
 tagPID_T Camera_y_pid;
 tagPID_T Gyro_rotate_pid;
 
-#if MOTOR_BOARD_USE_NEW
 PIDInitStruct ULPidInitStruct = 
 {
 	.fKp       = 10.0,    //.fKp
@@ -51,48 +49,6 @@ PIDInitStruct DRPidInitStruct =
 	.fMax_Out  = 6000,       //.fMax_Out
 	.alpha     = 0.9
 };
-#else
-/* Old-board values calibrated with independent wheel steps at 40/80/120 counts. */
-PIDInitStruct ULPidInitStruct =
-{
-	.fKp       = 12.0,
-	.fKi       = 0.6,
-	.fKd       = 5.0,
-	.fMax_Iout = 4000,
-	.fMax_Out  = 6000,
-	.alpha     = 0.9
-};
-
-PIDInitStruct URPidInitStruct =
-{
-	.fKp       = 12.0,
-	.fKi       = 0.6,
-	.fKd       = 5.0,
-	.fMax_Iout = 4000,
-	.fMax_Out  = 6000,
-	.alpha     = 0.9
-};
-
-PIDInitStruct DLPidInitStruct =
-{
-	.fKp       = 12.0,
-	.fKi       = 0.8,
-	.fKd       = 5.0,
-	.fMax_Iout = 4000,
-	.fMax_Out  = 6000,
-	.alpha     = 0.9
-};
-
-PIDInitStruct DRPidInitStruct =
-{
-	.fKp       = 12.0,
-	.fKi       = 0.6,
-	.fKd       = 5.0,
-	.fMax_Iout = 4000,
-	.fMax_Out  = 6000,
-	.alpha     = 0.9
-};
-#endif
 PIDInitStruct YawPidInitStruct = 
 {
 	.fKp       = 1.2,     //.fKp 8.6

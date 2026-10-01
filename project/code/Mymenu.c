@@ -7,6 +7,7 @@
 #include "imu_wifi_spi.h"
 #include "menu.h"
 #include "zf_common_font.h"
+#include "zf_common_interrupt.h"
 #include "zf_device_ips200.h"
 #include "zf_device_key.h"
 
@@ -23,11 +24,32 @@ static Menu_Item g_root;
 static Menu_Item *g_pointer;
 static float g_steps[MENU_STEP_COUNT] = {0.01f, 0.1f, 1.0f, 10.0f, 100.0f};
 static uint8_t g_step_index = 2u;
-static bool g_refresh_pending;
+static volatile bool g_refresh_pending;
 static bool g_imu_recalibrate;
+static Menu_Item *g_encoder_folder;
+static bool g_encoder_zero;
+static uint8_t g_refresh_ticks;
+static motor_speed_debug_snapshot_t g_motor_snapshot;
+static int32 g_encoder_zero_counts[MOTOR_WHEEL_COUNT];
+
+/* 240 pixels / 8 pixels per glyph = 30 characters. Padding clears old text. */
+static void menu_show_line(uint16 y, const char *text)
+{
+    char bounded[MENU_COLUMNS + 1];
+    snprintf(bounded, sizeof(bounded), "%-*.*s", MENU_COLUMNS, MENU_COLUMNS, text);
+    ips200_show_string(0, y, bounded);
+}
+
+static void menu_motor_snapshot(void)
+{
+    uint32 primask = interrupt_global_disable();
+    motor_speed_debug_get_snapshot(&g_motor_snapshot);
+    interrupt_global_enable(primask);
+}
 
 static void menu_create(void)
 {
+    Menu_Item *pwm_test = Create_Menu_Folder_dynamic(&g_root, "PWM_Test");
     Menu_Item *drive = Create_Menu_Folder_dynamic(&g_root, "Drive");
     Menu_Item *encoder = Create_Menu_Folder_dynamic(&g_root, "Encoder");
     Menu_Item *imu = Create_Menu_Folder_dynamic(&g_root, "IMU");
@@ -39,15 +61,25 @@ static void menu_create(void)
     Menu_Item *pid_dl;
     Menu_Item *pid_dr;
 
+    g_encoder_folder = encoder;
+
     Create_Menu_File_dynamic(drive, "Run", (void *)&motor_run_enabled, bool_Box);
     Create_Menu_File_dynamic(drive, "Vx_cmps", (void *)&motor_cmd_vx_cmps, float_Box);
     Create_Menu_File_dynamic(drive, "Vy_cmps", (void *)&motor_cmd_vy_cmps, float_Box);
     Create_Menu_File_dynamic(drive, "Omega", (void *)&motor_cmd_omega_radps, float_Box);
 
+    Create_Menu_File_dynamic(pwm_test, "OpenLoop", (void *)&motor_pwm_test_enabled, bool_Box);
+    Create_Menu_File_dynamic(pwm_test, "Run", (void *)&motor_run_enabled, bool_Box);
+    Create_Menu_File_dynamic(pwm_test, "UL_PWM", (void *)&motor_test_pwm[MOTOR_WHEEL_UL], int16_Box);
+    Create_Menu_File_dynamic(pwm_test, "UR_PWM", (void *)&motor_test_pwm[MOTOR_WHEEL_UR], int16_Box);
+    Create_Menu_File_dynamic(pwm_test, "DL_PWM", (void *)&motor_test_pwm[MOTOR_WHEEL_DL], int16_Box);
+    Create_Menu_File_dynamic(pwm_test, "DR_PWM", (void *)&motor_test_pwm[MOTOR_WHEEL_DR], int16_Box);
+
     Create_Menu_Readonly_dynamic(encoder, "UL", &up_L_all, int16_Box);
     Create_Menu_Readonly_dynamic(encoder, "UR", &up_R_all, int16_Box);
     Create_Menu_Readonly_dynamic(encoder, "DL", &down_L_all, int16_Box);
     Create_Menu_Readonly_dynamic(encoder, "DR", &down_R_all, int16_Box);
+    Create_Menu_File_dynamic(encoder, "ZeroTotal", &g_encoder_zero, bool_Box);
 
     Create_Menu_Readonly_dynamic(imu, "Status", (void *)&imu_attitude_status, int32_Box);
     Create_Menu_Readonly_dynamic(imu, "CalPct", (void *)&imu_calibration_percent, float_Box);
@@ -111,38 +143,65 @@ static void menu_draw(void)
 
     snprintf(line, sizeof(line), "%-20s <%5.2f>", g_pointer->Father->name,
              (double)g_steps[g_step_index]);
-    ips200_show_string(0, 0, line);
+    menu_show_line(0, line);
 
-    for (row = 0u; row < MENU_VISIBLE_LINES; ++row)
+    if (g_pointer->Father == g_encoder_folder)
     {
-        if (row < g_pointer->Father->sons)
+        menu_show_line(MENU_LINE_HEIGHT, "  Wheel  Raw  Filt       Total");
+        for (row = 0u; row < MOTOR_WHEEL_COUNT; ++row)
         {
-            menu_format_value(item, value, sizeof(value));
-            snprintf(line, sizeof(line), "%c%c%-12s %12s",
-                     item == g_pointer ? '>' : ' ',
-                     item->selected ? '*' : ' ',
-                     item->name,
-                     value);
+            snprintf(line, sizeof(line), "%c%-2s %6d%6d%12ld",
+                     item == g_pointer ? '>' : ' ', item->name,
+                     g_motor_snapshot.raw_counts[row], g_motor_snapshot.filtered_counts[row],
+                     (long)(g_motor_snapshot.cumulative_raw_counts[row] - g_encoder_zero_counts[row]));
+            menu_show_line((uint16)((row + 2u) * MENU_LINE_HEIGHT), line);
             item = item->Next_Brother;
         }
-        else
+        snprintf(line, sizeof(line), "%c%c%-12s %12s",
+                 item == g_pointer ? '>' : ' ', item->selected ? '*' : ' ',
+                 item->name, "Off");
+        menu_show_line(6u * MENU_LINE_HEIGHT, line);
+        menu_show_line(7u * MENU_LINE_HEIGHT, "Raw/Filt=count/10ms");
+    }
+    else
+    {
+
+        for (row = 0u; row < MENU_VISIBLE_LINES; ++row)
         {
-            snprintf(line, sizeof(line), "%30s", "");
+            if (row < g_pointer->Father->sons)
+            {
+                menu_format_value(item, value, sizeof(value));
+                snprintf(line, sizeof(line), "%c%c%-12s %12s",
+                         item == g_pointer ? '>' : ' ',
+                         item->selected ? '*' : ' ',
+                         item->name,
+                         value);
+                item = item->Next_Brother;
+            }
+            else
+            {
+                snprintf(line, sizeof(line), "%30s", "");
+            }
+            menu_show_line((uint16)((row + 1u) * MENU_LINE_HEIGHT), line);
         }
-        ips200_show_string(0, (uint16)((row + 1u) * MENU_LINE_HEIGHT), line);
     }
 
     snprintf(line, sizeof(line), "IMU:%ld Cal:%5.1f%%            ",
              (long)imu_attitude_status, (double)imu_calibration_percent);
-    ips200_show_string(0, 160, line);
+    menu_show_line(160, line);
     snprintf(line, sizeof(line), "RPY:%7.2f %7.2f %7.2f",
              (double)imu_roll_deg, (double)imu_pitch_deg, (double)imu_yaw_deg);
-    ips200_show_string(0, 176, line);
+    menu_show_line(176, line);
     snprintf(line, sizeof(line), "ENC:%5d %5d %5d %5d ",
-             up_L_all, up_R_all, down_L_all, down_R_all);
-    ips200_show_string(0, 192, line);
+             g_motor_snapshot.filtered_counts[0], g_motor_snapshot.filtered_counts[1],
+             g_motor_snapshot.filtered_counts[2], g_motor_snapshot.filtered_counts[3]);
+    menu_show_line(192, line);
+    snprintf(line, sizeof(line), "PWM:%5d %5d %5d %5d ",
+             g_motor_snapshot.final_pwm[0], g_motor_snapshot.final_pwm[1],
+             g_motor_snapshot.final_pwm[2], g_motor_snapshot.final_pwm[3]);
+    menu_show_line(208, line);
     snprintf(line, sizeof(line), "K1=enter K3=back K2/K4=move");
-    ips200_show_string(0, 224, line);
+    menu_show_line(224, line);
 }
 
 static float menu_clamp(float value, float low, float high)
@@ -167,6 +226,14 @@ static void menu_adjust(int direction)
             imu_attitude_request_recalibration();
             g_imu_recalibrate = false;
         }
+        else if (g_pointer->data == &g_encoder_zero && enabled)
+        {
+            /* Display baseline only: do not reset PWM, PID or wheel feedback. */
+            menu_motor_snapshot();
+            for (unsigned wheel = 0; wheel < MOTOR_WHEEL_COUNT; ++wheel)
+                g_encoder_zero_counts[wheel] = g_motor_snapshot.cumulative_raw_counts[wheel];
+            g_encoder_zero = false;
+        }
         return;
     }
     if (g_pointer->kind == float_Box)
@@ -187,6 +254,15 @@ static void menu_adjust(int direction)
         }
         *(float *)g_pointer->data = value;
     }
+    else if (g_pointer->kind == int16_Box)
+    {
+        /* PWM uses whole counts; fractional menu steps still move by one. */
+        int step = (int)g_steps[g_step_index];
+        int value;
+        if (step < 1) step = 1;
+        value = *(int16_t *)g_pointer->data + step * direction;
+        *(int16_t *)g_pointer->data = (int16_t)Limit_int(LIMIT_PWM_MIN, value, LIMIT_PWM_MAX);
+    }
 }
 
 void Menu_Init(void)
@@ -204,7 +280,19 @@ void Menu_Init(void)
     menu_create();
     g_pointer = g_root.First_Son;
     All_Folder_Menu_Init(&g_root);
+    g_refresh_ticks = 0;
+    memset(g_encoder_zero_counts, 0, sizeof(g_encoder_zero_counts));
+    g_encoder_zero = false;
     g_refresh_pending = true;
+}
+
+void Menu_Tick_20ms(void)
+{
+    if (++g_refresh_ticks >= 5u)
+    {
+        g_refresh_ticks = 0;
+        g_refresh_pending = true;
+    }
 }
 
 void Menu_Show(void)
@@ -214,6 +302,7 @@ void Menu_Show(void)
         return;
     }
     g_refresh_pending = false;
+    menu_motor_snapshot();
     menu_draw();
 }
 
@@ -223,21 +312,26 @@ void Menu_Switch(void)
     key_state_enum up = key_get_state(KEY_2);
     key_state_enum back = key_get_state(KEY_3);
     key_state_enum down = key_get_state(KEY_4);
+    bool repeat_numeric = g_pointer->selected && g_pointer->editable &&
+                          (g_pointer->kind == float_Box || g_pointer->kind == int16_Box);
+    bool up_repeat = up == KEY_LONG_PRESS || up == KEY_REPEAT_PRESS;
+    bool down_repeat = down == KEY_LONG_PRESS || down == KEY_REPEAT_PRESS;
 
     if (enter != KEY_SHORT_PRESS && up != KEY_SHORT_PRESS &&
-        back != KEY_SHORT_PRESS && down != KEY_SHORT_PRESS)
+        back != KEY_SHORT_PRESS && down != KEY_SHORT_PRESS &&
+        !up_repeat && !down_repeat)
     {
         return;
     }
 
     g_refresh_pending = true;
 
-    if (up == KEY_SHORT_PRESS)
+    if (up == KEY_SHORT_PRESS || (repeat_numeric && up_repeat))
     {
         if (g_pointer->selected) menu_adjust(1);
         else g_pointer = g_pointer->Last_Brother;
     }
-    else if (down == KEY_SHORT_PRESS)
+    else if (down == KEY_SHORT_PRESS || (repeat_numeric && down_repeat))
     {
         if (g_pointer->selected) menu_adjust(-1);
         else g_pointer = g_pointer->Next_Brother;

@@ -7,9 +7,21 @@
 #include <stdlib.h>
 
 volatile bool motor_run_enabled;
+volatile bool motor_pwm_test_enabled;
+volatile int16_t motor_test_pwm[MOTOR_WHEEL_COUNT];
 volatile float motor_cmd_vx_cmps;
 volatile float motor_cmd_vy_cmps;
 volatile float motor_cmd_omega_radps;
+
+static bool g_previous_pwm_test_enabled;
+
+static void clear_wheel_pid(void)
+{
+    PID_Clear(&ULpid);
+    PID_Clear(&URpid);
+    PID_Clear(&DLpid);
+    PID_Clear(&DRpid);
+}
 
 static float clampf(float value, float low, float high)
 {
@@ -26,13 +38,36 @@ void app_control_init(void)
     PID_Init(&DRpid, &DRPidInitStruct);
     Kinematics_Init();
     motor_run_enabled = false;
+    motor_pwm_test_enabled = true;
+    g_previous_pwm_test_enabled = true;
+    for (unsigned wheel = 0; wheel < MOTOR_WHEEL_COUNT; ++wheel)
+        motor_test_pwm[wheel] = 0;
 }
 
 void app_control_motor_tick_10ms(void)
 {
     float body_command[3];
+    bool pwm_test_enabled = motor_pwm_test_enabled;
 
     encoder_get();
+    /* Changing modes stops output and requires Run to be enabled again. */
+    if (pwm_test_enabled != g_previous_pwm_test_enabled)
+    {
+        g_previous_pwm_test_enabled = pwm_test_enabled;
+        motor_run_enabled = false;
+        clear_wheel_pid();
+        motor_pwm(0, 0, 0, 0);
+        return;
+    }
+    if (pwm_test_enabled)
+    {
+        if (motor_run_enabled)
+            motor_pwm(motor_test_pwm[MOTOR_WHEEL_UL], motor_test_pwm[MOTOR_WHEEL_UR],
+                      motor_test_pwm[MOTOR_WHEEL_DL], motor_test_pwm[MOTOR_WHEEL_DR]);
+        else
+            motor_pwm(0, 0, 0, 0);
+        return;
+    }
     if (motor_run_enabled)
     {
         body_command[0] = clampf(motor_cmd_vx_cmps, -300.0f, 300.0f);
@@ -47,10 +82,7 @@ void app_control_motor_tick_10ms(void)
     if (abs(up_L_all) < 5 && abs(up_R_all) < 5 &&
         abs(down_L_all) < 5 && abs(down_R_all) < 5)
     {
-        PID_Clear(&ULpid);
-        PID_Clear(&URpid);
-        PID_Clear(&DLpid);
-        PID_Clear(&DRpid);
+        clear_wheel_pid();
         motor_pwm(0, 0, 0, 0);
     }
 }

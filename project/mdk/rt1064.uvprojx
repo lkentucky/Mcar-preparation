@@ -490,26 +490,6 @@
               <FilePath>..\code\imu_numeric.h</FilePath>
             </File>
             <File>
-              <FileName>calibration.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\calibration.c</FilePath>
-            </File>
-            <File>
-              <FileName>calibration.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\calibration.h</FilePath>
-            </File>
-            <File>
-              <FileName>attitude_math.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\attitude_math.c</FilePath>
-            </File>
-            <File>
-              <FileName>attitude_math.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\attitude_math.h</FilePath>
-            </File>
-            <File>
               <FileName>ahrs6.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\code\ahrs6.h</FilePath>

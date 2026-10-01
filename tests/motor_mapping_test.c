@@ -1,0 +1,276 @@
+/* Test the actual driver with recorded hardware I/O, without energizing motors.
+ * Build with motor_stubs before the real zf_driver include directory.
+ */
+#include "zf_driver_gpio.h"
+#include "zf_driver_pwm.h"
+#include "zf_driver_encoder.h"
+#include "Motor.h"
+#include "PID_config.h"
+#include "app_control.h"
+
+#include <assert.h>
+#include <limits.h>
+#include <stdio.h>
+
+static uint32 duties[256];
+static uint8 levels[256];
+static int16 counts[16];
+static unsigned clear_calls[16];
+static unsigned motor_init_calls;
+static unsigned pwm_init_calls;
+static unsigned encoder_init_calls;
+
+/* Independent fixture from the updated wiring, in UL/UR/DL/DR order. */
+static const gpio_pin_enum expected_dir[] = {D12, D13, D0, D1};
+static const pwm_channel_enum expected_pwm[] = {
+    PWM1_MODULE1_CHA_D14, PWM1_MODULE1_CHB_D15,
+    PWM2_MODULE3_CHA_D2, PWM2_MODULE3_CHB_D3
+};
+/* All four forward DIR levels now follow the user's current hardware setting. */
+static const uint8 expected_forward[] = {GPIO_HIGH, GPIO_HIGH, GPIO_HIGH, GPIO_HIGH};
+
+void gpio_set_level(gpio_pin_enum pin, uint8 level)
+{
+    assert((unsigned)pin < 256);
+    levels[pin] = level;
+}
+
+void gpio_init(gpio_pin_enum pin, gpio_dir_enum dir, uint8 level, uint32 config)
+{
+    assert(motor_init_calls < 4);
+    assert(pin == expected_dir[motor_init_calls]);
+    assert(dir == GPO && config == GPO_PUSH_PULL);
+    assert(level == expected_forward[motor_init_calls]);
+    motor_init_calls++;
+    gpio_set_level(pin, level);
+}
+
+void pwm_set_duty(pwm_channel_enum pin, const uint32 duty)
+{
+    assert((unsigned)pin < 256);
+    assert(duty <= (uint32)(LIMIT_PWM_MAX > -LIMIT_PWM_MIN ? LIMIT_PWM_MAX : -LIMIT_PWM_MIN));
+    duties[pin] = duty;
+}
+
+void pwm_init(pwm_channel_enum pin, const uint32 freq, const uint32 duty)
+{
+    assert(pwm_init_calls < 4);
+    assert(pin == expected_pwm[pwm_init_calls]);
+    assert(freq == 17000 && duty == 0);
+    pwm_init_calls++;
+    pwm_set_duty(pin, duty);
+}
+
+void encoder_quad_init(encoder_index_enum index,
+                       encoder_channel1_enum a, encoder_channel2_enum b)
+{
+    static const encoder_index_enum expected_index[] = {
+        QTIMER1_ENCODER1, QTIMER1_ENCODER2, QTIMER2_ENCODER1, QTIMER3_ENCODER2
+    };
+    static const encoder_channel1_enum expected_a[] = {
+        QTIMER1_ENCODER1_CH1_C0, QTIMER1_ENCODER2_CH1_C2,
+        QTIMER2_ENCODER1_CH1_C3, QTIMER3_ENCODER2_CH1_B18
+    };
+    static const encoder_channel2_enum expected_b[] = {
+        QTIMER1_ENCODER1_CH2_C1, QTIMER1_ENCODER2_CH2_C24,
+        QTIMER2_ENCODER1_CH2_C25, QTIMER3_ENCODER2_CH2_B19
+    };
+    assert(encoder_init_calls < 4);
+    assert(index == expected_index[encoder_init_calls]);
+    assert(a == expected_a[encoder_init_calls] && b == expected_b[encoder_init_calls]);
+    assert((int)index == (int)a / 2 && (int)index == (int)b / 2);
+    encoder_init_calls++;
+}
+
+int16 encoder_get_count(encoder_index_enum index)
+{
+    return counts[index];
+}
+
+void encoder_clear_count(encoder_index_enum index)
+{
+    counts[index] = 0;
+    clear_calls[index]++;
+}
+
+static void check_single_wheel(unsigned wheel, int command)
+{
+    int speeds[4] = {0};
+    motor_speed_debug_snapshot_t snapshot;
+    unsigned i;
+    speeds[wheel] = command;
+    motor_pwm(speeds[0], speeds[1], speeds[2], speeds[3]);
+    motor_speed_debug_get_snapshot(&snapshot);
+    for (i = 0; i < 4; ++i)
+    {
+        assert(duties[expected_pwm[i]] == (i == wheel ? (uint32)abs(command) : 0));
+        if (i == wheel)
+            assert(levels[expected_dir[i]] ==
+                   (command < 0 ? 1 - expected_forward[i] : expected_forward[i]));
+        assert(snapshot.final_pwm[i] == speeds[i]);
+    }
+}
+
+static void check_feedback(int direction)
+{
+    unsigned tick;
+    motor_speed_debug_snapshot_t snapshot;
+    motor_speed_debug_reset();
+    for (tick = 0; tick < 10; ++tick)
+    {
+        /* Physical wiring: encoder 1=DL, 2=DR, 3=UR, 4=UL. */
+        counts[QTIMER1_ENCODER1] = (int16)(direction * 30);
+        counts[QTIMER1_ENCODER2] = (int16)(direction * -40);
+        counts[QTIMER2_ENCODER1] = (int16)(direction * -20);
+        counts[QTIMER3_ENCODER2] = (int16)(direction * 10);
+        encoder_get();
+        assert(counts[QTIMER1_ENCODER1] == 0 && counts[QTIMER1_ENCODER2] == 0);
+        assert(counts[QTIMER2_ENCODER1] == 0 && counts[QTIMER3_ENCODER2] == 0);
+        motor_speed_debug_get_snapshot(&snapshot);
+        for (unsigned wheel = 0; wheel < 4; ++wheel)
+            assert(snapshot.raw_counts[wheel] == direction * (int)(10 * (wheel + 1)));
+    }
+    assert(up_L_all == direction * 10 && up_R_all == direction * 20);
+    assert(down_L_all == direction * 30 && down_R_all == direction * 40);
+    assert(encoders_average == direction * 25);
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+        assert(snapshot.cumulative_raw_counts[wheel] == direction * (int)(100 * (wheel + 1)));
+}
+
+static void check_closed_loop(unsigned wheel, int command)
+{
+    PIDInitStruct simple_pid = {1.0f, 0.0f, 0.0f, 4000.0f, 6000.0f, 1.0f};
+    int targets[4] = {0};
+    motor_speed_debug_snapshot_t snapshot;
+    up_L_all = up_R_all = down_L_all = down_R_all = 0;
+    PID_Init(&ULpid, &simple_pid);
+    PID_Init(&URpid, &simple_pid);
+    PID_Init(&DLpid, &simple_pid);
+    PID_Init(&DRpid, &simple_pid);
+    targets[wheel] = command;
+    motor_control(targets);
+    motor_speed_debug_get_snapshot(&snapshot);
+    for (unsigned i = 0; i < 4; ++i)
+    {
+        assert(targets[i] == (i == wheel ? command : 0));
+        assert(snapshot.target_counts[i] == targets[i]);
+        assert(snapshot.pid_pwm[i] == targets[i]);
+        if (i != wheel)
+            assert(duties[expected_pwm[i]] == 0);
+        else
+        {
+            assert(duties[expected_pwm[i]] > (uint32)abs(command));
+            assert(levels[expected_dir[i]] ==
+                   (command < 0 ? 1 - expected_forward[i] : expected_forward[i]));
+        }
+    }
+}
+
+static void check_pwm_test_mode(void)
+{
+    motor_speed_debug_snapshot_t snapshot;
+    uint32 control_ticks;
+    motor_init_calls = pwm_init_calls = encoder_init_calls = 0;
+    app_control_init();
+    assert(motor_pwm_test_enabled && !motor_run_enabled);
+    for (unsigned i = 0; i < 4; ++i)
+        assert(motor_test_pwm[i] == 0 && duties[expected_pwm[i]] == 0);
+    motor_speed_debug_get_snapshot(&snapshot);
+    control_ticks = snapshot.control_ticks;
+    motor_run_enabled = true;
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+    {
+        for (int direction = -1; direction <= 1; direction += 2)
+        {
+            for (unsigned i = 0; i < 4; ++i)
+                motor_test_pwm[i] = i == wheel ? (int16)(direction * 100) : 0;
+            for (unsigned tick = 0; tick < 5; ++tick)
+            {
+                /* Changing feedback must not adjust the PWM or run the PID. */
+                counts[QTIMER1_ENCODER1] = (int16)(tick * 100);
+                counts[QTIMER1_ENCODER2] = (int16)(-300 + (int)tick * 100);
+                counts[QTIMER2_ENCODER1] = -500;
+                counts[QTIMER3_ENCODER2] = 700;
+                app_control_motor_tick_10ms();
+                motor_speed_debug_get_snapshot(&snapshot);
+                assert(snapshot.control_ticks == control_ticks);
+                for (unsigned i = 0; i < 4; ++i)
+                {
+                    assert(duties[expected_pwm[i]] == (i == wheel ? 100 : 0));
+                    assert(snapshot.final_pwm[i] == motor_test_pwm[i]);
+                    if (i == wheel)
+                        assert(levels[expected_dir[i]] ==
+                               (direction < 0 ? 1 - expected_forward[i] : expected_forward[i]));
+                }
+            }
+        }
+    }
+    motor_test_pwm[0] = INT16_MAX;
+    motor_test_pwm[1] = INT16_MIN;
+    app_control_motor_tick_10ms();
+    assert(duties[expected_pwm[0]] == LIMIT_PWM_MAX);
+    assert(duties[expected_pwm[1]] == (uint32)-LIMIT_PWM_MIN);
+
+    motor_run_enabled = false;
+    app_control_motor_tick_10ms();
+    assert(abs(up_L_all) >= 5); /* Stop is immediate even while moving. */
+    for (unsigned i = 0; i < 4; ++i)
+        assert(duties[expected_pwm[i]] == 0);
+    motor_speed_debug_get_snapshot(&snapshot);
+    assert(snapshot.control_ticks == control_ticks);
+
+    motor_pwm_test_enabled = false;
+    motor_run_enabled = true;
+    ULpid.fPre_Out = 1234;
+    app_control_motor_tick_10ms();
+    assert(!motor_run_enabled && ULpid.fPre_Out == 0);
+    for (unsigned i = 0; i < 4; ++i)
+        assert(duties[expected_pwm[i]] == 0);
+    motor_run_enabled = true;
+    motor_cmd_vx_cmps = 50;
+    app_control_motor_tick_10ms();
+    motor_speed_debug_get_snapshot(&snapshot);
+    assert(snapshot.control_ticks == control_ticks + 1);
+
+    motor_pwm_test_enabled = true;
+    app_control_motor_tick_10ms();
+    assert(!motor_run_enabled);
+    for (unsigned i = 0; i < 4; ++i)
+        assert(duties[expected_pwm[i]] == 0);
+}
+
+int main(void)
+{
+    motor_speed_debug_snapshot_t snapshot;
+    motor_init();
+    encoder_init();
+    assert(motor_init_calls == 4 && pwm_init_calls == 4 && encoder_init_calls == 4);
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+    {
+        check_single_wheel(wheel, 100 * (int)(wheel + 1));
+        check_single_wheel(wheel, -100 * (int)(wheel + 1));
+    }
+    motor_pwm(INT_MAX, INT_MIN, 10000, -10000);
+    motor_speed_debug_get_snapshot(&snapshot);
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+    {
+        int expected = wheel % 2 == 0 ? LIMIT_PWM_MAX : LIMIT_PWM_MIN;
+        assert(duties[expected_pwm[wheel]] == (uint32)abs(expected));
+        assert(snapshot.final_pwm[wheel] == expected);
+    }
+    motor_pwm(0, 0, 0, 0);
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+        assert(duties[expected_pwm[wheel]] == 0);
+    check_feedback(1);
+    check_feedback(-1);
+    assert(clear_calls[QTIMER1_ENCODER1] == 20 && clear_calls[QTIMER1_ENCODER2] == 20);
+    assert(clear_calls[QTIMER2_ENCODER1] == 20 && clear_calls[QTIMER3_ENCODER2] == 20);
+    for (unsigned wheel = 0; wheel < 4; ++wheel)
+    {
+        check_closed_loop(wheel, 100);
+        check_closed_loop(wheel, -100);
+    }
+    check_pwm_test_mode();
+    puts("motor tests passed: mapping, PID routing, direct PWM, feedback independence, stop, mode switching");
+    return 0;
+}
