@@ -493,8 +493,10 @@ void Kinematics_Init(void)
 void Kinematics_Inverse(float* input, int* output)
 {
 	float desired_vy_mps = input[1] * 0.01f;
+	//前后速度
 	float v_tx = input[0] * 0.01f -
 	             LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR * desired_vy_mps;
+	//左右速度
 	float v_ty = desired_vy_mps / LATERAL_CORRECTION_FACTOR;
 	float omega = input[2];                //rad/s（弧度/秒）
 	static float v_w[4] = {0};

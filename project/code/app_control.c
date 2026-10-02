@@ -23,6 +23,7 @@ static void clear_wheel_pid(void)
     PID_Clear(&DRpid);
 }
 
+//限制车体速度
 static float clampf(float value, float low, float high)
 {
     return value < low ? low : (value > high ? high : value);
@@ -68,6 +69,7 @@ void app_control_motor_tick_10ms(void)
             motor_pwm(0, 0, 0, 0);
         return;
     }
+    //速度闭环模式
     if (motor_run_enabled)
     {
         body_command[0] = clampf(motor_cmd_vx_cmps, -300.0f, 300.0f);

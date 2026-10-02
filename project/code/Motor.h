@@ -59,7 +59,7 @@
 #define ENCODER_RESOLUTION      ENCODER_RESOLUTION_UL
 #define WHEEL_DIAMETER          0.11     //轮子直径,单位：米（11 cm）
 #define LATERAL_CORRECTION_FACTOR 0.901589f  //实际横移距离 / 计划横移距离
-#define LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR 0.0f  // dx drift / dy travel
+#define LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR 0.0f  // dx drift / dy travel 单位横移速度产生的额外前后速度
 #define D_X                     0.176     //底盘Y轴上两轮中心的间距
 #define D_Y                     0.20     //底盘X轴上两轮中心的间距
 #define PID_RATE                100       //PID调节PWM值的频率
