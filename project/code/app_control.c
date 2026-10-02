@@ -4,7 +4,7 @@
 #include "PID.h"
 #include "PID_config.h"
 
-#include <stdlib.h>
+#include <math.h>
 
 volatile bool motor_run_enabled;
 volatile bool motor_pwm_test_enabled;
@@ -79,8 +79,10 @@ void app_control_motor_tick_10ms(void)
     }
 
     motor_control(car_stop_array);
-    if (abs(up_L_all) < 5 && abs(up_R_all) < 5 &&
-        abs(down_L_all) < 5 && abs(down_R_all) < 5)
+    if (fabsf(motor_reference_counts(MOTOR_WHEEL_UL, up_L_all)) < 5.0f &&
+        fabsf(motor_reference_counts(MOTOR_WHEEL_UR, up_R_all)) < 5.0f &&
+        fabsf(motor_reference_counts(MOTOR_WHEEL_DL, down_L_all)) < 5.0f &&
+        fabsf(motor_reference_counts(MOTOR_WHEEL_DR, down_R_all)) < 5.0f)
     {
         clear_wheel_pid();
         motor_pwm(0, 0, 0, 0);

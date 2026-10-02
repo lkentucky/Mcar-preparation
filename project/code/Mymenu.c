@@ -162,9 +162,19 @@ static void menu_draw(void)
                  item->name, "Off");
         menu_show_line(6u * MENU_LINE_HEIGHT, line);
         menu_show_line(7u * MENU_LINE_HEIGHT, "Raw/Filt=count/10ms");
+        snprintf(line, sizeof(line), "cm/s UL:%7.2f UR:%7.2f",
+                 (double)g_motor_snapshot.wheel_speed_cmps[0],
+                 (double)g_motor_snapshot.wheel_speed_cmps[1]);
+        menu_show_line(128, line);
+        snprintf(line, sizeof(line), "cm/s DL:%7.2f DR:%7.2f",
+                 (double)g_motor_snapshot.wheel_speed_cmps[2],
+                 (double)g_motor_snapshot.wheel_speed_cmps[3]);
+        menu_show_line(144, line);
     }
     else
     {
+        menu_show_line(128, "");
+        menu_show_line(144, "");
 
         for (row = 0u; row < MENU_VISIBLE_LINES; ++row)
         {

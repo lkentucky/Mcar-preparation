@@ -7,6 +7,26 @@
 
 #include <math.h>
 
+const float motor_encoder_counts_per_revolution[MOTOR_WHEEL_COUNT] =
+{
+    ENCODER_RESOLUTION_UL, ENCODER_RESOLUTION_UR,
+    ENCODER_RESOLUTION_DL, ENCODER_RESOLUTION_DR
+};
+
+float motor_reference_counts(uint8 wheel, float physical_counts)
+{
+    if (wheel >= MOTOR_WHEEL_COUNT) return 0.0f;
+    return physical_counts * ENCODER_RESOLUTION /
+           motor_encoder_counts_per_revolution[wheel];
+}
+
+float motor_encoder_counts_to_cmps(uint8 wheel, float counts)
+{
+    if (wheel >= MOTOR_WHEEL_COUNT) return 0.0f;
+    return counts * PID_RATE * (WHEEL_DIAMETER * 3.1415926f) * 100.0f /
+           motor_encoder_counts_per_revolution[wheel];
+}
+
 
 float speed_three_array[3] = {0};
 int speed_encoder[4] = {0};
@@ -74,7 +94,7 @@ int16 down_L_all=0;
 int16 up_R_all=0;
 int16 down_R_all=0;//编码器积分变量
 int32 encoder_all=0;
-int16 encoders_average;//积分平均值
+int32 encoders_average;//归一化到参考编码器分辨率的四轮平均计数
 
 int16 encoder_data_quaddec1 = 0;//编码器的值
 int16 encoder_data_quaddec2 = 0;
@@ -150,10 +170,15 @@ void encoder_get(void)
 	encoder_clear_count(ENCODER_3);                                       // 清空编码器计数
 	encoder_clear_count(ENCODER_4);
 
-	all = all + down_R_all+down_L_all+up_L_all+up_R_all;
-	encoders_average=(int16)lroundf(
-		((float)up_L_all + (float)up_R_all +
-		 (float)down_L_all + (float)down_R_all) * 0.25f);
+	all += (int)lroundf(motor_reference_counts(MOTOR_WHEEL_UL, up_L_all) +
+                       motor_reference_counts(MOTOR_WHEEL_UR, up_R_all) +
+                       motor_reference_counts(MOTOR_WHEEL_DL, down_L_all) +
+                       motor_reference_counts(MOTOR_WHEEL_DR, down_R_all));
+	encoders_average=(int32)lroundf(
+        (motor_reference_counts(MOTOR_WHEEL_UL, up_L_all) +
+         motor_reference_counts(MOTOR_WHEEL_UR, up_R_all) +
+         motor_reference_counts(MOTOR_WHEEL_DL, down_L_all) +
+         motor_reference_counts(MOTOR_WHEEL_DR, down_R_all)) * 0.25f);
 	
     // Position_yaw.add +=	(float)(-down_R_all+down_L_all+up_L_all-up_R_all);
 
@@ -330,7 +355,11 @@ void motor_limit_right_start_forward_offset(const int *input_speed_encoder,
 
 	/* encoder_get() runs before motor_control(), so these are the latest
 	 * filtered logical-wheel increments.  Accumulate only actual right travel. */
-	actual_lateral_sum4 = -up_L_all + up_R_all + down_L_all - down_R_all;
+	actual_lateral_sum4 = (int)lroundf(
+        -motor_reference_counts(MOTOR_WHEEL_UL, up_L_all) +
+         motor_reference_counts(MOTOR_WHEEL_UR, up_R_all) +
+         motor_reference_counts(MOTOR_WHEEL_DL, down_L_all) -
+         motor_reference_counts(MOTOR_WHEEL_DR, down_R_all));
 	if (actual_lateral_sum4 < 0)
 	{
 		g_motor_right_start_lateral_sum4 -= actual_lateral_sum4;
@@ -372,10 +401,10 @@ void motor_control(int* input_speed_encoder)
 	g_motor_debug_cumulative_target[MOTOR_WHEEL_DR] += limited_speed_encoder[MOTOR_WHEEL_DR];
 	g_motor_debug_control_ticks++;
 
-	motorUL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&ULpid, up_L_all, limited_speed_encoder[0]), LIMIT_PWM_MAX);   //上左
-	motorUR_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&URpid, up_R_all, limited_speed_encoder[1]), LIMIT_PWM_MAX);   //上右
-	motorDL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&DLpid, down_L_all, limited_speed_encoder[2]), LIMIT_PWM_MAX);   //下左
-	motorDR_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&DRpid, down_R_all, limited_speed_encoder[3]), LIMIT_PWM_MAX);   //下右
+	motorUL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&ULpid, motor_reference_counts(MOTOR_WHEEL_UL, up_L_all), limited_speed_encoder[0]), LIMIT_PWM_MAX);
+	motorUR_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&URpid, motor_reference_counts(MOTOR_WHEEL_UR, up_R_all), limited_speed_encoder[1]), LIMIT_PWM_MAX);
+	motorDL_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&DLpid, motor_reference_counts(MOTOR_WHEEL_DL, down_L_all), limited_speed_encoder[2]), LIMIT_PWM_MAX);
+	motorDR_pwm_value = Limit_int(LIMIT_PWM_MIN, PID_Add_Calculate(&DRpid, motor_reference_counts(MOTOR_WHEEL_DR, down_R_all), limited_speed_encoder[3]), LIMIT_PWM_MAX);
 	g_motor_debug_pid_pwm[MOTOR_WHEEL_UL] = motorUL_pwm_value;
 	g_motor_debug_pid_pwm[MOTOR_WHEEL_UR] = motorUR_pwm_value;
 	g_motor_debug_pid_pwm[MOTOR_WHEEL_DL] = motorDL_pwm_value;
@@ -424,6 +453,7 @@ void motor_speed_debug_get_snapshot(motor_speed_debug_snapshot_t *snapshot)
 		snapshot->target_counts[i] = g_motor_debug_target[i];
 		snapshot->raw_counts[i] = g_motor_debug_raw[i];
 		snapshot->filtered_counts[i] = filtered[i];
+		snapshot->wheel_speed_cmps[i] = motor_encoder_counts_to_cmps(i, (float)filtered[i]);
 		snapshot->pid_pwm[i] = g_motor_debug_pid_pwm[i];
 		snapshot->final_pwm[i] = g_motor_debug_final_pwm[i];
 		snapshot->cumulative_target_counts[i] = g_motor_debug_cumulative_target[i];
@@ -446,9 +476,8 @@ float r_y = 0;
   */
 void Kinematics_Init(void)
 {
-	//轮子转动一圈，移动的距离为轮子的周长WHEEL_DIAMETER*3.1415926，编码器产生的脉冲信号为ENCODER_RESOLUTION。则电机编码器转一圈产生的脉冲信号除以轮子周长可得轮子前进1m的距离所对应编码器计数的变化
-    pulse_per_meter = (float)(ENCODER_RESOLUTION/(WHEEL_DIAMETER*3.1415926f))/linear_correction_factor;      //12513
-    //宏定义依次对应 2280 0.058 修正系数给了1.0
+    /* All wheel targets and control feedback use the UL reference resolution. */
+    pulse_per_meter = (float)(ENCODER_RESOLUTION/(WHEEL_DIAMETER*3.1415926f))/linear_correction_factor;
     r_x = D_X/2;
     r_y = D_Y/2;
     rx_plus_ry_cali = (r_x + r_y)/angular_correction_factor;
@@ -458,8 +487,8 @@ void Kinematics_Init(void)
 
 /**
   * @函数作用：逆向运动学解析，底盘三轴速度-->轮子速度
-  * @输入：麦轮车三轴速度 m/s
-  * @输出：电机应达到的目标速度（一个PID控制周期内，电机编码器计数值的变化）
+  * @输入：平移速度 cm/s、角速度 rad/s
+  * @输出：每 10 ms 的参考编码器计数，四轮反馈在 PID 入口归一化到同一尺度
   */
 void Kinematics_Inverse(float* input, int* output)
 {

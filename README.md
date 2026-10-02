@@ -34,7 +34,7 @@ IPS200 使用竖屏 240×320，按键沿用 ASC 的操作方式：
 
 测试链路为 `motor_test_pwm[] → motor_pwm() → DIR/PWM`，绕过逆运动学、速度 PID、死区补偿及横移启动补偿。编码器仍读取并显示，反馈不会改变 PWM。测试模式下 `Run=Off` 在下一个 10 ms 周期将四路占空比直接置零。
 
-`Encoder` 页面每 100 ms 自动刷新，四轮均显示 `Raw`（方向校正后、滤波前的 10 ms 计数）、`Filt`（滤波后的 10 ms 计数）和 `Total`（方向校正后的累计计数）。`ZeroTotal` 选中后按 KEY2 清零显示累计值，操作完成自动回到 Off，不影响电机输出和 PID。底部 `PWM` 显示四轮最终软件输出，顺序为 UL、UR、DL、DR。
+`Encoder` 页面每 100 ms 自动刷新，四轮均显示 `Raw`（方向校正后、滤波前的 10 ms 计数）、`Filt`（滤波后的 10 ms 计数）和 `Total`（方向校正后的累计计数），这些列均保留编码器的真实计数。下方 `cm/s` 按各轮的分辨率换算轮缘速度。`ZeroTotal` 选中后按 KEY2 清零显示累计值，操作完成自动回到 Off，不影响电机输出和 PID。底部 `PWM` 显示四轮最终软件输出，顺序为 UL、UR、DL、DR。
 
 编码器测试先保持 `OpenLoop=On`、`Run=Off`，手动逐个转动车轮，确认只对应那一轮的 Raw/Total 变化。再用 PWM_Test 分别给单轮正、负 PWM，确认正 PWM 时该轮读数为正、负 PWM 时为负；慢速手转时 Raw 可能间歇为 0，应观察 Total。若电机正 PWM 的物理方向不正确，调整该轮 `MOTORn_FORWARD_LEVEL`；若物理方向正确但编码器符号相反，调整对应 `ENCODER_n_FORWARD_SIGN`。如累计值跳动而轮子静止，应先检查 A/B 接线和共地。
 
@@ -46,14 +46,20 @@ IPS200 使用竖屏 240×320，按键沿用 ASC 的操作方式：
 
 | 车轮 | 电机通道 | DIR / PWM 引脚 | 编码器模块 | A / B 引脚 |
 |---|---|---|---|---|
-| 左前 UL | MOTOR1 | D12 / D14 | QTIMER3_ENCODER2 | B18 / B19 |
-| 右前 UR | MOTOR2 | D13 / D15 | QTIMER2_ENCODER1 | C3 / C25 |
+| 左前 UL | MOTOR1 | D13 / D15 | QTIMER3_ENCODER2 | B18 / B19 |
+| 右前 UR | MOTOR2 | D12 / D14 | QTIMER2_ENCODER1 | C3 / C25 |
 | 左后 DL | MOTOR3 | D0 / D2 | QTIMER1_ENCODER1 | C0 / C1 |
 | 右后 DR | MOTOR4 | D1 / D3 | QTIMER1_ENCODER2 | C2 / C24 |
 
 PWM 频率为 17 kHz，当前命令限幅为 ±2000。电机 1、2 使用 PWM1_MODULE1 的 A、B 通道；电机 3、4 使用 PWM2_MODULE3 的 A、B 通道。编码器物理编号依次对应左后、右后、右前、左前，读取时转换为统一轮序，再进入滤波和 PID。
 
+当前车轮直径为 11 cm，减速比约 2.3。UL/UR/DL 编码器为 1024 线，DR 为 512 线；底层按 A 相上升沿计数、B 相判方向，不采用四倍频。因此前三轮约为 2355.2 计数/车轮圈，DR 约为 1177.6 计数/车轮圈。轮缘速度 `cm/s = 每10ms的计数 × 100 × π × 0.11 × 100 / 该轮每圈计数`；前三轮每计数约为 1.4673 cm/s，DR 每计数约为 2.9346 cm/s。
+
+四轮 PID 目标统一按 UL 的参考分辨率计算，PID 入口将 DR 的真实反馈乘 2；横移距离检测、四轮平均计数及闭环停止阈值也使用参考计数。Raw/Filt/Total 不乘 2，所以同速时 DR 的计数应约为其他轮的一半，页面 cm/s 应相同。减速比是近似值，最终应以各轮实测每圈计数校准；旧 PID 参数仍需在当前电机上调试。
+
 每轮正转电平由 `MOTOR1_FORWARD_LEVEL` 至 `MOTOR4_FORWARD_LEVEL` 设置，编码器方向由 `ENCODER_1_FORWARD_SIGN` 至 `ENCODER_4_FORWARD_SIGN` 设置。当前值沿用原来各逻辑轮的方向校正；实际电机接线后的正转与反馈符号仍需在车上确认。
+
+DR 实测反馈方向相反，已将 `ENCODER_2_FORWARD_SIGN` 修正为 +1。方向修正发生在原始计数进入滤波和累计之前，页面计数、速度及闭环反馈使用同一符号。PWM 测试中不使用反馈调整输出；相同 PWM 下应比较 cm/s，原始计数相差一倍符合 1024/512 线的硬件差异。
 
 `tests/motor_mapping_test.c` 用记录 GPIO、PWM 和编码器调用的主机替身检查独轮正反转、初始化、限幅、反馈顺序、PID 输出通道以及 PWM 测试模式，不驱动实物。使用真实 PWM 和编码器枚举头文件，编译时将 `tests/motor_stubs`、`libraries/zf_driver` 和 `project/code` 加入头文件路径，链接 `Motor.c`、`PID.c`、`PID_config.c`、`app_control.c` 和数学库。
 

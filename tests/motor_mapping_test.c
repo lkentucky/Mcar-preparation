@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include <math.h>
 
 static uint32 duties[256];
 static uint8 levels[256];
@@ -21,13 +22,13 @@ static unsigned pwm_init_calls;
 static unsigned encoder_init_calls;
 
 /* Independent fixture from the updated wiring, in UL/UR/DL/DR order. */
-static const gpio_pin_enum expected_dir[] = {D12, D13, D0, D1};
+static const gpio_pin_enum expected_dir[] = {D13, D12, D0, D1};
 static const pwm_channel_enum expected_pwm[] = {
-    PWM1_MODULE1_CHA_D14, PWM1_MODULE1_CHB_D15,
+    PWM1_MODULE1_CHB_D15, PWM1_MODULE1_CHA_D14,
     PWM2_MODULE3_CHA_D2, PWM2_MODULE3_CHB_D3
 };
-/* All four forward DIR levels now follow the user's current hardware setting. */
-static const uint8 expected_forward[] = {GPIO_HIGH, GPIO_HIGH, GPIO_HIGH, GPIO_HIGH};
+/* Forward DIR levels follow the user's current hardware setting. */
+static const uint8 expected_forward[] = {GPIO_LOW, GPIO_LOW, GPIO_HIGH, GPIO_HIGH};
 
 void gpio_set_level(gpio_pin_enum pin, uint8 level)
 {
@@ -120,7 +121,7 @@ static void check_feedback(int direction)
     {
         /* Physical wiring: encoder 1=DL, 2=DR, 3=UR, 4=UL. */
         counts[QTIMER1_ENCODER1] = (int16)(direction * 30);
-        counts[QTIMER1_ENCODER2] = (int16)(direction * -40);
+        counts[QTIMER1_ENCODER2] = (int16)(direction * 40);
         counts[QTIMER2_ENCODER1] = (int16)(direction * -20);
         counts[QTIMER3_ENCODER2] = (int16)(direction * 10);
         encoder_get();
@@ -132,7 +133,7 @@ static void check_feedback(int direction)
     }
     assert(up_L_all == direction * 10 && up_R_all == direction * 20);
     assert(down_L_all == direction * 30 && down_R_all == direction * 40);
-    assert(encoders_average == direction * 25);
+    assert(encoders_average == direction * 35);
     for (unsigned wheel = 0; wheel < 4; ++wheel)
         assert(snapshot.cumulative_raw_counts[wheel] == direction * (int)(100 * (wheel + 1)));
 }
@@ -239,6 +240,67 @@ static void check_pwm_test_mode(void)
         assert(duties[expected_pwm[i]] == 0);
 }
 
+static void check_mixed_encoder_resolution(void)
+{
+    const float circumference = 0.11f * 3.1415926f;
+    const float physical_counts[] = {20.0f, 20.0f, 20.0f, 10.0f};
+    const float counts_per_turn[] = {2355.2f, 2355.2f, 2355.2f, 1177.6f};
+    float command[3] = {100.0f, 0.0f, 0.0f};
+    int targets[4];
+    motor_speed_debug_snapshot_t snapshot;
+    PIDInitStruct simple_pid = {1.0f, 0.0f, 0.0f, 4000.0f, 6000.0f, 1.0f};
+    for (unsigned i = 0; i < 4; ++i)
+    {
+        assert(fabsf(motor_encoder_counts_per_revolution[i] - counts_per_turn[i]) < 0.001f);
+        assert(fabsf(motor_encoder_counts_to_cmps(i, counts_per_turn[i]) - circumference * 10000.0f) < 0.001f);
+        assert(fabsf(motor_reference_counts(i, physical_counts[i]) - 20.0f) < 0.001f);
+    }
+    assert(fabsf(motor_encoder_counts_to_cmps(0, 20.0f) - motor_encoder_counts_to_cmps(3, 10.0f)) < 0.001f);
+    assert(fabsf(motor_encoder_counts_to_cmps(3, -10.0f) + motor_encoder_counts_to_cmps(0, 20.0f)) < 0.001f);
+    assert(motor_encoder_counts_to_cmps(4, 1.0f) == 0.0f);
+    Kinematics_Init();
+    Kinematics_Inverse(command, targets);
+    for (unsigned i = 0; i < 4; ++i)
+        assert(targets[i] == 68); /* 1 m/s -> 68 reference counts / 10ms. */
+    assert(MOTOR_RIGHT_START_DISTANCE_COUNTS == 341); /* 5 cm with 11 cm wheels. */
+    for (unsigned tick = 0; tick < 10; ++tick)
+    {
+        counts[QTIMER1_ENCODER1] = 20;
+        counts[QTIMER1_ENCODER2] = 10;
+        counts[QTIMER2_ENCODER1] = -20;
+        counts[QTIMER3_ENCODER2] = 20;
+        encoder_get();
+    }
+    assert(up_L_all == 20 && up_R_all == 20 && down_L_all == 20 && down_R_all == 10);
+    assert(encoders_average == 20);
+    PID_Init(&ULpid, &simple_pid);
+    PID_Init(&URpid, &simple_pid);
+    PID_Init(&DLpid, &simple_pid);
+    PID_Init(&DRpid, &simple_pid);
+    for (unsigned i = 0; i < 4; ++i) targets[i] = 40;
+    motor_control(targets);
+    motor_speed_debug_get_snapshot(&snapshot);
+    for (unsigned i = 0; i < 4; ++i)
+    {
+        assert(snapshot.pid_pwm[i] == 20); /* Same physical speed gives same PID error. */
+        assert(snapshot.filtered_counts[i] == (int)physical_counts[i]);
+        assert(fabsf(snapshot.wheel_speed_cmps[i] - snapshot.wheel_speed_cmps[0]) < 0.001f);
+    }
+    /* Equal lateral wheel speeds must end the 5cm launch window together,
+     * despite DR producing half as many physical encoder counts. */
+    const int right_targets[4] = {40, -40, -40, 40};
+    int limited[4];
+    up_L_all = 40; up_R_all = -40; down_L_all = -40; down_R_all = 20;
+    motor_right_start_compensation_reset();
+    for (unsigned tick = 0; tick < 9; ++tick)
+    {
+        motor_limit_right_start_forward_offset(right_targets, limited);
+        for (unsigned i = 0; i < 4; ++i)
+            assert(limited[i] == right_targets[i] - (tick < 8 ? 1 : 0));
+    }
+    puts("mixed encoder tests passed: 1024/512 lines, 2.3 ratio, 11cm wheels, equal-speed PID feedback");
+}
+
 int main(void)
 {
     motor_speed_debug_snapshot_t snapshot;
@@ -271,6 +333,7 @@ int main(void)
         check_closed_loop(wheel, -100);
     }
     check_pwm_test_mode();
+    check_mixed_encoder_resolution();
     puts("motor tests passed: mapping, PID routing, direct PWM, feedback independence, stop, mode switching");
     return 0;
 }

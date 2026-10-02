@@ -40,13 +40,24 @@
 
 /* Convert physical counts to positive forward wheel feedback. */
 #define ENCODER_1_FORWARD_SIGN       (1)
-#define ENCODER_2_FORWARD_SIGN       (-1)
+#define ENCODER_2_FORWARD_SIGN       (1)   //DR：按实测正 PWM 方向修正反馈符号
 #define ENCODER_3_FORWARD_SIGN       (-1)
 #define ENCODER_4_FORWARD_SIGN       (1)
 
 //参数宏定义
-#define ENCODER_RESOLUTION      2390.0   //编码器分辨率, 轮子转一圈，编码器产生的脉冲数
-#define WHEEL_DIAMETER          0.06239  //轮子直径,单位：米@
+#define ENCODER_GEAR_RATIO      2.3f     //电机轴转数 / 车轮转数，当前近似减速比
+/* Backend counts A rising edges (1x), not all four quadrature edges. */
+#define ENCODER_LINES_UL        1024.0f
+#define ENCODER_LINES_UR        1024.0f
+#define ENCODER_LINES_DL        1024.0f
+#define ENCODER_LINES_DR        512.0f
+#define ENCODER_RESOLUTION_UL   (ENCODER_LINES_UL * ENCODER_GEAR_RATIO)
+#define ENCODER_RESOLUTION_UR   (ENCODER_LINES_UR * ENCODER_GEAR_RATIO)
+#define ENCODER_RESOLUTION_DL   (ENCODER_LINES_DL * ENCODER_GEAR_RATIO)
+#define ENCODER_RESOLUTION_DR   (ENCODER_LINES_DR * ENCODER_GEAR_RATIO)
+/* PID targets use the UL reference resolution; feedback is normalized to it. */
+#define ENCODER_RESOLUTION      ENCODER_RESOLUTION_UL
+#define WHEEL_DIAMETER          0.11     //轮子直径,单位：米（11 cm）
 #define LATERAL_CORRECTION_FACTOR 0.901589f  //实际横移距离 / 计划横移距离
 #define LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR 0.0f  // dx drift / dy travel
 #define D_X                     0.176     //底盘Y轴上两轮中心的间距
@@ -68,13 +79,12 @@
 #define MOTOR_DR_DEADZONE_FWD             550
 #define MOTOR_DR_DEADZONE_REV             637
 
-/* Right-strafe launch compensation.
- * 1 target count is about 0.82 cm/s with the current encoder calibration.
- * Limit the correction to the first 5 cm measured by the wheel encoders. */
+/* Right-strafe launch compensation, limited to the first 5 cm.
+ * Derive distance counts from the configured wheel diameter/resolution. */
 #define MOTOR_RIGHT_START_MIN_TARGET_COUNTS       5
 #define MOTOR_RIGHT_START_MAX_FORWARD_COUNTS      4
 #define MOTOR_RIGHT_START_REVERSE_COUNTS          1
-#define MOTOR_RIGHT_START_DISTANCE_COUNTS         610
+#define MOTOR_RIGHT_START_DISTANCE_COUNTS         ((int)(ENCODER_RESOLUTION * 0.05f / (WHEEL_DIAMETER * 3.1415926f) + 0.5f))
 #define MOTOR_RIGHT_START_MAX_TICKS               50U
 #define MOTOR_RIGHT_START_REARM_TICKS              5U
 
@@ -86,6 +96,7 @@
 
 typedef struct
 {
+    /* Targets are reference counts; raw/filtered/total are physical counts. */
     int target_counts[MOTOR_WHEEL_COUNT];
     int raw_counts[MOTOR_WHEEL_COUNT];
     int filtered_counts[MOTOR_WHEEL_COUNT];
@@ -94,6 +105,7 @@ typedef struct
     int32 cumulative_target_counts[MOTOR_WHEEL_COUNT];
     int32 cumulative_raw_counts[MOTOR_WHEEL_COUNT];
     uint32 control_ticks;
+    float wheel_speed_cmps[MOTOR_WHEEL_COUNT];
 } motor_speed_debug_snapshot_t;
 
 #define LIMIT_ENCODER_MIN          -500
@@ -108,13 +120,14 @@ extern int16 up_R_all;
 extern int16 down_R_all;
 
 extern int32 encoder_all;
-extern int16 encoders_average;
+extern int32 encoders_average;
 /* Logical wheel counts after direction correction: UL, UR, DL, DR. */
 extern int16 encoder_data_quaddec1;
 extern int16 encoder_data_quaddec2;
 extern int16 encoder_data_quaddec3;
 extern int16 encoder_data_quaddec4;
 extern double pulse_per_meter;
+extern const float motor_encoder_counts_per_revolution[MOTOR_WHEEL_COUNT];
 extern float rx_plus_ry_cali;
 
 extern float speed_three_array[3];
@@ -137,6 +150,10 @@ void motor_speed_debug_reset(void);
 void motor_speed_debug_get_snapshot(motor_speed_debug_snapshot_t *snapshot);
 //void encoder_read_filtered(int *enc1, int *enc2, int *enc3, int *enc4);
 float Lowpass(float X_last, float X_new);
+/* Input is one wheel's physical increment during a 10 ms control period. */
+float motor_encoder_counts_to_cmps(uint8 wheel, float counts);
+/* Normalize physical counts to the resolution used by the wheel PID targets. */
+float motor_reference_counts(uint8 wheel, float physical_counts);
 void Kinematics_Init(void);
 void Kinematics_Inverse(float* input, int* output);
 
