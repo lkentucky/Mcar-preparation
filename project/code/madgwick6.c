@@ -12,7 +12,7 @@
 ********************************************************************************************************************/
 
 #include "madgwick6.h"
-#include "attitude_math.h"
+#include "imu_attitude.h"
 #include "config.h"
 #include "imu_numeric.h"
 #include <math.h>

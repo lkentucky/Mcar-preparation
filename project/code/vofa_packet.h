@@ -1,21 +1,23 @@
 /*********************************************************************************************************************
 * 文件名称          vofa_packet
-* 功能说明          VOFA+ JustFloat 协议打包接口与通道定义，实现见 vofa_packet.c。
+* 功能说明          通用 VOFA+ JustFloat 打包接口，支持可变数量的 float32 通道。
 * 开发环境          MDK / armclang
 * 适用平台          RT1064 Lite 核心板
-* 备注信息          上位机按 JustFloat 解析，10 通道依次对应下方 CH0~CH9。
+* 备注信息          通道顺序由调用处决定，不自动添加时间戳或变量名称。
 ********************************************************************************************************************/
 
 #ifndef VOFA_PACKET_H
 #define VOFA_PACKET_H
+#include <stddef.h>
 #include <stdint.h>
 
-#define VOFA_CHANNELS 10u                              // 上传通道数
-#define VOFA_FRAME_BYTES (4u*(VOFA_CHANNELS+1u))       // 帧长：10 通道 × 4 字节 + 4 字节帧尾 = 44
-#define IMU_UDP_ANGLES_BYTES 12u                        // UDP 帧：roll/pitch/yaw 各 4 字节，无额外帧头帧尾
+#define VOFA_MAX_CHANNELS       40u                    // 最多上传 40 个用户通道
+#define VOFA_TAIL_BYTES         4u                     // 帧尾 00 00 80 7F
+#define VOFA_FRAME_BYTES(count) (4u * (count) + VOFA_TAIL_BYTES) // N 通道的总帧长
+#define VOFA_MAX_FRAME_BYTES    VOFA_FRAME_BYTES(VOFA_MAX_CHANNELS) // 最大缓冲区长度
 
-/* CH0..2=roll/pitch/yaw 度，CH3=状态，CH4=校准进度%，CH5=|a|g，CH6=dt毫秒 */
-/* CH7..9=Cube专用欧拉角X/Y/Z，绑定这三个通道到Cube。 */
-void vofa_pack(uint8_t out[VOFA_FRAME_BYTES], const float channels[VOFA_CHANNELS]);   // STEP 8：打包一帧
-void imu_udp_pack_angles(uint8_t out[IMU_UDP_ANGLES_BYTES], const float angles[3]);  // WiFi UDP 三轴欧拉角
+/* 按小端序打包 count 个 float32 通道并追加 JustFloat 帧尾。
+ * out_capacity 为输出缓冲区字节数；返回实际帧长，参数非法或空间不足返回 0，且不写入 out。 */
+size_t vofa_pack(uint8_t *out, size_t out_capacity,
+                 const float *channels, size_t count);
 #endif

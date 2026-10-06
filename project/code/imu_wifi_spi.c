@@ -1,6 +1,6 @@
 /*********************************************************************************************************************
 * 文件名称          imu_wifi_spi
-* 功能说明          逐飞 WiFi-SPI2.0 UDP 传输适配。发送小端 float32 的 roll/pitch/yaw，恰好 12 字节。
+* 功能说明          逐飞 WiFi-SPI2.0 UDP 传输适配。发送可变数量的小端 float32 通道及 JustFloat 帧尾。
 * 备注信息          SPI1 接 WiFi 模块，IMU 使用 SPI4，互不占用同一 SPI 控制器。
 ********************************************************************************************************************/
 
@@ -15,6 +15,10 @@ volatile int imu_wifi_status;
 volatile uint32_t imu_wifi_tx_packets;
 volatile uint32_t imu_wifi_init_attempts;
 volatile int imu_wifi_last_error;
+#if IMU_WIFI_ENABLED
+#include "zf_driver_spi.h"
+/* SPI1 can only use D12/D14/D15 in this library; those are motor pins. */
+typedef char wifi_spi1_conflicts_with_motor_D12_D15[(WIFI_SPI_INDEX == SPI_1) ? -1 : 1];
 static int wifi_ready;
 
 /* 分开执行逐飞驱动的三个阶段，避免一个 -1 混淆模块、WiFi 和 UDP 故障。
@@ -36,9 +40,11 @@ static int imu_wifi_init_once(void)
                                 IMU_WIFI_TARGET_PORT, IMU_WIFI_LOCAL_PORT) != 0) return -3;
     return 1;
 }
+#endif
 
 int imu_wifi_init(void)
 {
+#if IMU_WIFI_ENABLED
     uint32_t attempt;
     int result;
     wifi_ready = 0;
@@ -60,15 +66,27 @@ int imu_wifi_init(void)
         imu_wifi_status = result;
     }
     return 0;
+#else
+    /* Do not initialize SPI or GPIO: keep motor pin muxes intact. */
+    imu_wifi_status = -5;
+    imu_wifi_init_attempts = 0;
+    imu_wifi_last_error = 0;
+    imu_wifi_tx_packets = 0;
+    return 0;
+#endif
 }
 
-int imu_wifi_send_angles(const float angles[3])
+int imu_wifi_send_floats(const float *channels, size_t count)
 {
-    uint8_t packet[IMU_UDP_ANGLES_BYTES];
+#if IMU_WIFI_ENABLED
+    uint8_t packet[VOFA_MAX_FRAME_BYTES];
+    size_t packet_bytes;
+
     if (!wifi_ready) return 0;
-    imu_udp_pack_angles(packet, angles);
+    packet_bytes = vofa_pack(packet, sizeof(packet), channels, count);
+    if (packet_bytes == 0u) return 0;
     /* send_buffer 返回“未发送的字节数”；send_now 强制结束这一个 UDP 数据报。 */
-    if (wifi_spi_send_buffer(packet, IMU_UDP_ANGLES_BYTES) != 0 ||
+    if (wifi_spi_send_buffer(packet, (uint32_t)packet_bytes) != 0 ||
         wifi_spi_udp_send_now() != 0) {
         imu_wifi_status = -4;
         return 0;
@@ -76,4 +94,9 @@ int imu_wifi_send_angles(const float angles[3])
     imu_wifi_status = 1;
     ++imu_wifi_tx_packets;
     return 1;
+#else
+    (void)channels;
+    (void)count;
+    return 0;
+#endif
 }

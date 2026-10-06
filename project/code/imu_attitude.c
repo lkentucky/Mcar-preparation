@@ -1,8 +1,8 @@
 #include "imu_attitude.h"
 
 #include "ahrs6.h"
-#include "calibration.h"
 #include "config.h"
+#include "imu_numeric.h"
 #include "zf_common_clock.h"
 #include "zf_common_interrupt.h"
 #include "zf_device_imu660ra.h"
@@ -14,6 +14,111 @@
 #include <string.h>
 
 #define IMU_STATUS_REG 0x03u
+
+/* 静止标定：累计陀螺零偏与初始重力向量，运动时丢弃当前窗口。 */
+typedef struct {
+    unsigned count;
+    float sum_g[3], sum_a[3], min_g[3], max_g[3], min_a[3], max_a[3];
+    float bias_dps[3], initial_accel[3];
+} ImuCalibration;
+
+static void calibration_reset(ImuCalibration *c)
+{
+    memset(c, 0, sizeof(*c));
+}
+
+/* 输入 gyro 为 deg/s、accel 为 g，收满 CALIBRATION_SAMPLES 后返回 1。
+ * 这是静止检查，无法识别所有匀速运动。 */
+static int calibration_push(ImuCalibration *c, const float g[3], const float a[3])
+{
+    unsigned i;
+    float n=sqrtf(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
+    /* 加速度模长偏离 1g，本次标定作废。 */
+    if (!imu_finite(n) || n < 0.9f || n > 1.1f) {
+        calibration_reset(c); return 0;
+    }
+    for (i=0; i<3; ++i) {
+        /* 陀螺数值非法或超出静止阈值，同样作废重来。 */
+        if (!imu_finite(g[i]) || fabsf(g[i]) > CAL_GYRO_LIMIT_DPS) {
+            calibration_reset(c); return 0;
+        }
+        /* 记录各轴极值，用于峰峰值判据。 */
+        if (!c->count) {
+            c->min_g[i]=c->max_g[i]=g[i]; c->min_a[i]=c->max_a[i]=a[i];
+        }
+        if (g[i]<c->min_g[i]) c->min_g[i]=g[i];
+        if (g[i]>c->max_g[i]) c->max_g[i]=g[i];
+        if (a[i]<c->min_a[i]) c->min_a[i]=a[i];
+        if (a[i]>c->max_a[i]) c->max_a[i]=a[i];
+        /* 峰峰值超限说明窗口内出现过运动，整个窗口重新计数。 */
+        if (c->max_g[i]-c->min_g[i]>CAL_GYRO_SPAN_DPS ||
+            c->max_a[i]-c->min_a[i]>CAL_ACCEL_SPAN_G) {
+            calibration_reset(c); return 0;
+        }
+    }
+    for (i=0; i<3; ++i) { c->sum_g[i]+=g[i]; c->sum_a[i]+=a[i]; }
+    if (++c->count < CALIBRATION_SAMPLES) return 0;
+    /* 零偏用于扣零漂，初始重力用于求初始姿态。 */
+    for (i=0; i<3; ++i) {
+        c->bias_dps[i]=c->sum_g[i]/c->count;
+        c->initial_accel[i]=c->sum_a[i]/c->count;
+    }
+    return 1;
+}
+
+/* 两种融合算法共用的姿态几何工具；坐标系为传感器坐标到参考坐标。
+ * 静止 +Z 加速度为 +1g，初始 yaw 约定为 0，欧拉角输出单位度。 */
+static float attitude_clamp(float x, float lo, float hi)
+{
+    return x < lo ? lo : (x > hi ? hi : x);
+}
+
+/* 由静止重力求初始四元数 w,x,y,z；输入非法时返回 0。 */
+int attitude_init(float q[4], float *accel_norm, const float a[3])
+{
+    float norm, roll, pitch, cr, sr, cp, sp;
+    if (!imu_finite(a[0]) || !imu_finite(a[1]) || !imu_finite(a[2])) return 0;
+    norm = sqrtf(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
+    if (!imu_finite(norm) || norm < ACC_NORM_MIN || norm > ACC_NORM_MAX) return 0;
+    roll = atan2f(a[1], a[2]);
+    pitch = atan2f(-a[0], sqrtf(a[1]*a[1] + a[2]*a[2]));
+    cr = cosf(roll*0.5f); sr = sinf(roll*0.5f);
+    cp = cosf(pitch*0.5f); sp = sinf(pitch*0.5f);
+    q[0] = cr*cp; q[1] = sr*cp;
+    q[2] = cr*sp; q[3] = -sr*sp;
+    *accel_norm = norm;
+    return 1;
+}
+
+/* ZYX 欧拉角：R=Rz(yaw)*Ry(pitch)*Rx(roll)。
+ * pitch 接近 ±90 度时，roll/yaw 不唯一。 */
+void attitude_euler(const float q[4], float e[3])
+{
+    float w=q[0], x=q[1], y=q[2], z=q[3];
+    e[0]=atan2f(2.0f*(w*x+y*z), 1.0f-2.0f*(x*x+y*y))*RAD_TO_DEG;
+    e[1]=asinf(attitude_clamp(2.0f*(w*y-z*x), -1.0f, 1.0f))*RAD_TO_DEG;
+    e[2]=atan2f(2.0f*(w*z+x*y), 1.0f-2.0f*(y*y+z*z))*RAD_TO_DEG;
+}
+
+/* Qt3D Cube 专用欧拉角：R=Ry(Y)*Rx(X)*Rz(Z)，与 ZYX 不可混用。 */
+void attitude_cube_euler(const float q[4], float e[3])
+{
+    float w=q[0], x=q[1], y=q[2], z=q[3];
+    float r00=1.0f-2.0f*(y*y+z*z), r02=2.0f*(x*z+w*y);
+    float r10=2.0f*(x*y+w*z), r11=1.0f-2.0f*(x*x+z*z);
+    float r12=2.0f*(y*z-w*x), r20=2.0f*(x*z-w*y);
+    float r22=1.0f-2.0f*(x*x+y*y);
+    float cx=sqrtf(r10*r10+r11*r11);
+    e[0]=atan2f(-r12,cx)*RAD_TO_DEG;
+    if (cx>1e-5f) {
+        e[1]=atan2f(r02,r22)*RAD_TO_DEG;
+        e[2]=atan2f(r10,r11)*RAD_TO_DEG;
+    } else {
+        /* X接近±90度时Y/Z不唯一，取Z=0，保留等效姿态。 */
+        e[1]=atan2f(-r20,r00)*RAD_TO_DEG;
+        e[2]=0;
+    }
+}
 
 volatile int32 imu_attitude_status = IMU_ATTITUDE_INIT_FAILED;
 volatile float imu_roll_deg;

@@ -50,7 +50,8 @@
 
 static uint32               scanner_period = 0;                                 // 按键的扫描周期
 static uint32               key_press_time[KEY_NUMBER];                         // 按键信号持续时长
-static key_state_enum       key_state[KEY_NUMBER];                              // 按键状态
+static uint32               key_repeat_time[KEY_NUMBER];
+static volatile key_state_enum key_state[KEY_NUMBER];                           // 中断产生，主循环消费
 
 static const gpio_pin_enum  key_index[KEY_NUMBER] = KEY_LIST;
 
@@ -68,23 +69,35 @@ void key_scanner (void)
     {
         if(KEY_RELEASE_LEVEL != gpio_get_level(key_index[i]))                   // 按键按下
         {
-            key_press_time[i] += scanner_period;
-            if(KEY_LONG_PRESS_PERIOD <= key_press_time[i])
+            if(key_press_time[i] < KEY_LONG_PRESS_PERIOD)
             {
-                key_state[i] = KEY_LONG_PRESS;
+                key_press_time[i] += scanner_period;
+                if(KEY_LONG_PRESS_PERIOD <= key_press_time[i])
+                {
+                    key_press_time[i] = KEY_LONG_PRESS_PERIOD;
+                    key_repeat_time[i] = 0;
+                    key_state[i] = KEY_LONG_PRESS;
+                }
+            }
+            else
+            {
+                key_repeat_time[i] += scanner_period;
+                if(key_repeat_time[i] >= KEY_REPEAT_PRESS_PERIOD)
+                {
+                    key_repeat_time[i] %= KEY_REPEAT_PRESS_PERIOD;
+                    if(key_state[i] == KEY_RELEASE)
+                        key_state[i] = KEY_REPEAT_PRESS;
+                }
             }
         }
         else                                                                    // 按键释放
         {
-            if((KEY_LONG_PRESS != key_state[i]) && (KEY_MAX_SHOCK_PERIOD <= key_press_time[i]) && (KEY_LONG_PRESS_PERIOD > key_press_time[i]))
+            if((KEY_MAX_SHOCK_PERIOD <= key_press_time[i]) && (KEY_LONG_PRESS_PERIOD > key_press_time[i]))
             {
                 key_state[i] = KEY_SHORT_PRESS;
             }
-            else
-            {
-                key_state[i] = KEY_RELEASE;
-            }
             key_press_time[i] = 0;
+            key_repeat_time[i] = 0;
         }
     }
 }
@@ -122,10 +135,9 @@ void key_clear_state (key_index_enum key_n)
 //-------------------------------------------------------------------------------------------------------------------
 void key_clear_all_state (void)
 {
-    key_state[0] = KEY_RELEASE;
-    key_state[1] = KEY_RELEASE;
-    key_state[2] = KEY_RELEASE;
-    key_state[3] = KEY_RELEASE;
+    uint8 i;
+    for(i = 0; i < KEY_NUMBER; ++i)
+        key_state[i] = KEY_RELEASE;
 }
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -143,6 +155,8 @@ void key_init (uint32 period)
     {
         gpio_init(key_index[loop_temp], GPI, GPIO_HIGH, GPI_PULL_UP);
         key_state[loop_temp] = KEY_RELEASE;
+        key_press_time[loop_temp] = 0;
+        key_repeat_time[loop_temp] = 0;
     }
     scanner_period = period;
 }
