@@ -1,9 +1,8 @@
 #include "zf_common_headfile.h"
-
 #include "Mymenu.h"
 #include "app_control.h"
-#include "app_wifi_telemetry.h"
-#include "imu_attitude.h"
+#include "wifispi.h"
+#include "imu.h"
 
 #define PIT_SHARED_IRQ_PRIORITY 2u
 
@@ -14,11 +13,11 @@ int main(void)
     system_delay_ms(300);
 
     app_control_init();
-    imu_attitude_init();
+    imu_init();
     Menu_Init();
-    app_wifi_telemetry_init();
+    wifispi_telemetry_init();
 
-    /* CH0: 200 Hz IMU; CH1: 100 Hz wheel loop; CH2: 50 Hz key scan. */
+    /* CH0: 200 Hz IMU；CH1: 100 Hz 电机控制；CH2: 50 Hz 按键扫描。 */
     pit_ms_init(PIT_CH0, 5);
     pit_ms_init(PIT_CH1, 10);
     pit_ms_init(PIT_CH2, 20);
@@ -27,13 +26,10 @@ int main(void)
 
     while (1)
     {
-        /* Blocking reinitialization and UDP transmission stay outside IRQs. */
-        imu_attitude_service();
-        app_wifi_telemetry_service();
+        /* 阻塞重初始化和 UDP 同步发送只在主循环执行。 */
+        imu_service();
+        wifispi_telemetry_service();
         Menu_Switch();
         Menu_Show();
     }
 }
-
-
-
