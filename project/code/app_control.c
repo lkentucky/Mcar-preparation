@@ -68,9 +68,8 @@ void app_control_init(void)
     Kinematics_Init();
     app_navigation_init();
     motor_run_enabled = false;
-    motor_pwm_test_enabled = true;
-    g_previous_pwm_test_enabled = true;
-    motor_position_enabled = g_previous_position_enabled = false;
+    motor_pwm_test_enabled = g_previous_pwm_test_enabled = false;
+    motor_position_enabled = g_previous_position_enabled = true;
     g_position_was_running = false;
     motor_position_goal = (position_goal_t){0.0f, 0.0f, 0.0f};
     motor_position_config = (position_config_t)POSITION_CONFIG_DEFAULT;

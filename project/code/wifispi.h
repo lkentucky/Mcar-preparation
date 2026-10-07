@@ -1,5 +1,4 @@
-/** WiFi-SPI2.0 通用 JustFloat 发送及 IMU 周期遥测。
- * 配置仍使用原 config.h；IMU_WIFI_ENABLED 默认禁用，不能绕过引脚保护。
+/** WiFi-SPI2.0 JustFloat 遥测；主循环解析上位机 UDP 订阅命令。
  */
 #ifndef MCAR_WIFISPI_H
 #define MCAR_WIFISPI_H
@@ -19,6 +18,9 @@ extern volatile int imu_wifi_status;
 extern volatile uint32_t imu_wifi_tx_packets; /* 累计成功发送帧数 */
 extern volatile uint32_t imu_wifi_init_attempts; /* 本次初始化尝试次数 */
 extern volatile int imu_wifi_last_error; /* 原初始化最近错误，成功重试不清除 */
+extern volatile uint32_t wifi_telemetry_channel_count, wifi_telemetry_period_ms;
+extern volatile uint32_t wifi_telemetry_commands, wifi_telemetry_command_errors;
+extern volatile uint32_t wifi_telemetry_stream_enabled;
 
 /* 显式小端 float32 + 00 00 80 7F；无效参数返回 0，且不写输出。 */
 size_t vofa_pack(uint8_t *out,size_t out_capacity,const float *channels,size_t count);
@@ -27,7 +29,7 @@ int wifispi_send_floats(const float *channels,size_t count); /* 1=成功 */
 /* IMU 三通道专用接口；实际发送 16 字节 JustFloat，不是旧 12 字节包。 */
 int wifispi_send_imu(const float angles_deg[3]);
 void wifispi_telemetry_init(void);
-void wifispi_telemetry_service(void); /* 主循环；channels[] 决定周期上传内容 */
+void wifispi_telemetry_service(void); /* 主循环；SUB/RATE/STREAM/LIST?/GET? */
 
 /* 至少一个通道；表达式只求值一次，整数自动转 float。不得在中断中发送。 */
 #define wifi_justfloat(...) \

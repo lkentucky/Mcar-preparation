@@ -29,9 +29,9 @@ IPS200 使用竖屏 240×320，按键沿用 ASC 的操作方式：
 
 选中数值参数后，KEY2/KEY4 按住 1 秒开始连续加减，每 80 ms 按当前步进调整一次。长按不会连续切换文件夹或开启 Run；松开后不再补一次短按。
 
-菜单包含 PWM_Test、Drive、Encoder、Navigation、IMU、Sensor、WiFi、PID 和 Position，超过七行自动滚动。默认进入直接 PWM 测试模式，电机输出禁止，四轮 PWM 均为 0。
+菜单包含 PWM_Test、Drive、Encoder、Navigation、IMU、Sensor、WiFi、PID 和 Position，超过七行自动滚动。上电默认进入 Position 页面并选择位置闭环：Enable=On、OpenLoop=Off、Run=Off，目标为 (0,0,0)，不会上电自动行驶。
 
-进入 `PWM_Test`，保持 `OpenLoop=On`，设置 `UL_PWM`（左前）、`UR_PWM`（右前）、`DL_PWM`（左后）、`DR_PWM`（右后），再将 `Run` 设为 On。测试单轮时其余三轮保持 0；例如 `UL_PWM=1000` 为左前正转 10% 占空比，`-1000` 为反转 10%。当前范围为 -2000～2000（由 `Motor.h` 的 `LIMIT_PWM_MIN/MAX` 设置），频率为 17 kHz；PWM 参数步进为 1、10 或 100，原菜单小数步进在这里按 1 处理。
+进入 `PWM_Test`，将 `OpenLoop` 设为 On（自动退出位置模式并关闭 Run），设置 `UL_PWM`（左前）、`UR_PWM`（右前）、`DL_PWM`（左后）、`DR_PWM`（右后），再将 `Run` 设为 On。测试单轮时其余三轮保持 0；例如 `UL_PWM=1000` 为左前正转 10% 占空比，`-1000` 为反转 10%。当前范围为 -2000～2000（由 `Motor.h` 的 `LIMIT_PWM_MIN/MAX` 设置），频率为 17 kHz；PWM 参数步进为 1、10 或 100，原菜单小数步进在这里按 1 处理。
 
 测试链路为 `motor_test_pwm[] → motor_pwm() → DIR/PWM`，绕过逆运动学、速度 PID、死区补偿及横移启动补偿。编码器仍读取并显示，反馈不会改变 PWM。测试模式下 `Run=Off` 在下一个 10 ms 周期将四路占空比直接置零。
 
@@ -39,7 +39,7 @@ IPS200 使用竖屏 240×320，按键沿用 ASC 的操作方式：
 
 编码器测试先保持 `OpenLoop=On`、`Run=Off`，手动逐个转动车轮，确认只对应那一轮的 Raw/Total 变化。再用 PWM_Test 分别给单轮正、负 PWM，确认正 PWM 时该轮读数为正、负 PWM 时为负；慢速手转时 Raw 可能间歇为 0，应观察 Total。若电机正 PWM 的物理方向不正确，调整该轮 `MOTORn_FORWARD_LEVEL`；若物理方向正确但编码器符号相反，调整对应 `ENCODER_n_FORWARD_SIGN`。如累计值跳动而轮子静止，应先检查 A/B 接线和共地。
 
-`PWM_Test/OpenLoop=Off` 可恢复 `Drive` 中的车体速度闭环。切换模式会停止输出、清空轮速 PID，并将共享的 `Run` 设为 Off；需要重新开启 Run。
+手动车体速度模式需要同时设 `Position/Enable=Off`、`PWM_Test/OpenLoop=Off`，再在 `Drive` 设置速度并开启 Run。切换模式会停止输出、清空轮速 PID，并将共享的 `Run` 设为 Off；需要重新开启 Run。
 
 ## 电机与编码器
 
@@ -47,12 +47,12 @@ IPS200 使用竖屏 240×320，按键沿用 ASC 的操作方式：
 
 | 车轮 | 电机通道 | DIR / PWM 引脚 | 编码器模块 | A / B 引脚 |
 |---|---|---|---|---|
-| 左前 UL | MOTOR1 | D13 / D15 | QTIMER3_ENCODER2 | B18 / B19 |
-| 右前 UR | MOTOR2 | D12 / D14 | QTIMER2_ENCODER1 | C3 / C25 |
-| 左后 DL | MOTOR3 | D0 / D2 | QTIMER1_ENCODER1 | C0 / C1 |
-| 右后 DR | MOTOR4 | D1 / D3 | QTIMER1_ENCODER2 | C2 / C24 |
+| 左前 UL | MOTOR1 | C10 / C11 | QTIMER2_ENCODER2 | C5 / C25 |
+| 右前 UR | MOTOR2 | D2 / D3 | QTIMER2_ENCODER1 | C3 / C4 |
+| 左后 DL | MOTOR3 | C7 / C6 | QTIMER1_ENCODER1 | C0 / C1 |
+| 右后 DR | MOTOR4 | C9 / C8 | QTIMER1_ENCODER2 | C2 / C24 |
 
-PWM 频率为 17 kHz，当前命令限幅为 ±2000。电机 1、2 使用 PWM1_MODULE1 的 A、B 通道；电机 3、4 使用 PWM2_MODULE3 的 A、B 通道。编码器物理编号依次对应左后、右后、右前、左前，读取时转换为统一轮序，再进入滤波和 PID。
+PWM 频率为 17 kHz，当前命令限幅为 ±2000。当前本地接线中，电机 1~4 分别使用 PWM2_MODULE2_CHB、PWM2_MODULE3_CHB、PWM2_MODULE0_CHA、PWM2_MODULE1_CHA；按键为 C13/C15/C12/C14。编码器物理编号依次对应左后、右后、右前、左前，读取时转换为统一轮序，再进入滤波和 PID。
 
 当前车轮直径为 11 cm，减速比约 2.3。UL/UR/DL 编码器为 1024 线，DR 为 512 线；底层按 A 相上升沿计数、B 相判方向，不采用四倍频。因此前三轮约为 2355.2 计数/车轮圈，DR 约为 1177.6 计数/车轮圈。轮缘速度 `cm/s = 每10ms的计数 × 100 × π × 0.11 × 100 / 该轮每圈计数`；前三轮每计数约为 1.4673 cm/s，DR 每计数约为 2.9346 cm/s。
 
@@ -76,24 +76,17 @@ IMU660RA 使用 SPI4：C23/C22/C21/C20。上电后须保持静止，连续取得
 
 ## WiFi-SPI
 
-当前 `config.h` 的 `IMU_WIFI_ENABLED=0`：电机测试固件禁用 WiFi 初始化及发送，菜单状态为 -5。原 WiFi-SPI1 的 SCK=D12、MOSI=D14、MISO=D15、CS=D13，与前轮 DIR/PWM 冲突；WiFi 初始化会覆盖电机引脚复用，即使联网失败也会造成冲突。恢复 WiFi 前必须确认新的非冲突接线并修改驱动引脚；继续使用 SPI1 时重新启用会被编译检查阻止。
+当前 `config.h` 的 `IMU_WIFI_ENABLED=1`，启用逐飞 WiFi-SPI2.0 UDP 遥测。当前电机接线已移开 D12-D15，编译检查会阻止电机 DIR/PWM 退回这些引脚。WiFi 使用 SPI1：SCK=D12、MOSI=D14、MISO=D15、CS=D13、INT=B17、RST=B16；屏幕使用 SPI3、IMU 使用 SPI4。
 
-WiFi 模块使用逐飞 WiFi-SPI2.0 驱动，通过 UDP 发送 JustFloat 数据。发送间隔由 `project/code/config.h` 的 `IMU_WIFI_PERIOD_MS` 决定，当前为 2 ms（目标 500 帧/秒，实际频率受主循环及同步发送耗时影响）。热点、密码、目标 IP 和端口也在该文件配置。WiFi 初始化失败不会停止 IMU 与电机控制。
+默认发送周期为 10 ms（目标 100 帧/秒，实际受主循环及 SPI 耗时影响），上位机可运行时调整为 2~1000 ms。热点、密码和目标电脑地址在 `project/code/config.h` 配置；当前电脑端为 `192.168.0.108:8081`，模块本地端口为 `5001`。定时采样和控制在 WiFi 初始化之前启用，网络初始化失败后仍继续运行。修改上传内容无需重新烧录，重启恢复默认三通道与周期。
 
 默认 CH0/CH1/CH2 为 roll/pitch/yaw（单位：度）。报文格式是 `N 个小端 float32 + 00 00 80 7F`，总长度为 `4*N+4` 字节，默认 16 字节。不自动添加时间戳。VOFA+ 应选择 UDP 接收和 JustFloat 解析；原来只接收 12 字节姿态数据的程序需要适配新帧长与帧尾。
 
-修改周期发送内容，只需编辑 `project/code/wifispi.c` 的 `wifispi_telemetry_service()` 中的 `channels[]` 列表。通道数和帧长自动计算，最多 40 通道，不需要修改打包或发送函数。每次在短暂关中断期间取得数据快照，恢复中断后才打包并同步发送。
+上位机通过 `SUB x_cm,y_cm,nav_yaw_deg\n` 选择上传顺序，最多 40 个变量；`LIST?\n` 查询变量清单，`GET?\n` 查询当前配置，`RATE 20\n` 设置周期，`STREAM 0/1\n` 暂停/恢复上传。命令由主循环解析，数据在短临界区取一致快照，再恢复中断打包发送。未知变量、重复、空字段、超长命令或越界周期均拒绝并保留原配置。
 
-例如添加四轮编码器，在该文件包含 `Motor.h` 后，将列表改为：
+在原“开发UDP IMU上位机GUI”的现有源码基础上，适配版本位于 [tools/wifi_spi_udp_gui](tools/wifi_spi_udp_gui/README.md)。保留三个工作区、CSV 和飞机模型，新增上传预设、变量查询和自动解析配置。默认识别 JustFloat，控制应答单独处理。使用步骤与完整协议见 [WiFi 遥测协议](docs/wifi-telemetry-protocol.md)。
 
-```c
-const float channels[] = {
-    imu_roll_deg, imu_pitch_deg, imu_yaw_deg, /* CH0~2，度 */
-    up_L_all, up_R_all, down_L_all, down_R_all /* CH3~6，编码器计数 */
-};
-```
-
-主循环中的其他调试位置也可用快捷接口 `wifi_justfloat(imu_roll_deg, imu_pitch_deg, imu_yaw_deg)`，或 `wifispi_send_floats(data, count)`。快捷接口会自动计算参数数量，并将整数转成浮点数；整数超过 float32 的精确表示范围时会丢失精度。不要在中断或关中断区内调用发送接口。通道顺序变化后，上位机的名称、单位和曲线绑定也需同步更新。
+WiFi 菜单显示 Status、Packets（成功数据帧数）、Attempts、LastErr、Channels、Period_ms、Stream、Commands 和 CmdErr。接口 `wifi_justfloat(...)`/`wifispi_send_floats(data,count)` 仍保留供单独调试；启用自动订阅上传时应统一使用所选通道，避免混入另一组无映射数据。
 
 ## 编码器与 IMU 定位融合
 
@@ -107,7 +100,7 @@ const float channels[] = {
 
 1. 确认后轮已换为标准 X 排列，四轮编码器正方向正确；静止上电，等待原有 IMU 标定结束，再静止约 0.5 s 建立水平加速度偏置。
 2. 打开 `Navigation`，`State=2`、`Valid=1`、`Bias=1` 表示可用。`X_cm/Y_cm` 是位置，`Yaw_deg` 是相对起点的连续航向；下方显示固定坐标速度、`Slip` 和 `Rest`。根菜单有九个文件夹，自动滚动后 PID 和 Position 均可访问。
-3. 停车后选中 `Zero` 按 KEY2，在下一个 10 ms 周期重建位置和航向起点，重新静止标定约 0.5 s；不重置 Encoder 页的 Total。修改 Mount_deg/YawFlip 同样重建定位起点。位置模式中这些操作使定位暂时不可用，位置控制随即关闭 Run、清轮速 PID 并停止 PWM；手动 Drive/PWM 模式仍由各自的 Run 控制。
+3. 停车后选中 `Zero` 按 KEY2，在下一个 10 ms 周期重建位置和航向起点，重新静止标定约 0.5 s；不重置 Encoder 页的 Total。修改 Mount_deg/YawFlip/ScaleX/ScaleY 同样重建定位起点。位置模式中这些操作使定位暂时不可用，位置控制随即关闭 Run、清轮速 PID 并停止 PWM；手动 Drive/PWM 模式仍由各自的 Run 控制。
 4. State：`0` 等待 IMU，`1` 静止偏置标定，`2` 正常；`-1` 输入/配置非法，`-2` IMU 失效，`-3` 编码器异常。IMU 约 50 ms 无新帧、姿态重标定或明显异常编码器脉冲会冻结位置并使 Valid=0；排除原因后停车 Zero，不能直接继续使用旧坐标。
 
 首次硬件验证：手推前进 50 cm，X 应增加约 50；向左推 50 cm，Y 应增加；绕车体中心旋转时航向变化、XY 应基本不变；最后测试圆弧运动。定点的实际距离取决于每圈计数及前后/横向距离比例。当前减速比仍为约 2.3，`LATERAL_CORRECTION_FACTOR` 沿用旧值，不能把菜单小数位数当成定位精度。
@@ -125,7 +118,7 @@ const float channels[] = {
 菜单操作：
 
 1. 静止上电，等 Navigation 的 State=2、Valid=1、Bias=1。需要重设起点时先停车，再 Zero 并等待定位重新就绪。
-2. 在根菜单最后一项 `Position` 中将 Enable 设 On；会自动令 PWM_Test/OpenLoop=Off，并令共享 Run=Off。初始上电仍是 PWM 测试，位置模式默认关闭。文件夹和参数超出七行后自动滚动。
+2. 上电直接显示 `Position`，默认 Enable=On、OpenLoop=Off、Run=Off；等待定位有效后设置目标，再开启 Run。手动切回位置模式时将 Enable 设 On，会自动退出 PWM 测试并关闭 Run。文件夹和参数超出七行后自动滚动。
 3. 设置 TargetX_cm / TargetY_cm / TargetYaw。例如 `(50, 0, 0)` 表示向起点前方走到 50 cm，`(0, 50, 0)` 表示向左走到 50 cm，`(50, 0, 90)` 表示走向该点并左转至 90°。目标 X/Y 可为负，Yaw 在 −180° 至 +180°。
 4. 首次可设 MaxV_cmps=10，其余参数先保留默认值，最后将 Position/Run 设 On。Drive 显示的是此时自动生成的 Vx/Vy/Omega，位置模式中不应在 Drive 修改速度。Position 下方显示指令和当前 XY/Yaw，ErrXY_cm / ErrYaw_deg 显示误差。
 5. State=0 待启动，1 移动，2 到达范围内等待停止，3 已到达；−1 定位不可用，−2 参数非法或 PWM/位置模式冲突。到达或故障会自动关 Run、清轮速 PID、PWM 归零；新目标需要再次 Run。定位恢复不会自动续跑。切换 Enable/OpenLoop 也取消 Run；打开 PWM_Test/OpenLoop 会退出位置模式。
@@ -135,6 +128,22 @@ const float channels[] = {
 代码接口是 `app_control.h` 的 `motor_position_enabled`、`motor_position_goal` 和 `motor_position_config`。切换模式先关闭 Run，再置 `motor_pwm_test_enabled=false`、`motor_position_enabled=true`，等待至少一个 10 ms 控制周期完成切换后才能打开 Run；菜单负责这一操作。主循环读取 `app_control_get_position_snapshot()` 时要在短暂关中断区内复制快照，与导航接口一致。
 
 主机测试额外覆盖世界/车体坐标变换、跨 ±180° 转向、限速与加速度限制、前后左右和同时转向的带滞后模型收敛、低速持续到达判定、真实融合→解算→轮速 PID→PWM 接线、定位失效和运行中 Zero 停车、模式互斥、手动 Drive/PWM 回归，以及 Position 的负数编辑和全部 17 项菜单滚动。
+
+## 行驶距离和 X/Y 比例校准
+
+如果 Position 的 State=3，Navigation 显示约 100 cm，而地面实测只走了约 50 cm，说明定位距离偏大约两倍，位置环只是按错误的距离反馈提前到达；调整位置 Kp 不能校正这种比例误差。如果 State 仍为 1/2，却已经停住，则要先检查低速轮速闭环、死区和反馈，不应直接按比例补偿。
+
+距离基础换算为 `每个轮子位移 = 原始计数 × π × 轮径 / 车轮每圈计数`。本工程使用 A 相上升沿 1 倍计数，车轮每圈计数暂按 `编码器线数 × 2.3`，不是 4 倍计数。若其它条件成立，显示/实际=2 意味着配置的车轮每圈计数只有实际的一半，等效减速比可能应接近 4.6；这只是现象对应的推算，不能代替实测。抬起车体，将每个车轮同方向手动转满 5~10 圈，用 Encoder/Total 增量除以圈数，直接核对每圈实际计数，能避开编码器线数/减速比口径混淆。
+
+Y 与 X 的误差不一定相同。当前横移位移额外乘 `LATERAL_CORRECTION_FACTOR=0.901589`，逆解则除以该值；这是一组正逆配套系数，并非简单的重复修正。它来自旧底盘，应针对当前麦轮、地面和负载重新标定。横移滑动、轮子安装、实际 Yaw 偏差和各轮计数比例也会影响斜向落点，应先分别测试 (100,0) 与 (0,100)，再测试 (100,100)，各次从同一起点方向 Zero。
+
+Navigation 的 `ScaleX/ScaleY` 范围为 0.1~5：分别额外修正车体前后和左右里程增量，先修正再按实际 Yaw 转入固定坐标。当前按实测反馈设置默认值为 `ScaleX=0.52`、`ScaleY=0.61`。ScaleY 乘在原 0.901589 横移系数上，总横移定位系数为约 0.549969。
+
+1. 保持 Run=Off，Zero 后等待 Valid=1、Bias=1，沿地面直线手推一段已知距离，尽量保持航向不变。记录前后试验的实际距离 Lx 与 Navigation 的 X 增量 Nx；横移试验记录 Ly 与 Y 增量 Ny。
+2. `ScaleX新 = ScaleX旧 × |Lx/Nx|`，`ScaleY新 = ScaleY旧 × |Ly/Ny|`。也可用自动定点后的落点实测，但分母应取实际 Navigation 读数，避免到达容差影响。若实际方向与页面符号相反，先修正方向，不能用负比例掩盖。
+3. 例如旧比例均为 1，前进实际 50 cm、页面 100 cm，则 ScaleX=0.5；横移实际 60 cm、页面 100 cm，则 ScaleY=0.6。此为计算示例，不代表本车已测得这两个数。
+4. 参数修改后自动重建坐标并取消 Run，重新静止等待定位就绪，再开 Run 测试。不要在运行中修改。修改仅作用于定位位移/速度，不改变 Encoder 原始计数、轮速 PID 的参考计数或 Kinematics 的轮速单位。基础每圈计数校准应优先，修正基础参数后须重新标定这两个附加比例，避免重复补偿。
+5. 菜单参数重启后恢复 `navigation_config.h` 的 `NAV_FORWARD_SCALE_DEFAULT/NAV_LEFT_SCALE_DEFAULT`，当前未保存至 Flash。实测确认后将默认值写入配置再编译。
 
 ## 构建
 

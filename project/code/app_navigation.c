@@ -7,6 +7,7 @@
 
 volatile float navigation_mount_deg;
 volatile bool navigation_yaw_reversed;
+volatile float navigation_scale_x, navigation_scale_y;
 static navigation_fusion_t g_navigation;
 static volatile bool g_reset_requested;
 static uint32_t g_imu_sequence, g_imu_generation;
@@ -19,7 +20,8 @@ static void reset_state(void)
     for (unsigned i = 0; i < 4; ++i)
         config.counts_per_revolution[i] = motor_encoder_counts_per_revolution[i];
     config.wheel_diameter_m = WHEEL_DIAMETER;
-    config.lateral_scale = LATERAL_CORRECTION_FACTOR;
+    config.forward_scale = navigation_scale_x;
+    config.lateral_scale = LATERAL_CORRECTION_FACTOR * navigation_scale_y;
     config.lateral_to_forward = LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR;
     config.imu_mount_yaw_deg = navigation_mount_deg;
     config.imu_yaw_reversed = navigation_yaw_reversed;
@@ -33,6 +35,8 @@ void app_navigation_init(void)
 {
     navigation_mount_deg = 180.0f; /* 实测：IMU +X 朝车尾，+Z 朝上。 */
     navigation_yaw_reversed = false;
+    navigation_scale_x = NAV_FORWARD_SCALE_DEFAULT;
+    navigation_scale_y = NAV_LEFT_SCALE_DEFAULT;
     g_reset_requested = false;
     reset_state();
 }
@@ -78,7 +82,9 @@ void app_navigation_encoder_tick_10ms(void)
         encoder_data_quaddec3, encoder_data_quaddec4
     };
     if (g_reset_requested || navigation_mount_deg != g_navigation.config.imu_mount_yaw_deg ||
-        navigation_yaw_reversed != g_navigation.config.imu_yaw_reversed) {
+        navigation_yaw_reversed != g_navigation.config.imu_yaw_reversed ||
+        navigation_scale_x != g_navigation.config.forward_scale ||
+        LATERAL_CORRECTION_FACTOR * navigation_scale_y != g_navigation.config.lateral_scale) {
         g_reset_requested = false;
         reset_state();
         app_navigation_imu_tick_5ms();

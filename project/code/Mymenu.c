@@ -95,6 +95,8 @@ static void menu_create(void)
     Create_Menu_File_dynamic(navigation, "Mount_deg", (void *)&navigation_mount_deg, float_Box);
     Create_Menu_File_dynamic(navigation, "YawFlip", (void *)&navigation_yaw_reversed, bool_Box);
     Create_Menu_File_dynamic(navigation, "Zero", &g_navigation_zero, bool_Box);
+    Create_Menu_File_dynamic(navigation, "ScaleX", (void *)&navigation_scale_x, float_Box);
+    Create_Menu_File_dynamic(navigation, "ScaleY", (void *)&navigation_scale_y, float_Box);
 
     Create_Menu_File_dynamic(drive,"Run",(void *)&motor_run_enabled,bool_Box);
     Create_Menu_File_dynamic(drive,"Vx_cmps",(void *)&motor_cmd_vx_cmps,float_Box);
@@ -127,6 +129,11 @@ static void menu_create(void)
     Create_Menu_Readonly_dynamic(wifi,"Packets",(void *)&imu_wifi_tx_packets,uint32_Box);
     Create_Menu_Readonly_dynamic(wifi,"Attempts",(void *)&imu_wifi_init_attempts,uint32_Box);
     Create_Menu_Readonly_dynamic(wifi,"LastErr",(void *)&imu_wifi_last_error,int32_Box);
+    Create_Menu_Readonly_dynamic(wifi,"Channels",(void *)&wifi_telemetry_channel_count,uint32_Box);
+    Create_Menu_Readonly_dynamic(wifi,"Period_ms",(void *)&wifi_telemetry_period_ms,uint32_Box);
+    Create_Menu_Readonly_dynamic(wifi,"Stream",(void *)&wifi_telemetry_stream_enabled,uint32_Box);
+    Create_Menu_Readonly_dynamic(wifi,"Commands",(void *)&wifi_telemetry_commands,uint32_Box);
+    Create_Menu_Readonly_dynamic(wifi,"CmdErr",(void *)&wifi_telemetry_command_errors,uint32_Box);
     pid_ul=Create_Menu_Folder_dynamic(pid,"UL");
     pid_ur=Create_Menu_Folder_dynamic(pid,"UR");
     pid_dl=Create_Menu_Folder_dynamic(pid,"DL");
@@ -267,6 +274,9 @@ static void menu_adjust(int direction)
         {
             value = menu_clamp(value, -180.0f, 180.0f);
         }
+        else if (g_pointer->data == (void *)&navigation_scale_x ||
+                 g_pointer->data == (void *)&navigation_scale_y)
+            value = menu_clamp(value, 0.1f, 5.0f);
         else if (g_pointer->data == (void *)&motor_position_goal.x_cm ||
                  g_pointer->data == (void *)&motor_position_goal.y_cm)
             value = menu_clamp(value, -10000.0f, 10000.0f);
@@ -318,7 +328,7 @@ void Menu_Init(void)
     ips200_clear(); key_init(20u);
     memset(&g_root,0,sizeof(g_root));
     g_root.name="MCAR"; g_root.kind=MENU_Folder;
-    menu_create(); g_pointer=g_root.First_Son;
+    menu_create(); g_pointer=g_position_folder->First_Son;
     All_Folder_Menu_Init(&g_root);
     g_refresh_ticks=0;
     memset(g_encoder_zero_counts,0,sizeof(g_encoder_zero_counts));

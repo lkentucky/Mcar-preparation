@@ -19,9 +19,11 @@ try {
     Invoke-NavigationHostTest 'imu_navigation_madgwick_test' @(
         'tests/imu_navigation_publish_test.c', 'project/code/imu.c', 'project/code/attitude.c') @('-DAHRS_METHOD=2')
     Invoke-NavigationHostTest 'wifi_disabled_test' @(
-        'tests/wifi_disabled_test.c', 'project/code/wifispi.c')
+        'tests/wifi_disabled_test.c', 'project/code/wifispi.c') @('-DIMU_WIFI_ENABLED=0')
     Invoke-NavigationHostTest 'vofa_packet_test' @(
-        'tests/vofa_packet_test.c', 'project/code/wifispi.c') @('-Wl,--wrap=wifispi_send_floats')
+        'tests/vofa_packet_test.c', 'project/code/wifispi.c') @('-DIMU_WIFI_ENABLED=0', '-Wl,--wrap=wifispi_send_floats')
+    Invoke-NavigationHostTest 'wifi_telemetry_test' @(
+        'tests/wifi_telemetry_test.c', 'project/code/wifispi.c')
     Invoke-NavigationHostTest 'navigation_fusion_test' @(
         'tests/navigation_fusion_test.c', 'project/code/navigation_fusion.c')
     Invoke-NavigationHostTest 'position_control_test' @(

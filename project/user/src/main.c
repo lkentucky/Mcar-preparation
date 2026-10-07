@@ -15,7 +15,6 @@ int main(void)
     app_control_init();
     imu_init();
     Menu_Init();
-    wifispi_telemetry_init();
 
     /* CH0: 200 Hz IMU；CH1: 100 Hz 电机控制；CH2: 50 Hz 按键扫描。 */
     pit_ms_init(PIT_CH0, 5);
@@ -23,6 +22,8 @@ int main(void)
     pit_ms_init(PIT_CH2, 20);
     interrupt_set_priority(PIT_IRQn, PIT_SHARED_IRQ_PRIORITY);
     interrupt_global_enable(0);
+    /* Networking can block on startup. Keep IMU/control ticks running. */
+    wifispi_telemetry_init();
 
     while (1)
     {

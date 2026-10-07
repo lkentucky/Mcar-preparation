@@ -25,6 +25,8 @@ volatile float imu_roll_deg, imu_pitch_deg, imu_yaw_deg, imu_calibration_percent
 volatile float imu_accel_g[3], imu_gyro_dps[3];
 volatile int imu_wifi_status, imu_wifi_last_error;
 volatile uint32_t imu_wifi_tx_packets, imu_wifi_init_attempts;
+volatile uint32_t wifi_telemetry_channel_count, wifi_telemetry_period_ms;
+volatile uint32_t wifi_telemetry_stream_enabled, wifi_telemetry_commands, wifi_telemetry_command_errors;
 static key_state_enum events[KEY_NUMBER];
 static motor_speed_debug_snapshot_t snapshot;
 static unsigned draw_calls, irq_disabled;
@@ -33,6 +35,7 @@ void app_control_get_position_snapshot(position_output_t *out)
 static char rows[20][31];
 volatile float navigation_mount_deg = 180.0f;
 volatile bool navigation_yaw_reversed;
+volatile float navigation_scale_x = 1.0f, navigation_scale_y = 1.0f;
 static unsigned navigation_resets;
 static navigation_snapshot_t nav_snapshot;
 void app_navigation_get_snapshot(navigation_snapshot_t *out)
@@ -78,8 +81,13 @@ int main(void)
         snapshot.cumulative_raw_counts[wheel] = wheel % 2 ? INT32_MIN : INT32_MAX;
         snapshot.final_pwm[wheel] = wheel % 2 ? LIMIT_PWM_MIN : LIMIT_PWM_MAX;
     }
+    motor_position_enabled = true;
     Menu_Init();
     Menu_Show();
+    assert(strstr(rows[0], "Position") != NULL && strstr(rows[1], "On") != NULL);
+    assert(!motor_run_enabled && !motor_pwm_test_enabled);
+    press(KEY_3); /* Root/Position */
+    press(KEY_4); /* PWM_Test */
     press(KEY_4); /* Drive */
     press(KEY_4); /* Encoder */
     press(KEY_1);
@@ -107,6 +115,14 @@ int main(void)
     for (unsigned i = 0; i < 6; ++i) press(KEY_4);
     press(KEY_1); press(KEY_2);
     assert(navigation_resets == 1);
+    press(KEY_3); press(KEY_4); /* deselect Zero, select ScaleX */
+    assert(strstr(rows[7], "ScaleX") != NULL);
+    press(KEY_1); press(KEY_4);
+    assert(navigation_scale_x == 0.1f); /* positive calibration bound */
+    press(KEY_3); press(KEY_4); /* ScaleY */
+    assert(strstr(rows[7], "ScaleY") != NULL);
+    press(KEY_1); press(KEY_2);
+    assert(navigation_scale_y == 2.0f && navigation_scale_x == 0.1f);
     press(KEY_3); press(KEY_3); /* deselect then Root */
     /* Draw each root folder and its full-width values. */
     for (unsigned i = 0; i < 9; ++i)

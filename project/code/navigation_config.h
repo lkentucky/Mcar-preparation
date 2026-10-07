@@ -18,4 +18,10 @@
 #define NAV_IMU_MAX_DT_S              0.020f
 #define NAV_MAX_YAW_RADPS             40.0f
 
+/* Body-axis odometry calibration: new = old * measured_distance / displayed_distance.
+ * Leave at 1 until measured; Y multiplies the legacy Motor.h lateral factor.
+ * These correct localization only, not encoder counts or wheel-speed PID units. */
+#define NAV_FORWARD_SCALE_DEFAULT    0.52f
+#define NAV_LEFT_SCALE_DEFAULT       0.61f
+
 #endif
