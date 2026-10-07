@@ -3,6 +3,7 @@
 #include "Motor.h"
 #include "PID_config.h"
 #include "app_control.h"
+#include "app_navigation.h"
 #include "imu_attitude.h"
 #include "imu_wifi_spi.h"
 #include "menu.h"
@@ -31,6 +32,12 @@ static bool g_encoder_zero;
 static uint8_t g_refresh_ticks;
 static motor_speed_debug_snapshot_t g_motor_snapshot;
 static int32 g_encoder_zero_counts[MOTOR_WHEEL_COUNT];
+static Menu_Item *g_navigation_folder;
+static bool g_navigation_zero;
+static navigation_snapshot_t g_navigation_snapshot;
+static float g_navigation_x_cm, g_navigation_y_cm;
+static Menu_Item *g_position_folder;
+static position_output_t g_position_snapshot;
 
 /* 240 pixels / 8 pixels per glyph = 30 characters. Padding clears old text. */
 static void menu_show_line(uint16 y, const char *text)
@@ -44,7 +51,11 @@ static void menu_motor_snapshot(void)
 {
     uint32 primask = interrupt_global_disable();
     motor_speed_debug_get_snapshot(&g_motor_snapshot);
+    app_navigation_get_snapshot(&g_navigation_snapshot);
+    app_control_get_position_snapshot(&g_position_snapshot);
     interrupt_global_enable(primask);
+    g_navigation_x_cm = g_navigation_snapshot.x_m * 100.0f;
+    g_navigation_y_cm = g_navigation_snapshot.y_m * 100.0f;
 }
 
 static void menu_create(void)
@@ -52,16 +63,46 @@ static void menu_create(void)
     Menu_Item *pwm_test = Create_Menu_Folder_dynamic(&g_root, "PWM_Test");
     Menu_Item *drive = Create_Menu_Folder_dynamic(&g_root, "Drive");
     Menu_Item *encoder = Create_Menu_Folder_dynamic(&g_root, "Encoder");
+    Menu_Item *navigation = Create_Menu_Folder_dynamic(&g_root, "Navigation");
     Menu_Item *imu = Create_Menu_Folder_dynamic(&g_root, "IMU");
     Menu_Item *sensor = Create_Menu_Folder_dynamic(&g_root, "Sensor");
     Menu_Item *wifi = Create_Menu_Folder_dynamic(&g_root, "WiFi");
     Menu_Item *pid = Create_Menu_Folder_dynamic(&g_root, "PID");
+    Menu_Item *position = Create_Menu_Folder_dynamic(&g_root, "Position");
     Menu_Item *pid_ul;
     Menu_Item *pid_ur;
     Menu_Item *pid_dl;
     Menu_Item *pid_dr;
 
     g_encoder_folder = encoder;
+    g_navigation_folder = navigation;
+    g_position_folder = position;
+
+    Create_Menu_File_dynamic(position, "Enable", (void *)&motor_position_enabled, bool_Box);
+    Create_Menu_File_dynamic(position, "Run", (void *)&motor_run_enabled, bool_Box);
+    Create_Menu_File_dynamic(position, "TargetX_cm", (void *)&motor_position_goal.x_cm, float_Box);
+    Create_Menu_File_dynamic(position, "TargetY_cm", (void *)&motor_position_goal.y_cm, float_Box);
+    Create_Menu_File_dynamic(position, "TargetYaw", (void *)&motor_position_goal.yaw_deg, float_Box);
+    Create_Menu_Readonly_dynamic(position, "State", &g_position_snapshot.status, int32_Box);
+    Create_Menu_File_dynamic(position, "MaxV_cmps", (void *)&motor_position_config.max_speed_cmps, float_Box);
+    Create_Menu_File_dynamic(position, "MaxOmega", (void *)&motor_position_config.max_omega_radps, float_Box);
+    Create_Menu_File_dynamic(position, "TolXY_cm", (void *)&motor_position_config.xy_tolerance_cm, float_Box);
+    Create_Menu_File_dynamic(position, "TolYaw_deg", (void *)&motor_position_config.yaw_tolerance_deg, float_Box);
+    Create_Menu_File_dynamic(position, "XY_Kp", (void *)&motor_position_config.xy_kp, float_Box);
+    Create_Menu_File_dynamic(position, "XY_Kd", (void *)&motor_position_config.xy_kd, float_Box);
+    Create_Menu_File_dynamic(position, "Yaw_Kp", (void *)&motor_position_config.yaw_kp, float_Box);
+    Create_Menu_File_dynamic(position, "Acc_cmps2", (void *)&motor_position_config.max_accel_cmps2, float_Box);
+    Create_Menu_File_dynamic(position, "Alpha", (void *)&motor_position_config.max_alpha_radps2, float_Box);
+    Create_Menu_Readonly_dynamic(position, "ErrXY_cm", &g_position_snapshot.distance_cm, float_Box);
+    Create_Menu_Readonly_dynamic(position, "ErrYaw_deg", &g_position_snapshot.yaw_error_deg, float_Box);
+
+    Create_Menu_Readonly_dynamic(navigation, "State", &g_navigation_snapshot.status, int32_Box);
+    Create_Menu_Readonly_dynamic(navigation, "X_cm", &g_navigation_x_cm, float_Box);
+    Create_Menu_Readonly_dynamic(navigation, "Y_cm", &g_navigation_y_cm, float_Box);
+    Create_Menu_Readonly_dynamic(navigation, "Yaw_deg", &g_navigation_snapshot.yaw_deg, float_Box);
+    Create_Menu_File_dynamic(navigation, "Mount_deg", (void *)&navigation_mount_deg, float_Box);
+    Create_Menu_File_dynamic(navigation, "YawFlip", (void *)&navigation_yaw_reversed, bool_Box);
+    Create_Menu_File_dynamic(navigation, "Zero", &g_navigation_zero, bool_Box);
 
     Create_Menu_File_dynamic(drive, "Run", (void *)&motor_run_enabled, bool_Box);
     Create_Menu_File_dynamic(drive, "Vx_cmps", (void *)&motor_cmd_vx_cmps, float_Box);
@@ -140,6 +181,8 @@ static void menu_draw(void)
     char line[MENU_COLUMNS + 1];
     char value[14];
     uint8_t row;
+    unsigned first_row = g_pointer->rank > MENU_VISIBLE_LINES ?
+                         (unsigned)g_pointer->rank - MENU_VISIBLE_LINES : 0u;
 
     snprintf(line, sizeof(line), "%-20s <%5.2f>", g_pointer->Father->name,
              (double)g_steps[g_step_index]);
@@ -176,9 +219,10 @@ static void menu_draw(void)
         menu_show_line(128, "");
         menu_show_line(144, "");
 
+        for (unsigned skip = 0; skip < first_row; ++skip) item = item->Next_Brother;
         for (row = 0u; row < MENU_VISIBLE_LINES; ++row)
         {
-            if (row < g_pointer->Father->sons)
+            if (row + first_row < g_pointer->Father->sons)
             {
                 menu_format_value(item, value, sizeof(value));
                 snprintf(line, sizeof(line), "%c%c%-12s %12s",
@@ -193,6 +237,27 @@ static void menu_draw(void)
                 snprintf(line, sizeof(line), "%30s", "");
             }
             menu_show_line((uint16)((row + 1u) * MENU_LINE_HEIGHT), line);
+        }
+        if (g_pointer->Father == g_navigation_folder) {
+            snprintf(line, sizeof(line), "Vcm/s X:%7.2f Y:%7.2f",
+                     (double)(g_navigation_snapshot.vx_mps * 100.0f),
+                     (double)(g_navigation_snapshot.vy_mps * 100.0f));
+            menu_show_line(128, line);
+            snprintf(line, sizeof(line), "Valid:%d Bias:%d Slip:%d Rest:%d",
+                     g_navigation_snapshot.valid, g_navigation_snapshot.bias_ready,
+                     g_navigation_snapshot.slipping, g_navigation_snapshot.stationary);
+            menu_show_line(144, line);
+        }
+        if (g_pointer->Father == g_position_folder) {
+            snprintf(line, sizeof(line), "Vx%5.1f Vy%5.1f W%5.2f",
+                     (double)g_position_snapshot.vx_cmps,
+                     (double)g_position_snapshot.vy_cmps,
+                     (double)g_position_snapshot.omega_radps);
+            menu_show_line(128, line);
+            snprintf(line, sizeof(line), "XY%6.1f,%6.1f Yaw%6.1f",
+                     (double)g_navigation_x_cm, (double)g_navigation_y_cm,
+                     (double)g_navigation_snapshot.yaw_deg);
+            menu_show_line(144, line);
         }
     }
 
@@ -230,7 +295,17 @@ static void menu_adjust(int direction)
     if (g_pointer->kind == bool_Box)
     {
         bool enabled = direction > 0;
+        uint32 primask = interrupt_global_disable();
+        if (g_pointer->data == (void *)&motor_position_enabled) {
+            /* One menu action selects position mode; Run remains a separate action. */
+            motor_run_enabled = false;
+            if (enabled) motor_pwm_test_enabled = false;
+        } else if (g_pointer->data == (void *)&motor_pwm_test_enabled) {
+            motor_run_enabled = false;
+            if (enabled) motor_position_enabled = false;
+        }
         *(bool *)g_pointer->data = enabled;
+        interrupt_global_enable(primask);
         if (g_pointer->data == &g_imu_recalibrate && enabled)
         {
             imu_attitude_request_recalibration();
@@ -244,12 +319,42 @@ static void menu_adjust(int direction)
                 g_encoder_zero_counts[wheel] = g_motor_snapshot.cumulative_raw_counts[wheel];
             g_encoder_zero = false;
         }
+        else if (g_pointer->data == &g_navigation_zero && enabled)
+        {
+            app_navigation_request_reset();
+            g_navigation_zero = false;
+        }
         return;
     }
     if (g_pointer->kind == float_Box)
     {
         float value = *(float *)g_pointer->data + delta;
-        if (g_pointer->data == (void *)&motor_cmd_vx_cmps ||
+        if (g_pointer->data == (void *)&navigation_mount_deg)
+        {
+            value = menu_clamp(value, -180.0f, 180.0f);
+        }
+        else if (g_pointer->data == (void *)&motor_position_goal.x_cm ||
+                 g_pointer->data == (void *)&motor_position_goal.y_cm)
+            value = menu_clamp(value, -10000.0f, 10000.0f);
+        else if (g_pointer->data == (void *)&motor_position_goal.yaw_deg)
+            value = menu_clamp(value, -180.0f, 180.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.xy_kp ||
+                 g_pointer->data == (void *)&motor_position_config.yaw_kp)
+            value = menu_clamp(value, 0.01f, 20.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.xy_kd)
+            value = menu_clamp(value, 0.0f, 5.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.max_speed_cmps)
+            value = menu_clamp(value, 1.0f, 100.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.max_omega_radps)
+            value = menu_clamp(value, 0.05f, 3.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.max_accel_cmps2)
+            value = menu_clamp(value, 1.0f, 300.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.max_alpha_radps2)
+            value = menu_clamp(value, 0.05f, 10.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.xy_tolerance_cm ||
+                 g_pointer->data == (void *)&motor_position_config.yaw_tolerance_deg)
+            value = menu_clamp(value, 0.5f, 20.0f);
+        else if (g_pointer->data == (void *)&motor_cmd_vx_cmps ||
             g_pointer->data == (void *)&motor_cmd_vy_cmps)
         {
             value = menu_clamp(value, -300.0f, 300.0f);

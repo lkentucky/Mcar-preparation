@@ -37,6 +37,7 @@
 #include "zf_common_debug.h"
 #include "isr.h"
 #include "app_control.h"
+#include "app_navigation.h"
 #include "Mymenu.h"
 #include "imu_attitude.h"
 
@@ -55,6 +56,7 @@ void PIT_IRQHandler(void)
     {
         pit_flag_clear(PIT_CH0);
         imu_attitude_update_5ms();
+        app_navigation_imu_tick_5ms();
     }
 
     if(pit_flag_get(PIT_CH1))

@@ -94,6 +94,47 @@ const float channels[] = {
 
 主循环中的其他调试位置也可用快捷接口 `wifi_justfloat(imu_roll_deg, imu_pitch_deg, imu_yaw_deg)`，或 `imu_wifi_send_floats(data, count)`。快捷接口会自动计算参数数量，并将整数转成浮点数；整数超过 float32 的精确表示范围时会丢失精度。不要在中断或关中断区内调用发送接口。通道顺序变化后，上位机的名称、单位和曲线绑定也需同步更新。
 
-## 构建
+## 编码器与 IMU 定位融合
+
+融合在 `navigation_fusion.c` 实现，由 `app_navigation.c` 接入现有调度：每个成功的 5 ms IMU 新帧预测速度，每 10 ms 读取一次方向修正后的四轮原始计数，修正速度并更新位置。重复 IMU 帧不会重复积分；编码器不会被二次读取或清零。PWM 测试和 Run=Off 时仍跟踪实际运动，融合输出已接到可选的位置外环，不包含路线回放。
+
+坐标为起点车头 +X、左侧 +Y、从上方看逆时针航向为正。按本车实测，左转 Yaw 增大、静止 Az=+1g、IMU 的 X 朝车尾，故默认 `Mount_deg=180`、`YawFlip=Off`。去倾斜后用安装角把水平加速度映射到车体轴，再转换到固定坐标系。四轮各用自己的每圈实际计数换算距离，DR 的 512 线不会使其位移减半。位置积分使用原始增量及 IMU 航向变化，采用圆弧积分处理同时平移和旋转；不会按速度指令推算位置。
+
+参考 [HDU 车端组合里程计](https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield) 的惯性预测、编码器修正、静止归零和打滑减权思路，以及旧 `project/code/path_follow.c` 的二维坐标变换，结合当前接口独立实现。正常编码器权重为 1，保留实际位移；速度创新与加速度差同时超限时，编码器权重短时降为 0.15，持续 8 个控制周期。此检测是启发式判断，不能识别所有打滑或消除长期漂移。参数集中在 `navigation_config.h`，需在本车重新验证。加速度预测也受安装误差、振动及 IMU 距离旋转中心的偏移影响，当前未做传感器杆臂补偿。
+
+操作：
+
+1. 确认后轮已换为标准 X 排列，四轮编码器正方向正确；静止上电，等待原有 IMU 标定结束，再静止约 0.5 s 建立水平加速度偏置。
+2. 打开 `Navigation`，`State=2`、`Valid=1`、`Bias=1` 表示可用。`X_cm/Y_cm` 是位置，`Yaw_deg` 是相对起点的连续航向；下方显示固定坐标速度、`Slip` 和 `Rest`。根菜单新增第八个文件夹后会自动滚动，PID 仍可访问。
+3. 停车后选中 `Zero` 按 KEY2，在下一个 10 ms 周期重建位置和航向起点，重新静止标定约 0.5 s；不重置 Encoder 页的 Total。修改 Mount_deg/YawFlip 同样重建定位起点。位置模式中这些操作使定位暂时不可用，位置控制随即关闭 Run、清轮速 PID 并停止 PWM；手动 Drive/PWM 模式仍由各自的 Run 控制。
+4. State：`0` 等待 IMU，`1` 静止偏置标定，`2` 正常；`-1` 输入/配置非法，`-2` IMU 失效，`-3` 编码器异常。IMU 约 50 ms 无新帧、姿态重标定或明显异常编码器脉冲会冻结位置并使 Valid=0；排除原因后停车 Zero，不能直接继续使用旧坐标。
+
+首次硬件验证：手推前进 50 cm，X 应增加约 50；向左推 50 cm，Y 应增加；绕车体中心旋转时航向变化、XY 应基本不变；最后测试圆弧运动。定点的实际距离取决于每圈计数及前后/横向距离比例。当前减速比仍为约 2.3，`LATERAL_CORRECTION_FACTOR` 沿用旧值，不能把菜单小数位数当成定位精度。
+
+主机验证：运行 `tests/run_navigation_tests.ps1`，覆盖混合编码器分辨率、前后/横移、四分之一圆弧、原地旋转、倾斜重力消除、180° 安装、航向跨圈、偏置、打滑与故障冻结；并回归实际电机调度、IMU 新帧/重标定适配、Zero 和 240×320 菜单边界。
+
+## 定点位置外环
+
+`position_control.c` 是独立控制器。`app_control_motor_tick_10ms()` 在采集编码器并更新融合后，取得同一时刻的 X/Y/Yaw 和固定坐标速度，每 10 ms 计算一次位置指令，再调用原有 `Kinematics_Inverse()` 和 `motor_control()`。完整链路为目标点 → 融合位置反馈 → 位置外环 → 车体 Vx/Vy/Omega → 麦轮四轮目标 → 轮速 PID → PWM。PWM 测试模式不经过位置环或轮速 PID；普通 Drive 保持手动速度控制。
+
+目标 XY 的单位是 cm，使用 Navigation/Zero 的固定坐标，不随当前车头旋转；目标 Yaw 单位是度，以 Zero 时车头为 0，逆时针为正。平移采用 `世界速度 = XY_Kp × 位置误差 − XY_Kd × 世界实测速度`，按向量长度限速；航向采用最短角误差的 P 控制并限转速。用当前融合航向 θ 转成车体指令：`Vx = cosθ × V世界X + sinθ × V世界Y`，`Vy = −sinθ × V世界X + cosθ × V世界Y`。例如车头已经左转 90°、目标仍在起点正前方时，控制器会发出车体右移指令。同时设定 XY 和 Yaw 可边平移边旋转。
+
+默认参数在 `position_control.h`：XY_Kp=2/s，XY_Kd=0.2，Yaw_Kp=2/s；最大平移速度 20 cm/s、最大转速 1 rad/s，世界平移加速度上限 40 cm/s²、角加速度上限 2 rad/s²。平移容差 2 cm、航向容差 3°；进入容差后将指令缓降到零，实测平移速度 ≤3 cm/s 且航向变化速度 ≤0.1 rad/s，连续保持 0.2 s 才判定到达。无位置积分；容差内完成后关闭 Run，不持续锁住该点。减速比误差、IMU 漂移、打滑仍会影响真实落点，主机仿真不能替代实车调参。
+
+菜单操作：
+
+1. 静止上电，等 Navigation 的 State=2、Valid=1、Bias=1。需要重设起点时先停车，再 Zero 并等待定位重新就绪。
+2. 在根菜单最后一项 `Position` 中将 Enable 设 On；会自动令 PWM_Test/OpenLoop=Off，并令共享 Run=Off。初始上电仍是 PWM 测试，位置模式默认关闭。文件夹和参数超出七行后自动滚动。
+3. 设置 TargetX_cm / TargetY_cm / TargetYaw。例如 `(50, 0, 0)` 表示向起点前方走到 50 cm，`(0, 50, 0)` 表示向左走到 50 cm，`(50, 0, 90)` 表示走向该点并左转至 90°。目标 X/Y 可为负，Yaw 在 −180° 至 +180°。
+4. 首次可设 MaxV_cmps=10，其余参数先保留默认值，最后将 Position/Run 设 On。Drive 显示的是此时自动生成的 Vx/Vy/Omega，位置模式中不应在 Drive 修改速度。Position 下方显示指令和当前 XY/Yaw，ErrXY_cm / ErrYaw_deg 显示误差。
+5. State=0 待启动，1 移动，2 到达范围内等待停止，3 已到达；−1 定位不可用，−2 参数非法或 PWM/位置模式冲突。到达或故障会自动关 Run、清轮速 PID、PWM 归零；新目标需要再次 Run。定位恢复不会自动续跑。切换 Enable/OpenLoop 也取消 Run；打开 PWM_Test/OpenLoop 会退出位置模式。
+
+所有目标以最近一次 Zero 的起点为参照，完成一个目标后设置新目标不会重置坐标。Run=On 时修改目标允许平滑转向新目标，并重新计算到达等待时间；Run=Off 时修改目标不会启动电机。
+
+代码接口是 `app_control.h` 的 `motor_position_enabled`、`motor_position_goal` 和 `motor_position_config`。切换模式先关闭 Run，再置 `motor_pwm_test_enabled=false`、`motor_position_enabled=true`，等待至少一个 10 ms 控制周期完成切换后才能打开 Run；菜单负责这一操作。主循环读取 `app_control_get_position_snapshot()` 时要在短暂关中断区内复制快照，与导航接口一致。
+
+主机测试额外覆盖世界/车体坐标变换、跨 ±180° 转向、限速与加速度限制、前后左右和同时转向的带滞后模型收敛、低速持续到达判定、真实融合→解算→轮速 PID→PWM 接线、定位失效和运行中 Zero 停车、模式互斥、手动 Drive/PWM 回归，以及 Position 的负数编辑和全部 17 项菜单滚动。
+
+## 构建固件
 
 用 Keil MDK 打开 `project/mdk/rt1064.uvprojx`，构建目标 `nor_sdram_zf_dtcm`。已使用 Arm Compiler 6.19 验证：0 errors，0 warnings。

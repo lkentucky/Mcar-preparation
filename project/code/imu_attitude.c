@@ -138,6 +138,31 @@ static uint8 g_have_sample;
 static uint8 g_calibrated;
 static volatile uint8 g_update_enabled;
 static volatile uint8 g_recalibration_requested;
+static imu_navigation_sample_t g_navigation_sample;
+static uint32 g_navigation_generation;
+
+static void imu_publish_navigation(const float gyro[3], const float accel[3],
+                                   const float euler[3], float dt)
+{
+    g_navigation_sample.roll_deg = euler[0];
+    g_navigation_sample.pitch_deg = euler[1];
+    g_navigation_sample.yaw_deg = euler[2];
+    g_navigation_sample.dt_s = dt;
+    for (unsigned i = 0; i < 3; ++i) {
+        g_navigation_sample.accel_g[i] = accel[i];
+        g_navigation_sample.gyro_dps[i] = gyro[i] - g_calibration.bias_dps[i];
+    }
+    g_navigation_sample.generation = g_navigation_generation;
+    ++g_navigation_sample.sequence;
+}
+
+bool imu_attitude_get_navigation_sample(imu_navigation_sample_t *sample)
+{
+    if (sample == NULL || imu_attitude_status != IMU_ATTITUDE_RUNNING ||
+        g_navigation_sample.sequence == 0u) return false;
+    *sample = g_navigation_sample;
+    return true;
+}
 
 static uint32 imu_ticks(void)
 {
@@ -221,6 +246,8 @@ static uint8 imu_hardware_init(void)
 
 static void imu_reset_pipeline(void)
 {
+    ++g_navigation_generation;
+    memset(&g_navigation_sample, 0, sizeof(g_navigation_sample));
     memset(&g_attitude, 0, sizeof(g_attitude));
     calibration_reset(&g_calibration);
     g_have_sample = 0u;
@@ -321,6 +348,7 @@ void imu_attitude_update_5ms(void)
             imu_roll_deg = euler[0];
             imu_pitch_deg = euler[1];
             imu_yaw_deg = euler[2];
+            imu_publish_navigation(gyro_dps, accel_g, euler, dt);
             imu_attitude_status = IMU_ATTITUDE_RUNNING;
         }
         imu_calibration_percent =
@@ -343,6 +371,7 @@ void imu_attitude_update_5ms(void)
     imu_pitch_deg = euler[1];
     imu_yaw_deg = euler[2];
     imu_accel_norm_g = g_attitude.accel_norm;
+    imu_publish_navigation(gyro_dps, accel_g, euler, dt);
     imu_attitude_status = IMU_ATTITUDE_RUNNING;
 }
 

@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MENU_MAX_SIZE 64         //菜单项最大数量
+#define MENU_MAX_SIZE 96         //菜单项最大数量（含位置环参数）
 
 //菜单项类型
 typedef enum Menu_Kind

@@ -2,6 +2,7 @@
 #include "Mymenu.h"
 #include "Motor.h"
 #include "app_control.h"
+#include "app_navigation.h"
 #include "imu_attitude.h"
 #include "imu_wifi_spi.h"
 #include "zf_device_ips200.h"
@@ -14,6 +15,10 @@
 volatile bool motor_run_enabled, motor_pwm_test_enabled;
 volatile int16_t motor_test_pwm[4];
 volatile float motor_cmd_vx_cmps, motor_cmd_vy_cmps, motor_cmd_omega_radps;
+volatile bool motor_position_enabled;
+volatile position_goal_t motor_position_goal;
+volatile position_config_t motor_position_config = POSITION_CONFIG_DEFAULT;
+static position_output_t position_snapshot;
 int16 up_L_all, up_R_all, down_L_all, down_R_all;
 volatile int32 imu_attitude_status;
 volatile float imu_roll_deg, imu_pitch_deg, imu_yaw_deg, imu_calibration_percent;
@@ -23,7 +28,16 @@ volatile uint32_t imu_wifi_tx_packets, imu_wifi_init_attempts;
 static key_state_enum events[KEY_NUMBER];
 static motor_speed_debug_snapshot_t snapshot;
 static unsigned draw_calls, irq_disabled;
+void app_control_get_position_snapshot(position_output_t *out)
+{ assert(irq_disabled); *out = position_snapshot; }
 static char rows[20][31];
+volatile float navigation_mount_deg = 180.0f;
+volatile bool navigation_yaw_reversed;
+static unsigned navigation_resets;
+static navigation_snapshot_t nav_snapshot;
+void app_navigation_get_snapshot(navigation_snapshot_t *out)
+{ assert(irq_disabled); *out = nav_snapshot; }
+void app_navigation_request_reset(void) { ++navigation_resets; }
 
 void ips200_set_dir(ips200_dir_enum dir) { assert(dir == IPS200_PORTAIT); }
 void ips200_set_font(ips200_font_size_enum font) { assert(font == IPS200_8X16_FONT); }
@@ -79,13 +93,57 @@ int main(void)
     Menu_Tick_20ms(); Menu_Show();
     assert(draw_calls > previous);
     press(KEY_3); /* Root */
+    press(KEY_4); /* Navigation */
+    nav_snapshot.status = NAV_RUNNING;
+    nav_snapshot.valid = nav_snapshot.bias_ready = true;
+    nav_snapshot.x_m = -1.23f; nav_snapshot.y_m = 4.56f;
+    nav_snapshot.vx_mps = 0.12f; nav_snapshot.vy_mps = -0.34f;
+    press(KEY_1);
+    assert(strstr(rows[0], "Navigation") != NULL);
+    assert(strstr(rows[2], "-123.000") != NULL);
+    assert(strstr(rows[3], "456.000") != NULL);
+    assert(strstr(rows[8], "12.00") != NULL && strstr(rows[8], "-34.00") != NULL);
+    assert(strstr(rows[9], "Valid:1") != NULL);
+    for (unsigned i = 0; i < 6; ++i) press(KEY_4);
+    press(KEY_1); press(KEY_2);
+    assert(navigation_resets == 1);
+    press(KEY_3); press(KEY_3); /* deselect then Root */
     /* Draw each root folder and its full-width values. */
-    for (unsigned i = 0; i < 7; ++i)
+    for (unsigned i = 0; i < 9; ++i)
     {
+        if (i == 4) assert(strstr(rows[7], "PID") != NULL); /* eighth folder scrolls into view */
         press(KEY_1);
         press(KEY_3);
         press(KEY_4);
     }
+    /* Root pointer is back at Navigation; Position is five folders ahead. */
+    for (unsigned i = 0; i < 5; ++i) press(KEY_4);
+    assert(strstr(rows[7], "Position") != NULL);
+    press(KEY_1);
+    assert(strstr(rows[0], "Position") != NULL);
+    motor_pwm_test_enabled = motor_run_enabled = true;
+    press(KEY_1); press(KEY_2); /* Enable position */
+    assert(motor_position_enabled && !motor_pwm_test_enabled && !motor_run_enabled);
+    press(KEY_3);
+    press(KEY_4); press(KEY_4); /* TargetX */
+    press(KEY_1); press(KEY_4);
+    assert(motor_position_goal.x_cm == -1.0f);
+    press(KEY_3); press(KEY_4); /* TargetY */
+    press(KEY_1); press(KEY_4);
+    assert(motor_position_goal.y_cm == -1.0f);
+    press(KEY_3); press(KEY_4); /* TargetYaw */
+    press(KEY_1); press(KEY_4);
+    assert(motor_position_goal.yaw_deg == -1.0f);
+    press(KEY_3);
+    for (unsigned i = 0; i < 12; ++i) press(KEY_4); /* through every parameter, to ErrYaw */
+    assert(strstr(rows[7], "ErrYaw_deg") != NULL);
+    press(KEY_1); press(KEY_2); /* Read-only values don't select or modify */
+    assert(position_snapshot.yaw_error_deg == 0.0f);
+    /* Return from Position to PWM_Test, selecting direct PWM cancels position/Run. */
+    press(KEY_3); press(KEY_4); press(KEY_1);
+    motor_run_enabled = true;
+    press(KEY_1); press(KEY_2);
+    assert(motor_pwm_test_enabled && !motor_position_enabled && !motor_run_enabled);
     puts("menu display tests passed: bounds, full signed totals, 100ms refresh, root folders");
     return 0;
 }
