@@ -1,6 +1,5 @@
 /* 主机端协议测试：实际 WiFi 驱动由 Keil 构建验证，此处仅替代传输层。 */
-#include "imu_wifi_spi.h"
-#include "vofa_packet.h"
+#include "wifispi.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -11,7 +10,8 @@ static uint8_t sent_frame[VOFA_MAX_FRAME_BYTES];
 static size_t sent_count;
 static size_t sent_bytes;
 
-int imu_wifi_send_floats(const float *channels, size_t count)
+/* GNU host linker wraps only the transport. Packing remains the real code. */
+int __wrap_wifispi_send_floats(const float *channels, size_t count)
 {
     sent_count = count;
     sent_bytes = vofa_pack(sent_frame, sizeof(sent_frame), channels, count);

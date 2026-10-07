@@ -420,6 +420,41 @@
               <FilePath>..\code\app_control.h</FilePath>
             </File>
             <File>
+              <FileName>app_navigation.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\app_navigation.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_navigation.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\app_navigation.h</FilePath>
+            </File>
+            <File>
+              <FileName>navigation_fusion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\navigation_fusion.c</FilePath>
+            </File>
+            <File>
+              <FileName>navigation_fusion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\navigation_fusion.h</FilePath>
+            </File>
+            <File>
+              <FileName>navigation_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\navigation_config.h</FilePath>
+            </File>
+            <File>
+              <FileName>position_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\position_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>position_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\position_control.h</FilePath>
+            </File>
+            <File>
               <FileName>Motor.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\Motor.c</FilePath>

@@ -23,6 +23,15 @@ extern volatile float imu_accel_g[3]; /* 原始 X/Y/Z 加速度，g */
 extern volatile float imu_gyro_dps[3]; /* 未扣静止零偏的角速度，deg/s */
 extern const uint8 imu_attitude_method;
 
+/* 同一成功采样帧的姿态、加速度和扣零偏角速度，供定位融合使用。
+ * 主循环调用 getter 时须短暂关中断；PIT 内可直接读取。 */
+typedef struct {
+    uint32 sequence, generation;
+    float roll_deg, pitch_deg, yaw_deg, dt_s;
+    float accel_g[3], gyro_dps[3];
+} imu_navigation_sample_t;
+bool imu_get_navigation_sample(imu_navigation_sample_t *out);
+
 void imu_init(void); /* 启动阶段，先于 WiFi/定时采样启用 */
 void imu_update_5ms(void); /* 5ms 周期入口 */
 void imu_request_recalibration(void); /* 只置请求标志 */

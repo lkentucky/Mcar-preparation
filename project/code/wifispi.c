@@ -4,11 +4,13 @@
  */
 #include "wifispi.h"
 #include "imu.h"
+#if IMU_WIFI_ENABLED
 #include "zf_common_clock.h"
 #include "zf_common_interrupt.h"
 #include "zf_device_wifi_spi.h"
 #include "zf_driver_delay.h"
 #include "fsl_common.h"
+#endif
 #include <string.h>
 
 volatile int imu_wifi_status;

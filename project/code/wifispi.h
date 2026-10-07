@@ -31,7 +31,7 @@ void wifispi_telemetry_service(void); /* 主循环；channels[] 决定周期上�
 
 /* 至少一个通道；表达式只求值一次，整数自动转 float。不得在中断中发送。 */
 #define wifi_justfloat(...) \
-    imu_wifi_send_floats((const float[]){__VA_ARGS__}, \
+    wifispi_send_floats((const float[]){__VA_ARGS__}, \
     sizeof((const float[]){__VA_ARGS__})/sizeof(float))
 #ifdef __cplusplus
 }

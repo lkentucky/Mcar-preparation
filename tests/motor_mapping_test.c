@@ -7,6 +7,8 @@
 #include "Motor.h"
 #include "PID_config.h"
 #include "app_control.h"
+#include "app_navigation.h"
+#include "imu.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -20,6 +22,66 @@ static unsigned clear_calls[16];
 static unsigned motor_init_calls;
 static unsigned pwm_init_calls;
 static unsigned encoder_init_calls;
+volatile int32 imu_attitude_status;
+static imu_navigation_sample_t fake_imu;
+
+bool imu_get_navigation_sample(imu_navigation_sample_t *out)
+{
+    if (imu_attitude_status != IMU_ATTITUDE_RUNNING) return false;
+    *out = fake_imu;
+    return true;
+}
+
+static void imu_tick(void)
+{
+    ++fake_imu.sequence;
+    app_navigation_imu_tick_5ms();
+}
+
+static void check_navigation_integration(void)
+{
+    navigation_snapshot_t out;
+    app_navigation_init();
+    assert(navigation_mount_deg == 180.0f && !navigation_yaw_reversed);
+    memset(&fake_imu, 0, sizeof(fake_imu));
+    fake_imu.accel_g[2] = 1.0f;
+    fake_imu.dt_s = 0.005f;
+    fake_imu.generation = 1;
+    imu_attitude_status = IMU_ATTITUDE_RUNNING;
+    motor_pwm_test_enabled = true;
+    motor_run_enabled = false;
+    memset(counts, 0, sizeof(counts));
+    /* Fusion is updated even while PWM mode is selected and Run is off. */
+    for (unsigned i = 0; i < 55; ++i) {
+        imu_tick(); imu_tick(); app_control_motor_tick_10ms();
+    }
+    app_navigation_get_snapshot(&out);
+    assert(out.valid && out.bias_ready);
+    for (unsigned i = 0; i < 100; ++i) {
+        counts[ENCODER_1] = 2; counts[ENCODER_2] = 1;
+        counts[ENCODER_3] = -2; counts[ENCODER_4] = 2;
+        imu_tick(); imu_tick(); app_control_motor_tick_10ms();
+    }
+    app_navigation_get_snapshot(&out);
+    float expected = 200.0f * 3.1415926f * WHEEL_DIAMETER / ENCODER_RESOLUTION_UL;
+    assert(out.valid && fabsf(out.x_m - expected) < 1e-5f && fabsf(out.y_m) < 1e-5f);
+    for (unsigned i = 0; i < 256; ++i) assert(duties[i] == 0);
+    memset(counts, 0, sizeof(counts));
+    /* Reading one published IMU frame repeatedly must not extend freshness. */
+    for (unsigned i = 0; i < 7; ++i) {
+        app_navigation_imu_tick_5ms(); app_control_motor_tick_10ms();
+    }
+    app_navigation_get_snapshot(&out);
+    assert(!out.valid && out.status == NAV_IMU_FAULT);
+    app_navigation_request_reset(); app_control_motor_tick_10ms();
+    for (unsigned i = 0; i < 55; ++i) { imu_tick(); imu_tick(); app_control_motor_tick_10ms(); }
+    app_navigation_get_snapshot(&out);
+    assert(out.valid && out.x_m == 0.0f);
+    ++fake_imu.generation; imu_tick();
+    app_navigation_get_snapshot(&out);
+    assert(!out.valid && out.status == NAV_IMU_FAULT);
+    puts("navigation integration passed: actual encoder adapter, stopped/PWM sampling, stale frame, Zero, AHRS recalibration");
+}
 
 /* Independent fixture from the updated wiring, in UL/UR/DL/DR order. */
 static const gpio_pin_enum expected_dir[] = {D13, D12, D0, D1};
@@ -301,6 +363,119 @@ static void check_mixed_encoder_resolution(void)
     puts("mixed encoder tests passed: 1024/512 lines, 2.3 ratio, 11cm wheels, equal-speed PID feedback");
 }
 
+static void position_tick(void)
+{
+    imu_tick(); imu_tick(); app_control_motor_tick_10ms();
+}
+
+static void assert_position_stopped(void)
+{
+    assert(!motor_run_enabled);
+    assert(motor_cmd_vx_cmps == 0.0f && motor_cmd_vy_cmps == 0.0f && motor_cmd_omega_radps == 0.0f);
+    for (unsigned i = 0; i < 4; ++i) assert(duties[expected_pwm[i]] == 0);
+    assert(ULpid.fPre_Out == 0 && DRpid.fPre_Out == 0);
+}
+
+static void check_position_integration(void)
+{
+    position_output_t out;
+    navigation_snapshot_t pose;
+    memset(counts, 0, sizeof(counts));
+    motor_position_enabled = true;
+    motor_pwm_test_enabled = false;
+    motor_position_goal = (position_goal_t){50.0f, 0.0f, 0.0f};
+    motor_run_enabled = true;
+    position_tick(); /* Changing modes must not start moving. */
+    assert_position_stopped();
+    motor_run_enabled = true;
+    position_tick(); /* Previous AHRS generation fault is still latched. */
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_NO_POSE);
+    assert_position_stopped();
+    app_navigation_request_reset(); position_tick();
+    for (unsigned i = 0; i < 55; ++i) position_tick();
+    app_navigation_get_snapshot(&pose);
+    assert(pose.valid);
+    assert_position_stopped(); /* Valid pose recovery doesn't restart Run. */
+    motor_run_enabled = true;
+    for (unsigned i = 0; i < 60; ++i) position_tick();
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_MOVING && motor_cmd_vx_cmps > 0.0f);
+    for (unsigned i = 0; i < 4; ++i) {
+        assert(speed_encoder[i] > 0);
+        assert(duties[expected_pwm[i]] > 0);
+    }
+    /* Replay equal physical motion toward X=50cm, DR at half count rate. */
+    for (unsigned i = 0; i < 166; ++i) {
+        counts[ENCODER_1] = 20; counts[ENCODER_2] = 10;
+        counts[ENCODER_3] = -20; counts[ENCODER_4] = 20;
+        position_tick();
+    }
+    app_navigation_get_snapshot(&pose);
+    assert(fabsf(pose.x_m * 100.0f - 50.0f) < 2.0f);
+    assert(motor_run_enabled); /* In tolerance but measured speed is not settled. */
+    memset(counts, 0, sizeof(counts));
+    for (unsigned i = 0; i < 100; ++i) position_tick();
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_REACHED);
+    assert_position_stopped();
+    motor_position_goal = (position_goal_t){0, 0, 0};
+    position_tick();
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_IDLE); /* New target must not display old arrival. */
+    assert_position_stopped(); /* Editing a target doesn't auto-start. */
+    motor_run_enabled = true;
+    for (unsigned i = 0; i < 40; ++i) position_tick();
+    assert(motor_run_enabled && motor_cmd_vx_cmps < 0.0f);
+    for (unsigned i = 0; i < 7; ++i) app_control_motor_tick_10ms();
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_NO_POSE);
+    assert_position_stopped();
+    app_navigation_request_reset(); position_tick();
+    for (unsigned i = 0; i < 55; ++i) position_tick();
+    assert_position_stopped();
+    motor_position_goal.x_cm = 50;
+    motor_run_enabled = true;
+    for (unsigned i = 0; i < 40; ++i) position_tick();
+    motor_position_goal.yaw_deg = 90;
+    fake_imu.gyro_dps[2] = 300.0f;
+    for (unsigned i = 0; i < 30; ++i) {
+        fake_imu.yaw_deg += 3.0f;
+        position_tick();
+    }
+    fake_imu.gyro_dps[2] = 0;
+    for (unsigned i = 0; i < 60; ++i) position_tick();
+    assert(motor_run_enabled && fabsf(motor_cmd_vx_cmps) < 0.001f);
+    assert(motor_cmd_vy_cmps < 0 && fabsf(motor_cmd_omega_radps) < 0.001f);
+    /* The same world +X point is now a right-strafe body command at yaw 90. */
+    assert(speed_encoder[0] > 0 && speed_encoder[1] < 0);
+    assert(speed_encoder[2] < 0 && speed_encoder[3] > 0);
+    motor_run_enabled = false; position_tick();
+    assert_position_stopped();
+    motor_run_enabled = true; position_tick();
+    app_navigation_request_reset(); position_tick();
+    assert_position_stopped(); /* Zero while running cancels the move immediately. */
+    for (unsigned i = 0; i < 55; ++i) position_tick();
+    motor_position_config.max_speed_cmps = NAN;
+    motor_run_enabled = true; position_tick();
+    app_control_get_position_snapshot(&out);
+    assert(out.status == POSITION_BAD_CONFIG);
+    assert_position_stopped();
+    motor_position_config = (position_config_t)POSITION_CONFIG_DEFAULT;
+    motor_position_enabled = false; position_tick();
+    motor_cmd_vx_cmps = 20; motor_run_enabled = true; position_tick();
+    assert(motor_run_enabled && speed_encoder[0] > 0); /* Manual Drive still works. */
+    motor_position_enabled = true; motor_pwm_test_enabled = true;
+    position_tick(); motor_run_enabled = true; position_tick();
+    assert_position_stopped(); /* Conflicting modes can't actuate PWM. */
+    motor_position_enabled = false; position_tick();
+    motor_test_pwm[0] = 100; motor_test_pwm[1] = motor_test_pwm[2] = motor_test_pwm[3] = 0;
+    motor_run_enabled = true; position_tick();
+    assert(duties[expected_pwm[0]] == 100 && duties[expected_pwm[1]] == 0);
+    motor_run_enabled = false; position_tick();
+    puts("position integration passed: fusion to kinematics/PID/PWM, arrival, stale IMU, Zero, mode isolation, manual Drive");
+}
+
 int main(void)
 {
     motor_speed_debug_snapshot_t snapshot;
@@ -334,6 +509,8 @@ int main(void)
     }
     check_pwm_test_mode();
     check_mixed_encoder_resolution();
+    check_navigation_integration();
+    check_position_integration();
     puts("motor tests passed: mapping, PID routing, direct PWM, feedback independence, stop, mode switching");
     return 0;
 }

@@ -39,6 +39,7 @@
 #include "app_control.h"
 #include "Mymenu.h"
 #include "imu.h"
+#include "app_navigation.h"
 
 void CSI_IRQHandler(void)
 {
@@ -50,6 +51,7 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH0)) {
         pit_flag_clear(PIT_CH0);
         imu_update_5ms();
+        app_navigation_imu_tick_5ms();
     }
     if(pit_flag_get(PIT_CH1)) {
         pit_flag_clear(PIT_CH1);

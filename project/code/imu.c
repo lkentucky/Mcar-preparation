@@ -24,6 +24,32 @@ static ImuCalibration g_calibration;
 static uint32 g_last_sample_ticks, g_last_success_ticks;
 static uint8 g_have_sample, g_calibrated;
 static volatile uint8 g_update_enabled, g_recalibration_requested;
+static imu_navigation_sample_t g_navigation_sample;
+static uint32 g_navigation_generation;
+
+bool imu_get_navigation_sample(imu_navigation_sample_t *out)
+{
+    if (out==NULL || imu_attitude_status!=IMU_ATTITUDE_RUNNING ||
+        g_navigation_sample.sequence==0u) return false;
+    *out=g_navigation_sample;
+    return true;
+}
+
+static void imu_publish_navigation(const float gyro_dps[3],const float accel_g[3],float dt)
+{
+    unsigned i;
+    g_navigation_sample.roll_deg=imu_roll_deg;
+    g_navigation_sample.pitch_deg=imu_pitch_deg;
+    g_navigation_sample.yaw_deg=imu_yaw_deg;
+    g_navigation_sample.dt_s=dt;
+    g_navigation_sample.generation=g_navigation_generation;
+    for(i=0u;i<3u;++i) {
+        g_navigation_sample.accel_g[i]=accel_g[i];
+        g_navigation_sample.gyro_dps[i]=gyro_dps[i]-g_calibration.bias_dps[i];
+    }
+    ++g_navigation_sample.sequence;
+    if(g_navigation_sample.sequence==0u) ++g_navigation_sample.sequence;
+}
 
 /* uint32 无符号做差处理单次计数回绕；保留原 DWT 时间基准。 */
 static uint32 imu_ticks(void) { return DWT->CYCCNT; }
@@ -76,6 +102,8 @@ static uint8 imu_hardware_init(void)
 }
 static void imu_reset_pipeline(void)
 {
+    ++g_navigation_generation;
+    memset(&g_navigation_sample,0,sizeof(g_navigation_sample));
     memset(&g_attitude,0,sizeof(g_attitude));
     calibration_reset(&g_calibration);
     g_have_sample=0u; g_calibrated=0u;
@@ -130,6 +158,7 @@ void imu_update_5ms(void)
             ahrs6_euler(&g_attitude,euler);
             imu_roll_deg=euler[0]; imu_pitch_deg=euler[1]; imu_yaw_deg=euler[2];
             imu_attitude_status=IMU_ATTITUDE_RUNNING;
+            imu_publish_navigation(gyro_dps,accel_g,dt);
         }
         imu_calibration_percent=100.0f*(float)g_calibration.count/(float)CALIBRATION_SAMPLES;
         return;
@@ -143,6 +172,7 @@ void imu_update_5ms(void)
     imu_roll_deg=euler[0]; imu_pitch_deg=euler[1]; imu_yaw_deg=euler[2];
     imu_accel_norm_g=g_attitude.accel_norm;
     imu_attitude_status=IMU_ATTITUDE_RUNNING;
+    imu_publish_navigation(gyro_dps,accel_g,dt);
 }
 void imu_request_recalibration(void) { g_recalibration_requested=1u; }
 /* 主循环服务；只在短临界区更新状态，硬件初始化在开中断时执行。 */
