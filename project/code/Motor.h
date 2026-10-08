@@ -3,17 +3,17 @@
 
 #include "zf_common_typedef.h"
 
-#define MOTOR1_DIR              (D13)                  //上左
-#define MOTOR1_PWM              (PWM1_MODULE1_CHB_D15)
+#define MOTOR1_DIR              (C10)                  //上左
+#define MOTOR1_PWM              (PWM2_MODULE2_CHB_C11)
 
-#define MOTOR2_DIR              (D12)                          //上右
-#define MOTOR2_PWM              (PWM1_MODULE1_CHA_D14)
+#define MOTOR2_DIR              (D2)                          //上右     
+#define MOTOR2_PWM              (PWM2_MODULE3_CHB_D3)            
 
-#define MOTOR3_DIR              (D0)                          //下左
-#define MOTOR3_PWM              (PWM2_MODULE3_CHA_D2)
+#define MOTOR3_DIR              (C7)                          //下左
+#define MOTOR3_PWM              (PWM2_MODULE0_CHA_C6)
 
-#define MOTOR4_DIR              (D1)                           //下右
-#define MOTOR4_PWM              (PWM2_MODULE3_CHB_D3)
+#define MOTOR4_DIR              (C9)                           //下右
+#define MOTOR4_PWM              (PWM2_MODULE1_CHA_C8)
 
 /* Positive wheel speed uses these DIR levels. Keep wheel polarity explicit. */
 #define MOTOR1_FORWARD_LEVEL         (GPIO_LOW)
@@ -32,11 +32,11 @@
 //上右
 #define ENCODER_3                   (QTIMER2_ENCODER1)
 #define ENCODER_3_A                 (QTIMER2_ENCODER1_CH1_C3)
-#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C25)
+#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C4)
 //上左
-#define ENCODER_4                   (QTIMER3_ENCODER2)
-#define ENCODER_4_A                 (QTIMER3_ENCODER2_CH1_B18)
-#define ENCODER_4_B                 (QTIMER3_ENCODER2_CH2_B19)
+#define ENCODER_4                   (QTIMER2_ENCODER2)
+#define ENCODER_4_A                 (QTIMER2_ENCODER2_CH1_C5)
+#define ENCODER_4_B                 (QTIMER2_ENCODER2_CH2_C25)
 
 /* Convert physical counts to positive forward wheel feedback. */
 #define ENCODER_1_FORWARD_SIGN       (1)

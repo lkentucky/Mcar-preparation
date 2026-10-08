@@ -3,3 +3,7 @@ project/mdk/Objects/
 project/mdk/Listings/
 project/mdk/*.log
 project/mdk/rt1064.uvguix.csz
+__pycache__/
+tools/wifi_spi_udp_gui/build/
+tools/wifi_spi_udp_gui/dist/
+tools/wifi_spi_udp_gui/*.spec
