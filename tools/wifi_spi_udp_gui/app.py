@@ -22,6 +22,7 @@ import dearpygui.dearpygui as dpg
 
 from attitude_3d import draw_aircraft_attitude
 from packet_parser import FieldRule, TYPE_FORMATS, parse_packet
+from slider_workspace import SliderWorkspace
 from udp_receiver import UdpReceiver
 from mcar_telemetry import PRESETS, Subscription, control_reply, parse_names, validate_frame
 
@@ -39,7 +40,7 @@ def get_ui_scale() -> float:
         return 1.0
 
 
-class WifiSpiMonitor:
+class WifiSpiMonitor(SliderWorkspace):
     """组合 UDP、解析、记录与 DearPyGui 控件的上位机主类。"""
 
     REFRESH_INTERVAL = 1 / 30  # GUI 每秒最多更新 30 次，避免高帧率报文拖慢界面
@@ -50,6 +51,7 @@ class WifiSpiMonitor:
         self.ui_scale = ui_scale
         self.receiver = UdpReceiver()
         self.rule_rows: list[int] = []
+        self.initialize_workspace("MCAR", __file__)
         self.latest_values: dict[str, Any] = {}
         self.value_tags: dict[str, int] = {}
         self.plot_checks: dict[str, int] = {}
@@ -258,6 +260,10 @@ class WifiSpiMonitor:
 
     def handle_mcar_reply(self, kind: str, value: str) -> None:
         """ASCII 应答只进入日志/配置，不进入数据、曲线或 CSV。"""
+        if kind == "SLIDER":
+            self.handle_slider_reply(value)
+            self.log(f"设备已确认调参：{value}", "rx")
+            return  # 调参确认独立于遥测订阅状态机，不改变解析字段。
         if self.subscription.pending and kind != "ERR" and (
                 f"{kind} {value}" != self.subscription.commands[self.subscription.index]):
             return  # 延迟的 GET?/重试应答不能重写切换中的映射。
@@ -564,6 +570,8 @@ class WifiSpiMonitor:
                                     dpg.add_button(label="发送 UDP 指令", callback=lambda: self.send_command(), width=px(150))
 
                         dpg.add_spacer(height=px(6))
+                        self.build_slider_ui()
+                        dpg.add_spacer(height=px(6))
                         with dpg.child_window(height=px(280), width=-1, border=True):
                             dpg.add_text("麦轮遥测：选择设备实际上传的变量", color=(98, 185, 255))
                             with dpg.group(horizontal=True):
@@ -673,14 +681,21 @@ class WifiSpiMonitor:
         self._last_rules_signature = self._rules_signature(self.collect_rules())
         draw_aircraft_attitude("attitude_drawlist", 0, 0, 0, ui_scale=self.ui_scale)
         self.switch_page("params")
+        self.restore_workspace([("pos_xy_kp", 0.01, 20, 0.001, 2.5),
+                                ("pos_xy_kd", 0, 5, 0.001, 0),
+                                ("pos_yaw_kp", 0.01, 20, 0.001, 2)])
 
     def shutdown(self) -> None:
-        self.receiver.stop()
+        try:
+            self.close_workspace()  # GUI 上下文销毁前保存最后一次编辑，包括未联网时的参数。
+        finally:
+            self.receiver.stop()
 
 
 def main() -> None:
     ui_scale = get_ui_scale()
     dpg.create_context()
+    dpg.configure_app(manual_callback_management=True)  # UI 编辑、按键与存档统一在主线程执行。
     # DearPyGui 默认字体仅含拉丁字符，中文会变成问号；加载系统中文字体并覆盖完整汉字字形范围。
     windows_fonts = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
     chinese_font = next((windows_fonts / name for name in ("Deng.ttf", "simhei.ttf", "NotoSansSC-VF.ttf")
@@ -710,6 +725,8 @@ def main() -> None:
     rendered_frames = 0
     try:
         while dpg.is_dearpygui_running():
+            dpg.run_callbacks(dpg.get_callback_queue())
+            monitor.autosave_workspace()
             if self_test and rendered_frames == 30:
                 # 打包验收同时覆盖三页切换、解析、曲线创建和姿态绘制。
                 monitor.switch_page("plot")
@@ -730,13 +747,15 @@ def main() -> None:
                 monitor.switch_page("params")
             elif self_test and rendered_frames == 145:
                 monitor.send_mcar(monitor.subscription.begin("x_cm,y_cm,nav_yaw_deg", 20, time.monotonic()))
-                for packet in (b"MCAR STREAM 0\n", b"MCAR SUB x_cm,y_cm,nav_yaw_deg\n",
+                for packet in (b"MCAR STREAM 0\n", b"MCAR SLIDER pos_xy_kp 2.5\n",
+                               b"MCAR SUB x_cm,y_cm,nav_yaw_deg\n",
                                b"MCAR RATE 20\n", b"MCAR STREAM 1\n",
                                struct.pack("<fff", 25, -50, 40) + b"\0\0\x80\x7f"):
                     monitor.receiver.events.put(("packet", (time.time(), packet, ("127.0.0.1", 12345))))
                 monitor._last_refresh = 0
                 monitor.refresh()
                 assert not monitor.subscription.pending and not monitor.subscription.error
+                assert dpg.get_value("slider_ack_status") == "设备已确认：pos_xy_kp 2.5"
                 assert monitor.latest_values == {"x_cm": 25, "y_cm": -50, "nav_yaw_deg": 40}
                 assert [rule.offset for rule in monitor.collect_rules()] == [0, 4, 8]
                 assert test_commands == ["STREAM 0\n", "SUB x_cm,y_cm,nav_yaw_deg\n", "RATE 20\n", "STREAM 1\n"]
@@ -747,6 +766,9 @@ def main() -> None:
                                                                                  angle * -0.3, angle * 0.5) + b"\0\0\x80\x7f",
                                                          ("127.0.0.1", 12345))))
             monitor.refresh()
+            if self_test and rendered_frames == 160:
+                from slider_selftest import verify_sliders
+                verify_sliders(monitor)
             dpg.render_dearpygui_frame()
             rendered_frames += 1
             if self_test and rendered_frames >= 180:
