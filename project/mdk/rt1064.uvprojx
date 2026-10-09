@@ -549,6 +549,16 @@
               <FileType>5</FileType>
               <FilePath>..\code\position_control.h</FilePath>
             </File>
+            <File>
+              <FileName>route_follow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\route_follow.c</FilePath>
+            </File>
+            <File>
+              <FileName>route_follow.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\route_follow.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
