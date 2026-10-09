@@ -1,5 +1,6 @@
 #include "Mymenu.h"
 #include "Motor.h"
+#include "Flash.h"
 #include "PID_config.h"
 #include "app_control.h"
 #include "app_navigation.h"
@@ -36,6 +37,7 @@ static navigation_snapshot_t g_navigation_snapshot;
 static float g_navigation_x_cm, g_navigation_y_cm;
 static Menu_Item *g_position_folder;
 static position_output_t g_position_snapshot;
+static bool g_flash_save;
 
 /* 240 像素 / 8 像素字体 = 30 字符，补空格清除旧文本。 */
 static void menu_show_line(uint16 y,const char *text)
@@ -150,6 +152,10 @@ static void menu_create(void)
     Create_Menu_File_dynamic(pid_dr,"Kp",&DRpid.fKp,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Ki",&DRpid.fKi,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Kd",&DRpid.fKd,float_Box);
+
+    /* 根目录保存项：置 On 即把当前 PID/位置环/导航参数写入 Flash */
+    g_flash_save=false;
+    Create_Menu_File_dynamic(&g_root,"SaveCfg",&g_flash_save,bool_Box);
 }
 static void menu_format_value(const Menu_Item *item,char *buffer,size_t size)
 {
@@ -265,6 +271,14 @@ static void menu_adjust(int direction)
         } else if(g_pointer->data==&g_navigation_zero && enabled) {
             app_navigation_request_reset();
             g_navigation_zero=false;
+        } else if(g_pointer->data==&g_flash_save && enabled) {
+            uint32 primask;
+            g_flash_save=false;
+            /* 擦写耗时约几十至上百毫秒且期间关中断：先停车，避免控制空窗 */
+            primask=interrupt_global_disable();
+            motor_run_enabled=false;
+            interrupt_global_enable(primask);
+            menu_flash_save_current();
         }
         return;
     }

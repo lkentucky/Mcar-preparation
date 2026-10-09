@@ -175,6 +175,21 @@ void imu_update_5ms(void)
     imu_publish_navigation(gyro_dps,accel_g,dt);
 }
 void imu_request_recalibration(void) { g_recalibration_requested=1u; }
+/* Flash 擦写等长时间关中断会让采样间隔超过 MAX_SAMPLE_DT，锁止到 BAD_DT。
+ * 在干扰源结束后调用：清除锁止、重建采样时间基准，保留已有标定与姿态，
+ * 不递增 generation，导航无需重新 Zero。 */
+void imu_recover_after_stall(void)
+{
+    uint32 primask;
+    if (imu_attitude_status!=IMU_ATTITUDE_BAD_DT &&
+        imu_attitude_status!=IMU_ATTITUDE_TIMEOUT) return;
+    primask=interrupt_global_disable();
+    g_last_sample_ticks=imu_ticks();
+    g_last_success_ticks=g_last_sample_ticks;
+    g_have_sample=0u;                 /* 下一帧只重建时间基准 */
+    imu_attitude_status=g_calibrated?IMU_ATTITUDE_RUNNING:IMU_ATTITUDE_CALIBRATING;
+    interrupt_global_enable(primask);
+}
 /* 主循环服务；只在短临界区更新状态，硬件初始化在开中断时执行。 */
 void imu_service(void)
 {

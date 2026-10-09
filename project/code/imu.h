@@ -35,6 +35,7 @@ bool imu_get_navigation_sample(imu_navigation_sample_t *out);
 void imu_init(void); /* 启动阶段，先于 WiFi/定时采样启用 */
 void imu_update_5ms(void); /* 5ms 周期入口 */
 void imu_request_recalibration(void); /* 只置请求标志 */
+void imu_recover_after_stall(void); /* 长时间关中断（如 Flash 擦写）后恢复采样 */
 void imu_service(void); /* 主循环处理重标定 */
 
 #ifdef __cplusplus

@@ -1,6 +1,7 @@
 #include "zf_common_headfile.h"
 #include "Mymenu.h"
 #include "app_control.h"
+#include "Flash.h"
 #include "wifispi.h"
 #include "imu.h"
 
@@ -13,6 +14,10 @@ int main(void)
     system_delay_ms(300);
 
     app_control_init();
+    /* Flash 参数存取：先初始化 FlexSPI ROM 驱动，再尝试加载上次保存的参数。
+     * 首次运行或校验失败时返回 0，继续使用代码中的默认值。 */
+    flash_init();
+    menu_flash_load_current();
     imu_init();
     Menu_Init();
 
