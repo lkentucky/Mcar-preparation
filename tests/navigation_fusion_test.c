@@ -9,7 +9,7 @@ static const int16_t zero[4] = {0};
 
 static navigation_config_t config(void)
 {
-    navigation_config_t c = {{1000, 1000, 1000, 500}, 1.0f / PI, 1.0f, 0.0f, 0.0f, false};
+    navigation_config_t c = {{1000, 1000, 1000, 500}, 1.0f / PI, 1.0f, 1.0f, 0.0f, 0.0f, false};
     return c;
 }
 
@@ -167,12 +167,49 @@ static void check_slip_and_faults(void)
     assert(s.output.status == NAV_BAD_INPUT && !s.output.valid);
 }
 
+static void check_axis_scales(void)
+{
+    navigation_fusion_t s;
+    navigation_imu_t m=sample();
+    navigation_config_t c=config();
+    c.forward_scale=0.5f;
+    c.lateral_scale=0.6f;
+    const int16_t forward[4]={2,2,2,1};
+    const int16_t left[4]={-2,2,2,-1};
+    const int16_t diagonal[4]={0,4,4,0};
+    warmup(&s,c,m);
+    for(unsigned i=0;i<100;++i) tick(&s,forward,m);
+    assert(fabsf(s.output.x_m-0.1f)<1e-5f && fabsf(s.output.y_m)<1e-5f);
+    warmup(&s,c,m);
+    for(unsigned i=0;i<100;++i) tick(&s,left,m);
+    assert(fabsf(s.output.y_m-0.12f)<1e-5f && fabsf(s.output.x_m)<1e-5f);
+    warmup(&s,c,m);
+    for(unsigned i=0;i<100;++i) tick(&s,diagonal,m);
+    assert(fabsf(s.output.x_m-0.1f)<1e-5f && fabsf(s.output.y_m-0.12f)<1e-5f);
+    /* Calibration belongs to chassis axes; it must rotate with measured yaw. */
+    warmup(&s,c,m);
+    for(unsigned i=0;i<10;++i) { m.yaw_deg+=9; tick(&s,zero,m); }
+    for(unsigned i=0;i<100;++i) tick(&s,diagonal,m);
+    assert(fabsf(s.output.x_m+0.12f)<1e-5f && fabsf(s.output.y_m-0.1f)<1e-5f);
+    assert(fabsf(s.output.vx_mps+0.12f)<1e-5f && fabsf(s.output.vy_mps-0.1f)<1e-5f);
+    const int16_t reverse[4]={0,-4,-4,0};
+    for(unsigned i=0;i<100;++i) tick(&s,reverse,m);
+    assert(fabsf(s.output.x_m)<1e-5f && fabsf(s.output.y_m)<1e-5f);
+    c.forward_scale=NAN;
+    navigation_fusion_init(&s,&c);
+    assert(!s.output.valid && s.output.status==NAV_BAD_INPUT);
+    c.forward_scale=0;
+    navigation_fusion_init(&s,&c);
+    assert(!s.output.valid && s.output.status==NAV_BAD_INPUT);
+}
+
 int main(void)
 {
     check_straight_and_strafe();
     check_arc_and_spin();
     check_mount_tilt_wrap_and_bias();
     check_slip_and_faults();
+    check_axis_scales();
     puts("navigation fusion tests passed: mixed resolutions, strafe, arc, spin, tilt, mount, yaw wrap, bias, slip, faults");
     return 0;
 }

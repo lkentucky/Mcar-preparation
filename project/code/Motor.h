@@ -3,17 +3,17 @@
 
 #include "zf_common_typedef.h"
 
-#define MOTOR1_DIR              (D13)                  //上左
-#define MOTOR1_PWM              (PWM1_MODULE1_CHB_D15)
+#define MOTOR1_DIR              (C10)                  //上左
+#define MOTOR1_PWM              (PWM2_MODULE2_CHB_C11)
 
-#define MOTOR2_DIR              (D12)                          //上右
-#define MOTOR2_PWM              (PWM1_MODULE1_CHA_D14)
+#define MOTOR2_DIR              (D2)                          //上右     
+#define MOTOR2_PWM              (PWM2_MODULE3_CHB_D3)            
 
-#define MOTOR3_DIR              (D0)                          //下左
-#define MOTOR3_PWM              (PWM2_MODULE3_CHA_D2)
+#define MOTOR3_DIR              (C7)                          //下左
+#define MOTOR3_PWM              (PWM2_MODULE0_CHA_C6)
 
-#define MOTOR4_DIR              (D1)                           //下右
-#define MOTOR4_PWM              (PWM2_MODULE3_CHB_D3)
+#define MOTOR4_DIR              (C9)                           //下右
+#define MOTOR4_PWM              (PWM2_MODULE1_CHA_C8)
 
 /* Positive wheel speed uses these DIR levels. Keep wheel polarity explicit. */
 #define MOTOR1_FORWARD_LEVEL         (GPIO_LOW)
@@ -32,11 +32,11 @@
 //上右
 #define ENCODER_3                   (QTIMER2_ENCODER1)
 #define ENCODER_3_A                 (QTIMER2_ENCODER1_CH1_C3)
-#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C25)
+#define ENCODER_3_B                 (QTIMER2_ENCODER1_CH2_C4)
 //上左
-#define ENCODER_4                   (QTIMER3_ENCODER2)
-#define ENCODER_4_A                 (QTIMER3_ENCODER2_CH1_B18)
-#define ENCODER_4_B                 (QTIMER3_ENCODER2_CH2_B19)
+#define ENCODER_4                   (QTIMER2_ENCODER2)
+#define ENCODER_4_A                 (QTIMER2_ENCODER2_CH1_C5)
+#define ENCODER_4_B                 (QTIMER2_ENCODER2_CH2_C25)
 
 /* Convert physical counts to positive forward wheel feedback. */
 #define ENCODER_1_FORWARD_SIGN       (1)
@@ -45,7 +45,7 @@
 #define ENCODER_4_FORWARD_SIGN       (1)
 
 //参数宏定义
-#define ENCODER_GEAR_RATIO      2.3f     //电机轴转数 / 车轮转数，当前近似减速比
+#define ENCODER_GEAR_RATIO      2.333f     //电机轴转数 / 车轮转数，当前近似减速比
 /* Backend counts A rising edges (1x), not all four quadrature edges. */
 #define ENCODER_LINES_UL        1024.0f
 #define ENCODER_LINES_UR        1024.0f
@@ -57,7 +57,7 @@
 #define ENCODER_RESOLUTION_DR   (ENCODER_LINES_DR * ENCODER_GEAR_RATIO)
 /* PID targets use the UL reference resolution; feedback is normalized to it. */
 #define ENCODER_RESOLUTION      ENCODER_RESOLUTION_UL
-#define WHEEL_DIAMETER          0.11     //轮子直径,单位：米（11 cm）
+#define WHEEL_DIAMETER          0.063     //轮子直径,单位：米（6.3 cm）
 #define LATERAL_CORRECTION_FACTOR 0.901589f  //实际横移距离 / 计划横移距离
 #define LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR 0.0f  // dx drift / dy travel 单位横移速度产生的额外前后速度
 #define D_X                     0.176     //底盘Y轴上两轮中心的间距

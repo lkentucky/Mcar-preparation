@@ -44,6 +44,7 @@ void navigation_fusion_init(navigation_fusion_t *s, const navigation_config_t *c
     s->config = *config;
     s->output.status = NAV_WAIT_IMU;
     if (!isfinite(config->wheel_diameter_m) || config->wheel_diameter_m <= 0.0f || config->wheel_diameter_m > 2.0f ||
+        !isfinite(config->forward_scale) || config->forward_scale <= 0.0f || config->forward_scale > 5.0f ||
         !isfinite(config->lateral_scale) || config->lateral_scale <= 0.0f || config->lateral_scale > 5.0f ||
         !isfinite(config->lateral_to_forward) || fabsf(config->lateral_to_forward) > 5.0f ||
         !isfinite(config->imu_mount_yaw_deg) || fabsf(config->imu_mount_yaw_deg) > 180.0f) {
@@ -165,7 +166,7 @@ void navigation_fusion_encoder(navigation_fusion_t *s, const int16_t counts[4], 
         }
         return;
     }
-    dx = 0.25f * (wheel[0] + wheel[1] + wheel[2] + wheel[3]);
+    dx = 0.25f * (wheel[0] + wheel[1] + wheel[2] + wheel[3]) * s->config.forward_scale;
     dy = 0.25f * (-wheel[0] + wheel[1] + wheel[2] - wheel[3]) * s->config.lateral_scale;
     dx += s->config.lateral_to_forward * dy;
     half = 0.5f * (s->heading_rad - s->wheel_heading_rad);

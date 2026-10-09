@@ -17,6 +17,7 @@ enum {
 typedef struct {
     float counts_per_revolution[4]; /* UL、UR、DL、DR，实际计数 */
     float wheel_diameter_m;
+    float forward_scale;
     float lateral_scale;
     float lateral_to_forward;
     float imu_mount_yaw_deg;        /* 水平传感器 +X 相对车头的逆时针角度 */

@@ -6,7 +6,7 @@
 #include "position_control.h"
 
 extern volatile bool motor_run_enabled;
-/* Default mode: direct signed PWM in UL, UR, DL, DR order. */
+/* Default is position control with Run off. PWM test must be selected explicitly. */
 extern volatile bool motor_pwm_test_enabled;
 extern volatile int16_t motor_test_pwm[4];
 extern volatile float motor_cmd_vx_cmps;

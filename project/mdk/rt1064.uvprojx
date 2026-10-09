@@ -10,13 +10,13 @@
       <TargetName>nor_sdram_zf_dtcm</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>6190000::V6.19::ARMCLANG</pCCUsed>
+      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>MIMXRT1064DVL6A</Device>
           <Vendor>NXP</Vendor>
-          <PackID>NXP.MIMXRT1064_DFP.15.0.0</PackID>
+          <PackID>NXP.MIMXRT1064_DFP.25.06.00</PackID>
           <PackURL>https://mcuxpresso.nxp.com/cmsis_pack/repo/</PackURL>
           <Cpu>IRAM(0x20000000,0x020000) IRAM2(0x00000000,0x020000) IROM(0x70000000,0x400000) XRAM(0x20200000,0x0c0000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -410,59 +410,69 @@
           <GroupName>code</GroupName>
           <Files>
             <File>
-              <FileName>app_control.c</FileName>
+              <FileName>menu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\app_control.c</FilePath>
+              <FilePath>..\code\menu.c</FilePath>
             </File>
             <File>
-              <FileName>position_control.c</FileName>
+              <FileName>menu.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\menu.h</FilePath>
+            </File>
+            <File>
+              <FileName>Flash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\position_control.c</FilePath>
+              <FilePath>..\code\Flash.c</FilePath>
             </File>
             <File>
-              <FileName>position_control.h</FileName>
+              <FileName>Flash.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\position_control.h</FilePath>
+              <FilePath>..\code\Flash.h</FilePath>
             </File>
             <File>
-              <FileName>app_control.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\app_control.h</FilePath>
-            </File>
-            <File>
-              <FileName>app_navigation.c</FileName>
+              <FileName>Mymenu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\app_navigation.c</FilePath>
+              <FilePath>..\code\Mymenu.c</FilePath>
             </File>
             <File>
-              <FileName>app_navigation.h</FileName>
+              <FileName>Mymenu.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\app_navigation.h</FilePath>
+              <FilePath>..\code\Mymenu.h</FilePath>
             </File>
             <File>
-              <FileName>navigation_fusion.c</FileName>
+              <FileName>wifispi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\navigation_fusion.c</FilePath>
+              <FilePath>..\code\wifispi.c</FilePath>
             </File>
             <File>
-              <FileName>navigation_fusion.h</FileName>
+              <FileName>wifispi.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\navigation_fusion.h</FilePath>
+              <FilePath>..\code\wifispi.h</FilePath>
             </File>
             <File>
-              <FileName>navigation_config.h</FileName>
+              <FileName>config.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\navigation_config.h</FilePath>
+              <FilePath>..\code\config.h</FilePath>
             </File>
             <File>
-              <FileName>app_wifi_telemetry.c</FileName>
+              <FileName>imu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\app_wifi_telemetry.c</FilePath>
+              <FilePath>..\code\imu.c</FilePath>
             </File>
             <File>
-              <FileName>app_wifi_telemetry.h</FileName>
+              <FileName>imu.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\app_wifi_telemetry.h</FilePath>
+              <FilePath>..\code\imu.h</FilePath>
+            </File>
+            <File>
+              <FileName>attitude.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\attitude.c</FilePath>
+            </File>
+            <File>
+              <FileName>attitude.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\attitude.h</FilePath>
             </File>
             <File>
               <FileName>Motor.c</FileName>
@@ -495,89 +505,49 @@
               <FilePath>..\code\PID_config.h</FilePath>
             </File>
             <File>
-              <FileName>menu.c</FileName>
+              <FileName>app_control.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\menu.c</FilePath>
+              <FilePath>..\code\app_control.c</FilePath>
             </File>
             <File>
-              <FileName>menu.h</FileName>
+              <FileName>app_control.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\menu.h</FilePath>
+              <FilePath>..\code\app_control.h</FilePath>
             </File>
             <File>
-              <FileName>Mymenu.c</FileName>
+              <FileName>app_navigation.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\Mymenu.c</FilePath>
+              <FilePath>..\code\app_navigation.c</FilePath>
             </File>
             <File>
-              <FileName>Mymenu.h</FileName>
+              <FileName>app_navigation.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\Mymenu.h</FilePath>
+              <FilePath>..\code\app_navigation.h</FilePath>
             </File>
             <File>
-              <FileName>config.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\config.h</FilePath>
-            </File>
-            <File>
-              <FileName>imu_numeric.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\imu_numeric.h</FilePath>
-            </File>
-            <File>
-              <FileName>ahrs6.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\ahrs6.h</FilePath>
-            </File>
-            <File>
-              <FileName>mahony6.c</FileName>
+              <FileName>navigation_fusion.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\mahony6.c</FilePath>
+              <FilePath>..\code\navigation_fusion.c</FilePath>
             </File>
             <File>
-              <FileName>mahony6.h</FileName>
+              <FileName>navigation_fusion.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\mahony6.h</FilePath>
+              <FilePath>..\code\navigation_fusion.h</FilePath>
             </File>
             <File>
-              <FileName>madgwick6.c</FileName>
+              <FileName>navigation_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\navigation_config.h</FilePath>
+            </File>
+            <File>
+              <FileName>position_control.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\code\madgwick6.c</FilePath>
+              <FilePath>..\code\position_control.c</FilePath>
             </File>
             <File>
-              <FileName>madgwick6.h</FileName>
+              <FileName>position_control.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\code\madgwick6.h</FilePath>
-            </File>
-            <File>
-              <FileName>imu_attitude.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\imu_attitude.c</FilePath>
-            </File>
-            <File>
-              <FileName>imu_attitude.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\imu_attitude.h</FilePath>
-            </File>
-            <File>
-              <FileName>imu_wifi_spi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\imu_wifi_spi.c</FilePath>
-            </File>
-            <File>
-              <FileName>imu_wifi_spi.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\imu_wifi_spi.h</FilePath>
-            </File>
-            <File>
-              <FileName>vofa_packet.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\vofa_packet.c</FilePath>
-            </File>
-            <File>
-              <FileName>vofa_packet.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\code\vofa_packet.h</FilePath>
+              <FilePath>..\code\position_control.h</FilePath>
             </File>
           </Files>
         </Group>
