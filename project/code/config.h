@@ -39,13 +39,13 @@
 #endif
 #define IMU_WIFI_SSID            "HDUASC"
 #define IMU_WIFI_PASSWORD        "zyz520520"
-#define IMU_WIFI_TARGET_IP       "192.168.0.108"
+#define IMU_WIFI_TARGET_IP       "192.168.0.122"
 #define IMU_WIFI_TARGET_PORT     "8081"
 #define IMU_WIFI_LOCAL_PORT      "5001"
 #define IMU_WIFI_STARTUP_DELAY_MS 300u
-#define IMU_WIFI_INIT_ATTEMPTS   3u
-#define IMU_WIFI_RETRY_DELAY_MS  500u
-#define IMU_WIFI_PERIOD_MS       10u
+#define IMU_WIFI_INIT_ATTEMPTS    3u
+#define IMU_WIFI_RETRY_DELAY_MS   500u
+#define IMU_WIFI_PERIOD_MS        10u
 #if IMU_WIFI_PERIOD_MS < 2 || IMU_WIFI_PERIOD_MS > 1000
 #error IMU_WIFI_PERIOD_MS must be between 2 and 1000
 #endif

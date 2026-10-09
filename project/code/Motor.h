@@ -45,7 +45,7 @@
 #define ENCODER_4_FORWARD_SIGN       (1)
 
 //参数宏定义
-#define ENCODER_GEAR_RATIO      2.3f     //电机轴转数 / 车轮转数，当前近似减速比
+#define ENCODER_GEAR_RATIO      2.333f     //电机轴转数 / 车轮转数，当前近似减速比
 /* Backend counts A rising edges (1x), not all four quadrature edges. */
 #define ENCODER_LINES_UL        1024.0f
 #define ENCODER_LINES_UR        1024.0f
@@ -57,7 +57,7 @@
 #define ENCODER_RESOLUTION_DR   (ENCODER_LINES_DR * ENCODER_GEAR_RATIO)
 /* PID targets use the UL reference resolution; feedback is normalized to it. */
 #define ENCODER_RESOLUTION      ENCODER_RESOLUTION_UL
-#define WHEEL_DIAMETER          0.11     //轮子直径,单位：米（11 cm）
+#define WHEEL_DIAMETER          0.063     //轮子直径,单位：米（6.3 cm）
 #define LATERAL_CORRECTION_FACTOR 0.901589f  //实际横移距离 / 计划横移距离
 #define LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR 0.0f  // dx drift / dy travel 单位横移速度产生的额外前后速度
 #define D_X                     0.176     //底盘Y轴上两轮中心的间距
