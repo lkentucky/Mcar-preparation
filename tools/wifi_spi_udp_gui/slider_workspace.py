@@ -47,7 +47,7 @@ class SliderWorkspace:
 
     def build_slider_ui(self) -> None:
         px = self.px
-        with dpg.child_window(height=px(320), width=-1, border=True):
+        with dpg.child_window(height=px(320), width=-1, border=True, tag="shared_slider_panel"):
             dpg.add_text("实时调参滑杆", color=(98, 185, 255))
             dpg.add_text("点击滑杆后：↑ 加一步，↓ 减一步；拖动与按键都会发送，最小步长 0.001。")
             with dpg.table(header_row=True, resizable=True, policy=dpg.mvTable_SizingStretchProp,
@@ -124,7 +124,7 @@ class SliderWorkspace:
             return
         self._slider_keys_held.add(key)
         row = self.selected_slider
-        if row not in self.slider_ranges or self.active_page != "params":
+        if row not in self.slider_ranges or self.active_page not in ("params", "plot"):
             return
         # get_focused_item 在 1.11 返回容器窗口，不能用它判定滑杆焦点。
         # 单步按键时才检查可编辑控件；鼠标点到别处也会清除选中状态。
@@ -207,12 +207,12 @@ class SliderWorkspace:
                             "value": number_text(self.slider_values[row]),
                             "draft": [dpg.get_value(f"slider_{s}_{row}") for s in ("min", "max", "step")]})
         tags = ("bind_ip", "bind_port", "remote_ip", "remote_port", "max_samples", "imu_zoom", "imu_quality",
-                "mcar_mode", "mcar_names", "mcar_period")
+                "mcar_mode", "mcar_names", "mcar_period", "plot_follow", "plot_window", "plot_refresh_hz")
         controls = {tag: dpg.get_value(tag) for tag in tags if dpg.does_item_exist(tag)}
         rules = [{"name": dpg.get_value(f"rule_name_{row}"), "data_type": dpg.get_value(f"rule_type_{row}"),
                   "offset": dpg.get_value(f"rule_offset_{row}"), "byte_order": dpg.get_value(f"rule_order_{row}")}
                  for row in self.rule_rows]
-        return {"version": 1, "sliders": sliders, "controls": controls, "rules": rules,
+        return {"version": 1, "sliders": sliders, "buttons": self.capture_buttons(), "controls": controls, "rules": rules,
                 "plot_selected": [name for name, tag in self.plot_checks.items() if dpg.get_value(tag)],
                 "active_page": self.active_page, "view_yaw": self.imu_view_yaw, "view_elev": self.imu_view_elev}
 
@@ -223,6 +223,7 @@ class SliderWorkspace:
             for args in defaults:
                 self.add_slider_row(*args)
         else:
+            self.restore_buttons(state.get("buttons", []))  # 兼容旧版只有滑杆的存档。
             for item in state["sliders"]:
                 try:
                     row = self.add_slider_row(item["name"], item["minimum"], item["maximum"], item["step"], item["value"])
@@ -236,13 +237,15 @@ class SliderWorkspace:
             controls = state.get("controls", {})
             if isinstance(controls, dict):
                 for tag, value in controls.items():
-                    if tag in ("bind_ip", "remote_ip", "imu_quality", "mcar_names") and isinstance(value, str):
+                    if tag in ("bind_ip", "remote_ip", "imu_quality", "mcar_names", "plot_refresh_hz") and isinstance(value, str):
+                        if tag == "plot_refresh_hz" and value not in ("30", "60", "120"):
+                            continue
                         if dpg.does_item_exist(tag):
                             dpg.set_value(tag, value)
                     elif tag in ("bind_port", "remote_port", "max_samples", "mcar_period") and isinstance(value, int):
                         if dpg.does_item_exist(tag):
                             dpg.set_value(tag, value)
-                    elif tag in ("imu_zoom", "mcar_mode") and isinstance(value, (float, int, bool)) and math.isfinite(value):
+                    elif tag in ("imu_zoom", "mcar_mode", "plot_follow", "plot_window") and isinstance(value, (float, int, bool)) and math.isfinite(value):
                         if dpg.does_item_exist(tag):
                             dpg.set_value(tag, value)
             saved_rules = state.get("rules")

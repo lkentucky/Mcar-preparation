@@ -26,6 +26,9 @@ class WorkspaceStore:
                     raise ValueError("存档版本不支持")
                 if not isinstance(state.get("sliders"), list) or len(state["sliders"]) > 200:
                     raise ValueError("滑杆列表无效")
+                buttons = state.get("buttons", [])
+                if not isinstance(buttons, list) or len(buttons) > 200:
+                    raise ValueError("按键列表无效")
                 warning = "主存档无法读取，已恢复备份" if path == self.backup else ""
                 return state, warning
             except (OSError, ValueError) as exc:

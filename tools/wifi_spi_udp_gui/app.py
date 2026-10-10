@@ -22,7 +22,10 @@ import dearpygui.dearpygui as dpg
 
 from attitude_3d import draw_aircraft_attitude
 from packet_parser import FieldRule, TYPE_FORMATS, parse_packet
+from live_plot import LivePlot
+from plot_history import PlotHistory
 from slider_workspace import SliderWorkspace
+from command_buttons import CommandButtons
 from udp_receiver import UdpReceiver
 from mcar_telemetry import PRESETS, Subscription, control_reply, parse_names, validate_frame
 
@@ -40,11 +43,10 @@ def get_ui_scale() -> float:
         return 1.0
 
 
-class WifiSpiMonitor(SliderWorkspace):
+class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
     """组合 UDP、解析、记录与 DearPyGui 控件的上位机主类。"""
 
-    REFRESH_INTERVAL = 1 / 30  # GUI 每秒最多更新 30 次，避免高帧率报文拖慢界面
-    PLOT_INTERVAL = 1 / 15     # 曲线最多 15 Hz，采集和绘图解耦
+    REFRESH_INTERVAL = 1 / 120  # 队列处理最多 120 Hz，避免高帧率报文拖慢界面
     MAX_PROCESS_PER_TICK = 300
 
     def __init__(self, ui_scale: float = 1.0) -> None:
@@ -52,11 +54,13 @@ class WifiSpiMonitor(SliderWorkspace):
         self.receiver = UdpReceiver()
         self.rule_rows: list[int] = []
         self.initialize_workspace("MCAR", __file__)
+        self.initialize_buttons()
+        self.initialize_plot()
         self.latest_values: dict[str, Any] = {}
         self.value_tags: dict[str, int] = {}
         self.plot_checks: dict[str, int] = {}
         self.plot_series: dict[str, int] = {}
-        self.history: dict[str, deque[tuple[float, float]]] = {}
+        self.history: dict[str, PlotHistory] = {}
         self.records: list[dict[str, Any]] = []
         self.packet_times: deque[float] = deque()
         self.active_page = "params"
@@ -108,7 +112,12 @@ class WifiSpiMonitor(SliderWorkspace):
         """左侧导航只显示一个页面；收包线程不受页面切换影响。"""
         if page not in ("params", "plot", "imu"):
             return
+        if self.active_page == "params" and page != "params":
+            self.release_command_buttons(momentary_only=True)
         self.active_page = page
+        slider_host = "plot_slider_host" if page == "plot" else "params_slider_host"
+        dpg.move_item("shared_slider_panel", parent=slider_host)
+        dpg.configure_item("shared_slider_panel", height=self.px(230 if page == "plot" else 320))
         for name in ("params", "plot", "imu"):
             dpg.configure_item(f"page_{name}", show=name == page)
             dpg.bind_item_theme(f"nav_{name}", "theme_nav_active" if name == page else "theme_nav_idle")
@@ -123,8 +132,7 @@ class WifiSpiMonitor(SliderWorkspace):
     def set_max_samples(self) -> None:
         """仅在用户更改上限时调整 deque，收包热路径不查询 GUI 控件。"""
         self.max_samples = max(100, min(5000, int(dpg.get_value("max_samples"))))
-        for name, samples in tuple(self.history.items()):
-            self.history[name] = deque(samples, maxlen=self.max_samples)
+        self._plot_render_signature = None  # 绘制点数上限不再删除历史。
         self._plot_dirty = True
 
     def set_imu_view(self, yaw: float, elevation: float) -> None:
@@ -297,9 +305,11 @@ class WifiSpiMonitor(SliderWorkspace):
             self.log(f"无法开始监听：{exc}", "error")
 
     def stop_listening(self) -> None:
+        self.release_command_buttons()  # 关闭 socket 前尝试发送抬起命令。
         if self.subscription.pending:
             self.subscription.abort("监听已停止，配置未完成；请重新监听并应用")
         self.receiver.stop()
+        dpg.set_value("plot_follow", False)  # 停止后保留当前视口，可自由缩放查看。
         self.log("已停止 UDP 监听", "info")
 
     def send_command(self) -> None:
@@ -356,6 +366,8 @@ class WifiSpiMonitor(SliderWorkspace):
         record.update(values)
         self.records.append(record)
 
+        if self.plot_time_origin is None:
+            self.plot_time_origin = timestamp
         for name, value in values.items():
             try:
                 number = float(value)
@@ -364,9 +376,9 @@ class WifiSpiMonitor(SliderWorkspace):
             history = self.history.get(name)
             # 用户改动采样点上限后立即对已有曲线生效（包括允许从小上限扩容）。
             if history is None:
-                history = deque(maxlen=self.max_samples)
+                history = PlotHistory(self.plot_history_capacity)
                 self.history[name] = history
-            history.append((timestamp, number))
+            history.append((timestamp - self.plot_time_origin, number))
         self._values_dirty = self._plot_dirty = self._attitude_dirty = True
 
         if errors:
@@ -389,28 +401,6 @@ class WifiSpiMonitor(SliderWorkspace):
                 text = str(value)
             dpg.set_value(tag, text)
         self._values_dirty = False
-
-    def _update_plot(self) -> None:
-        selected = {name for name, tag in self.plot_checks.items() if dpg.get_value(tag)}
-        for name in list(self.plot_series):
-            if name not in selected:
-                dpg.delete_item(self.plot_series.pop(name))
-        for name in selected:
-            if name not in self.plot_series:
-                self.plot_series[name] = dpg.add_line_series([], [], label=name, parent="plot_y_axis")
-            samples = self.history.get(name, ())
-            if samples:
-                base = samples[0][0]
-                xs, ys = zip(*((stamp - base, value) for stamp, value in samples))
-                dpg.set_value(self.plot_series[name], [list(xs), list(ys)])
-        # 轴自动适配属于较贵的操作；每 0.5 秒执行一次，避免每帧重复计算。
-        now = time.monotonic()
-        if selected and now - self._last_plot_fit >= 0.5:
-            dpg.fit_axis_data("plot_x_axis")
-            dpg.fit_axis_data("plot_y_axis")
-            self._last_plot_fit = now
-        self._plot_dirty = False
-        self._last_plot_refresh = now
 
     def _update_attitude(self) -> None:
         """字段名不区分大小写，需命名为 roll、pitch、yaw 才会驱动姿态。"""
@@ -475,7 +465,7 @@ class WifiSpiMonitor(SliderWorkspace):
         if self.active_page == "plot":
             if self._values_dirty:
                 self._update_values()
-            if self._plot_dirty and now - self._last_plot_refresh >= self.PLOT_INTERVAL:
+            if self._plot_dirty and now - self._last_plot_refresh >= 1 / int(dpg.get_value("plot_refresh_hz")):
                 self._update_plot()
         elif self.active_page == "imu":
             self._update_attitude()
@@ -570,7 +560,10 @@ class WifiSpiMonitor(SliderWorkspace):
                                     dpg.add_button(label="发送 UDP 指令", callback=lambda: self.send_command(), width=px(150))
 
                         dpg.add_spacer(height=px(6))
-                        self.build_slider_ui()
+                        with dpg.group(tag="params_slider_host"):
+                            self.build_slider_ui()
+                        dpg.add_spacer(height=px(6))
+                        self.build_button_ui()
                         dpg.add_spacer(height=px(6))
                         with dpg.child_window(height=px(280), width=-1, border=True):
                             dpg.add_text("麦轮遥测：选择设备实际上传的变量", color=(98, 185, 255))
@@ -623,7 +616,7 @@ class WifiSpiMonitor(SliderWorkspace):
 
                     with dpg.child_window(width=-1, height=-1, border=False, tag="page_plot", show=False):
                         dpg.add_text("实时绘图", color=(98, 185, 255))
-                        dpg.add_text("选中任意解析字段即可绘制；图像刷新与 UDP 接收分离，最多 15 次/秒。")
+                        dpg.add_text("选中字段查看曲线，下方可直接调参；默认刷新 60 Hz，支持手动回看历史。")
                         dpg.add_separator()
                         with dpg.group(horizontal=True):
                             with dpg.child_window(width=px(270), height=-1, border=True):
@@ -634,16 +627,19 @@ class WifiSpiMonitor(SliderWorkspace):
                                 dpg.add_text("曲线字段", color=(98, 185, 255))
                                 dpg.add_child_window(tag="plot_select_panel", height=px(205), border=False)
                                 dpg.add_spacer(height=px(8))
-                                dpg.add_input_int(label="最大采样点", default_value=self.max_samples,
+                                dpg.add_input_int(label="绘制点数上限", default_value=self.max_samples,
                                                   min_value=100, max_value=5000, min_clamped=True,
                                                   max_clamped=True, tag="max_samples", width=px(115),
                                                   callback=lambda: self.set_max_samples())
-                                dpg.add_text("每字段只保留最近采样点。", color=(148, 158, 171), wrap=px(245))
+                                dpg.add_text("每字段缓存最近 100000 点；绘制超限时保留峰谷，CSV 仍保留全部接收记录。", color=(148, 158, 171), wrap=px(245))
                             with dpg.child_window(width=-1, height=-1, border=True):
-                                with dpg.plot(label="", height=-1, width=-1, tag="data_plot", anti_aliased=False):
-                                    dpg.add_plot_legend()
-                                    dpg.add_plot_axis(dpg.mvXAxis, label="相对时间 / s", tag="plot_x_axis")
-                                    dpg.add_plot_axis(dpg.mvYAxis, label="数值", tag="plot_y_axis")
+                                self.build_plot_controls()
+                                with dpg.child_window(width=-1, height=-self.px(240), border=False):
+                                    with dpg.plot(label="", height=-1, width=-1, tag="data_plot", anti_aliased=True):
+                                        dpg.add_plot_legend()
+                                        dpg.add_plot_axis(dpg.mvXAxis, label="会话时间 / s", tag="plot_x_axis")
+                                        dpg.add_plot_axis(dpg.mvYAxis, label="数值", tag="plot_y_axis")
+                                dpg.add_group(tag="plot_slider_host")
 
                     with dpg.child_window(width=-1, height=-1, border=False, tag="page_imu", show=False):
                         dpg.add_text("IMU 三维姿态", color=(98, 185, 255))
@@ -687,6 +683,7 @@ class WifiSpiMonitor(SliderWorkspace):
 
     def shutdown(self) -> None:
         try:
+            self.release_command_buttons()
             self.close_workspace()  # GUI 上下文销毁前保存最后一次编辑，包括未联网时的参数。
         finally:
             self.receiver.stop()
@@ -710,7 +707,7 @@ def main() -> None:
     # 当前 DearPyGui Windows 原生后端在部分系统上处理中文 viewport 标题会于首帧崩溃。
     # 标题使用 ASCII，界面内部仍保留中文标签。
     dpg.create_viewport(title="WiFi-SPI2.0 UDP IMU Monitor", width=round(1400 * ui_scale),
-                        height=round(900 * ui_scale))
+                        height=round(900 * ui_scale), vsync=False)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.set_primary_window("main_window", True)
@@ -725,7 +722,10 @@ def main() -> None:
     rendered_frames = 0
     try:
         while dpg.is_dearpygui_running():
+            frame_started = time.perf_counter()
             dpg.run_callbacks(dpg.get_callback_queue())
+            monitor.poll_command_buttons()
+            monitor.poll_plot_view()
             monitor.autosave_workspace()
             if self_test and rendered_frames == 30:
                 # 打包验收同时覆盖三页切换、解析、曲线创建和姿态绘制。
@@ -769,7 +769,15 @@ def main() -> None:
             if self_test and rendered_frames == 160:
                 from slider_selftest import verify_sliders
                 verify_sliders(monitor)
+            if self_test and rendered_frames == 165:
+                from button_selftest import verify_buttons
+                verify_buttons(monitor)
             dpg.render_dearpygui_frame()
+            # 帧率由软件限频，120 Hz 选项不再被固定的 60 Hz 垂直同步限制。
+            frame_hz = max(60, int(dpg.get_value("plot_refresh_hz")))
+            delay = 1 / frame_hz - (time.perf_counter() - frame_started)
+            if delay > 0:
+                time.sleep(delay)
             rendered_frames += 1
             if self_test and rendered_frames >= 180:
                 break
