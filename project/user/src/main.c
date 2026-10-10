@@ -2,6 +2,7 @@
 #include "Mymenu.h"
 #include "app_control.h"
 #include "Flash.h"
+#include "route_follow.h"
 #include "wifispi.h"
 #include "imu.h"
 
@@ -18,6 +19,7 @@ int main(void)
      * 首次运行或校验失败时返回 0，继续使用代码中的默认值。 */
     flash_init();
     menu_flash_load_current();
+    route_follow_init();
     imu_init();
     Menu_Init();
 

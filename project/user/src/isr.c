@@ -37,6 +37,7 @@
 #include "zf_common_debug.h"
 #include "isr.h"
 #include "app_control.h"
+#include "route_follow.h"
 #include "Mymenu.h"
 #include "imu.h"
 #include "app_navigation.h"
@@ -56,6 +57,7 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH1)) {
         pit_flag_clear(PIT_CH1);
         app_control_motor_tick_10ms();
+        route_follow_tick_10ms();
     }
     if(pit_flag_get(PIT_CH2)) {
         pit_flag_clear(PIT_CH2);
