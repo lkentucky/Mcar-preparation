@@ -130,7 +130,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
             dpg.set_y_scroll("log_panel", dpg.get_y_scroll_max("log_panel"))
 
     def set_max_samples(self) -> None:
-        """仅在用户更改上限时调整 deque，收包热路径不查询 GUI 控件。"""
+        """更改屏幕绘制点数预算，不删除历史采样。"""
         self.max_samples = max(100, min(5000, int(dpg.get_value("max_samples"))))
         self._plot_render_signature = None  # 绘制点数上限不再删除历史。
         self._plot_dirty = True
@@ -374,7 +374,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
             except (TypeError, ValueError):
                 continue
             history = self.history.get(name)
-            # 用户改动采样点上限后立即对已有曲线生效（包括允许从小上限扩容）。
+            # 历史容量独立于屏幕点数；旧区域通过二分定位按需取样。
             if history is None:
                 history = PlotHistory(self.plot_history_capacity)
                 self.history[name] = history
@@ -772,6 +772,9 @@ def main() -> None:
             if self_test and rendered_frames == 165:
                 from button_selftest import verify_buttons
                 verify_buttons(monitor)
+            if self_test and rendered_frames == 170:
+                from plot_selftest import verify_plot
+                verify_plot(monitor)
             dpg.render_dearpygui_frame()
             # 帧率由软件限频，120 Hz 选项不再被固定的 60 Hz 垂直同步限制。
             frame_hz = max(60, int(dpg.get_value("plot_refresh_hz")))

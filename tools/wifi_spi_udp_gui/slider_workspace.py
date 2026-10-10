@@ -207,7 +207,7 @@ class SliderWorkspace:
                             "value": number_text(self.slider_values[row]),
                             "draft": [dpg.get_value(f"slider_{s}_{row}") for s in ("min", "max", "step")]})
         tags = ("bind_ip", "bind_port", "remote_ip", "remote_port", "max_samples", "imu_zoom", "imu_quality",
-                "mcar_mode", "mcar_names", "mcar_period", "plot_follow", "plot_window", "plot_refresh_hz")
+                "mcar_mode", "mcar_names", "mcar_period", "plot_window", "plot_refresh_hz")
         controls = {tag: dpg.get_value(tag) for tag in tags if dpg.does_item_exist(tag)}
         rules = [{"name": dpg.get_value(f"rule_name_{row}"), "data_type": dpg.get_value(f"rule_type_{row}"),
                   "offset": dpg.get_value(f"rule_offset_{row}"), "byte_order": dpg.get_value(f"rule_order_{row}")}
@@ -245,7 +245,7 @@ class SliderWorkspace:
                     elif tag in ("bind_port", "remote_port", "max_samples", "mcar_period") and isinstance(value, int):
                         if dpg.does_item_exist(tag):
                             dpg.set_value(tag, value)
-                    elif tag in ("imu_zoom", "mcar_mode", "plot_follow", "plot_window") and isinstance(value, (float, int, bool)) and math.isfinite(value):
+                    elif tag in ("imu_zoom", "mcar_mode", "plot_window") and isinstance(value, (float, int, bool)) and math.isfinite(value):
                         if dpg.does_item_exist(tag):
                             dpg.set_value(tag, value)
             saved_rules = state.get("rules")

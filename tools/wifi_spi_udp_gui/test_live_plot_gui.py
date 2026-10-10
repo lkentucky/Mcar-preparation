@@ -55,6 +55,8 @@ def run():
                 frames(monitor)
                 # 原生滚轮操作必须自动退出实时跟随，之后新数据不拉回视角。
                 hwnd = ctypes.windll.user32.FindWindowW(None, "WiFiSPI Slider Regression Test")
+                ctypes.windll.user32.SetForegroundWindow(hwnd)
+                frames(monitor, 12)
                 point, size = dpg.get_item_rect_min("data_plot"), dpg.get_item_rect_size("data_plot")
                 x, y = int(point[0] + size[0] / 2), int(point[1] + size[1] / 2)
                 p = ctypes.wintypes.POINT(x, y)
