@@ -13,6 +13,10 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include "navigation_config.h"
+static unsigned calibration_irq_lock;
+uint32 interrupt_global_disable(void) { assert(!calibration_irq_lock);calibration_irq_lock=1;return 0; }
+void interrupt_global_enable(uint32 previous) { assert(previous==0 && calibration_irq_lock);calibration_irq_lock=0; }
 #include <math.h>
 
 static uint32 duties[256];
@@ -43,7 +47,7 @@ static void check_navigation_integration(void)
     navigation_snapshot_t out;
     app_navigation_init();
     assert(navigation_mount_deg == 180.0f && !navigation_yaw_reversed);
-    assert(navigation_scale_x == 0.52f && navigation_scale_y == 0.61f);
+    assert(navigation_scale_x == NAV_FORWARD_SCALE_DEFAULT && navigation_scale_y == NAV_LEFT_SCALE_DEFAULT);
     memset(&fake_imu, 0, sizeof(fake_imu));
     fake_imu.accel_g[2] = 1.0f;
     fake_imu.dt_s = 0.005f;
@@ -64,7 +68,7 @@ static void check_navigation_integration(void)
         imu_tick(); imu_tick(); app_control_motor_tick_10ms();
     }
     app_navigation_get_snapshot(&out);
-    float expected = 200.0f * 3.1415926f * WHEEL_DIAMETER / ENCODER_RESOLUTION_UL * 0.52f;
+    float expected = 200.0f * 3.1415926f * WHEEL_DIAMETER / ENCODER_RESOLUTION_UL * NAV_FORWARD_SCALE_DEFAULT;
     assert(out.valid && fabsf(out.x_m - expected) < 1e-5f && fabsf(out.y_m) < 1e-5f);
     for (unsigned i = 0; i < 256; ++i) assert(duties[i] == 0);
     memset(counts, 0, sizeof(counts));
@@ -317,9 +321,9 @@ static void check_pwm_test_mode(void)
 
 static void check_mixed_encoder_resolution(void)
 {
-    const float circumference = 0.11f * 3.1415926f;
+    const float circumference = (float)WHEEL_DIAMETER * 3.1415926f;
     const float physical_counts[] = {20.0f, 20.0f, 20.0f, 10.0f};
-    const float counts_per_turn[] = {2355.2f, 2355.2f, 2355.2f, 1177.6f};
+    const float counts_per_turn[] = {1024*ENCODER_GEAR_RATIO,1024*ENCODER_GEAR_RATIO,1024*ENCODER_GEAR_RATIO,512*ENCODER_GEAR_RATIO};
     float command[3] = {100.0f, 0.0f, 0.0f};
     int targets[4];
     motor_speed_debug_snapshot_t snapshot;
@@ -336,8 +340,8 @@ static void check_mixed_encoder_resolution(void)
     Kinematics_Init();
     Kinematics_Inverse(command, targets);
     for (unsigned i = 0; i < 4; ++i)
-        assert(targets[i] == 68); /* 1 m/s -> 68 reference counts / 10ms. */
-    assert(MOTOR_RIGHT_START_DISTANCE_COUNTS == 341); /* 5 cm with 11 cm wheels. */
+        assert(targets[i] == (int)lroundf(1024*ENCODER_GEAR_RATIO/circumference/PID_RATE));
+    assert(MOTOR_RIGHT_START_DISTANCE_COUNTS == (int)lroundf(1024*ENCODER_GEAR_RATIO*.05f/circumference));
     for (unsigned tick = 0; tick < 10; ++tick)
     {
         counts[QTIMER1_ENCODER1] = 20;
@@ -367,13 +371,15 @@ static void check_mixed_encoder_resolution(void)
     int limited[4];
     up_L_all = 40; up_R_all = -40; down_L_all = -40; down_R_all = 20;
     motor_right_start_compensation_reset();
-    for (unsigned tick = 0; tick < 9; ++tick)
+    unsigned launch_ticks=(MOTOR_RIGHT_START_DISTANCE_COUNTS-1)/40;
+    if (launch_ticks>MOTOR_RIGHT_START_MAX_TICKS) launch_ticks=MOTOR_RIGHT_START_MAX_TICKS;
+    for (unsigned tick = 0; tick < launch_ticks+1; ++tick)
     {
         motor_limit_right_start_forward_offset(right_targets, limited);
         for (unsigned i = 0; i < 4; ++i)
-            assert(limited[i] == right_targets[i] - (tick < 8 ? 1 : 0));
+            assert(limited[i] == right_targets[i] - (tick < launch_ticks ? MOTOR_RIGHT_START_REVERSE_COUNTS : 0));
     }
-    puts("mixed encoder tests passed: 1024/512 lines, 2.3 ratio, 11cm wheels, equal-speed PID feedback");
+    puts("mixed encoder tests passed: 1024/512 lines, configured ratio/diameter, equal-speed PID feedback");
 }
 
 static void position_tick(void)
@@ -421,7 +427,8 @@ static void check_position_integration(void)
         assert(duties[expected_pwm[i]] > 0);
     }
     /* Replay equal physical motion toward X=50cm, DR at half count rate. */
-    for (unsigned i = 0; i < 166; ++i) {
+    const unsigned travel_ticks=(unsigned)lroundf(50*1024*ENCODER_GEAR_RATIO/(20*(float)WHEEL_DIAMETER*3.1415926f*100));
+    for (unsigned i = 0; i < travel_ticks; ++i) {
         counts[ENCODER_1] = 20; counts[ENCODER_2] = 10;
         counts[ENCODER_3] = -20; counts[ENCODER_4] = 20;
         position_tick();

@@ -27,8 +27,14 @@ try {
         'project/code/pid.c', 'project/code/PID_config.c')
     Invoke-NavigationHostTest 'navigation_fusion_test' @(
         'tests/navigation_fusion_test.c', 'project/code/navigation_fusion.c')
+    Invoke-NavigationHostTest 'scurve_profile_test' @(
+        'tests/scurve_profile_test.c', 'project/code/scurve_profile.c', 'project/code/odometry_calibration.c')
     Invoke-NavigationHostTest 'position_control_test' @(
-        'tests/position_control_test.c', 'project/code/position_control.c')
+        'tests/position_control_test.c', 'project/code/position_control.c', 'project/code/scurve_profile.c')
+    Invoke-NavigationHostTest 'route_scurve_test' @(
+        'tests/route_scurve_test.c', 'project/code/route_follow.c', 'project/code/position_control.c', 'project/code/scurve_profile.c')
+    Invoke-NavigationHostTest 'odometry_calibration_test' @(
+        'tests/odometry_calibration_test.c', 'project/code/app_navigation.c', 'project/code/navigation_fusion.c', 'project/code/odometry_calibration.c')
     Invoke-NavigationHostTest 'flash_route_test' @(
         'tests/flash_route_test.c', 'project/code/Flash.c', 'project/code/route_follow.c',
         'project/code/pid.c', 'project/code/PID_config.c')
@@ -36,7 +42,8 @@ try {
         'tests/motor_mapping_test.c', 'project/code/Motor.c', 'project/code/PID.c',
         'project/code/PID_config.c', 'project/code/app_control.c',
         'project/code/app_navigation.c', 'project/code/navigation_fusion.c',
-        'project/code/position_control.c')
+        'project/code/position_control.c', 'project/code/scurve_profile.c',
+        'project/code/odometry_calibration.c', 'project/code/route_follow.c')
     Invoke-NavigationHostTest 'menu_display_test' @(
         'tests/menu_display_test.c', 'project/code/Mymenu.c', 'project/code/menu.c',
         'project/code/PID_config.c', 'project/code/route_follow.c')

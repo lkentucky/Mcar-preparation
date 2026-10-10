@@ -2,6 +2,7 @@
 #define MCAR_POSITION_CONTROL_H
 
 #include "navigation_fusion.h"
+#include "scurve_profile.h"
 
 /* Goal XY uses the fixed Navigation/Zero frame; yaw is relative to that origin.
  * +X forward at Zero, +Y left, positive yaw counter-clockwise. */
@@ -19,11 +20,14 @@ typedef struct {
     float max_alpha_radps2;
     float xy_tolerance_cm;
     float yaw_tolerance_deg;
+    float max_jerk_cmps3;     /* S-curve reference jerk, not a PWM constraint */
 } position_config_t;
 
-#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 20.0f, 1.0f, 40.0f, 2.0f, 2.0f, 3.0f}
+#define POSITION_DEFAULT_JERK_CMPS3 120.0f
+#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 20.0f, 1.0f, 40.0f, 2.0f, 2.0f, 3.0f, POSITION_DEFAULT_JERK_CMPS3}
 
 enum {
+    POSITION_TIMEOUT = -3,
     POSITION_BAD_CONFIG = -2,
     POSITION_NO_POSE = -1,
     POSITION_IDLE = 0,
@@ -36,6 +40,9 @@ typedef struct {
     int32_t status;
     float distance_cm, yaw_error_deg;
     float vx_cmps, vy_cmps, omega_radps; /* effective Drive body command */
+    float ref_x_cm, ref_y_cm, ref_speed_cmps, ref_accel_cmps2;
+    float profile_elapsed_s, profile_total_s;
+    unsigned profile_phase;
 } position_output_t;
 
 typedef struct {
@@ -43,6 +50,11 @@ typedef struct {
     position_goal_t previous_goal;
     float world_vx_cmps, world_vy_cmps, previous_yaw_deg, settled_seconds;
     bool have_previous;
+    scurve_profile_t profile;
+    float start_x_cm, start_y_cm, dir_x, dir_y, profile_time_s;
+    float planned_vmax, planned_amax, planned_jmax;
+    float motion_elapsed_s, motion_timeout_s;
+    bool timeout_latched;
 } position_control_t;
 
 void position_control_reset(position_control_t *control);

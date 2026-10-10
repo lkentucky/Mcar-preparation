@@ -540,6 +540,26 @@
               <FilePath>..\code\navigation_config.h</FilePath>
             </File>
             <File>
+              <FileName>scurve_profile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\scurve_profile.c</FilePath>
+            </File>
+            <File>
+              <FileName>scurve_profile.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\scurve_profile.h</FilePath>
+            </File>
+            <File>
+              <FileName>odometry_calibration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\odometry_calibration.c</FilePath>
+            </File>
+            <File>
+              <FileName>odometry_calibration.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\odometry_calibration.h</FilePath>
+            </File>
+            <File>
               <FileName>position_control.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\position_control.c</FilePath>

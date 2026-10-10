@@ -57,11 +57,11 @@ static void check_directions_and_limits(void)
     /* Velocity damping must slow the world command when already moving. */
     pose = valid_pose(); goal = (position_goal_t){5.0f, 0.0f, 0.0f};
     config.max_accel_cmps2 = 300.0f;
-    pose.vx_mps = 0.2f;
+    pose.vx_mps = 0.4f;
     position_control_reset(&control);
     for (unsigned i = 0; i < 20; ++i)
         position_control_update(&control, &config, &goal, &pose, 0.01f);
-    assert(fabsf(control.output.vx_cmps - 6.0f) < 0.001f);
+    assert(fabsf(control.output.vx_cmps - 2.0f) < 0.001f);
 }
 
 static void check_arrival_and_faults(void)
@@ -169,6 +169,37 @@ int main(void)
     check_point(50, -50, 90);
     check_point(-50, 50, -120);
     check_point(0, 0, 180);
+    {
+        position_control_t c;
+        position_config_t config=POSITION_CONFIG_DEFAULT;
+        position_goal_t goal={100,0,0};
+        navigation_snapshot_t pose=valid_pose();
+        position_control_reset(&c);
+        /* A blocked plant is never declared reached just because time expired. */
+        for(unsigned i=0;i<1500;++i) position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.profile_phase==8 && c.output.status!=POSITION_REACHED);
+        assert(c.output.ref_x_cm==100 && c.output.distance_cm==100);
+        assert(c.output.vx_cmps<=5.0001f && c.output.vx_cmps>0);
+        for(unsigned i=0;i<2000 && c.output.status>=0;++i)
+            position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.status==POSITION_TIMEOUT && c.output.vx_cmps==0);
+        position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.status==POSITION_TIMEOUT);
+        /* A lateral disturbance is corrected, rather than repeating a frozen direction. */
+        position_control_reset(&c);
+        pose.y_m=.2f;
+        for(unsigned i=0;i<40;++i) position_control_update(&c,&config,&goal,&pose,.01f);
+        pose.y_m=.3f;
+        position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.vy_cmps<0);
+        float old_total=c.output.profile_total_s;
+        config.max_speed_cmps=10;
+        position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.profile_elapsed_s<.02f && c.output.profile_total_s>old_total);
+        config.max_jerk_cmps3=NAN;
+        position_control_update(&c,&config,&goal,&pose,.01f);
+        assert(c.output.status==POSITION_BAD_CONFIG);
+    }
     puts("position control passed: world/body transform, mixed move/yaw convergence, limits, dwell, faults");
     return 0;
 }

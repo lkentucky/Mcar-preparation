@@ -39,6 +39,9 @@ static float g_navigation_x_cm, g_navigation_y_cm;
 static Menu_Item *g_position_folder;
 static position_output_t g_position_snapshot;
 static bool g_flash_save;
+static float g_calibration_x_cm=100, g_calibration_y_cm=100;
+static bool g_calibration_apply_x, g_calibration_apply_y;
+static int32_t g_calibration_status;
 static char g_route_names[ROUTE_MAX_NODES][3][8];
 
 /* 240 像素 / 8 像素字体 = 30 字符，补空格清除旧文本。 */
@@ -89,6 +92,9 @@ static void menu_create(void)
     Create_Menu_File_dynamic(position, "Yaw_Kp", (void *)&motor_position_config.yaw_kp, float_Box);
     Create_Menu_File_dynamic(position, "Acc_cmps2", (void *)&motor_position_config.max_accel_cmps2, float_Box);
     Create_Menu_File_dynamic(position, "Alpha", (void *)&motor_position_config.max_alpha_radps2, float_Box);
+    Create_Menu_File_dynamic(position, "Jerk_cmps3", (void *)&motor_position_config.max_jerk_cmps3, float_Box);
+    Create_Menu_Readonly_dynamic(position, "RefV_cmps", &g_position_snapshot.ref_speed_cmps, float_Box);
+    Create_Menu_Readonly_dynamic(position, "Phase", &g_position_snapshot.profile_phase, uint32_Box);
     Create_Menu_Readonly_dynamic(position, "ErrXY_cm", &g_position_snapshot.distance_cm, float_Box);
     Create_Menu_Readonly_dynamic(position, "ErrYaw_deg", &g_position_snapshot.yaw_error_deg, float_Box);
 
@@ -101,6 +107,11 @@ static void menu_create(void)
     Create_Menu_File_dynamic(navigation, "Zero", &g_navigation_zero, bool_Box);
     Create_Menu_File_dynamic(navigation, "ScaleX", (void *)&navigation_scale_x, float_Box);
     Create_Menu_File_dynamic(navigation, "ScaleY", (void *)&navigation_scale_y, float_Box);
+    Create_Menu_File_dynamic(navigation, "RealX_cm", &g_calibration_x_cm, float_Box);
+    Create_Menu_File_dynamic(navigation, "RealY_cm", &g_calibration_y_cm, float_Box);
+    Create_Menu_File_dynamic(navigation, "CalX", &g_calibration_apply_x, bool_Box);
+    Create_Menu_File_dynamic(navigation, "CalY", &g_calibration_apply_y, bool_Box);
+    Create_Menu_Readonly_dynamic(navigation, "CalState", &g_calibration_status, int32_Box);
 
     Create_Menu_File_dynamic(drive,"Run",(void *)&motor_run_enabled,bool_Box);
     Create_Menu_File_dynamic(drive,"Vx_cmps",(void *)&motor_cmd_vx_cmps,float_Box);
@@ -291,6 +302,11 @@ static void menu_adjust(int direction)
         } else if(g_pointer->data==&g_navigation_zero && enabled) {
             app_navigation_request_reset();
             g_navigation_zero=false;
+        } else if((g_pointer->data==&g_calibration_apply_x || g_pointer->data==&g_calibration_apply_y) && enabled) {
+            unsigned axis=g_pointer->data==&g_calibration_apply_x?0u:1u;
+            if (!motor_run_enabled) route_follow_stop();
+            g_calibration_status=app_navigation_calibrate(axis,axis==0?g_calibration_x_cm:g_calibration_y_cm);
+            g_calibration_apply_x=g_calibration_apply_y=false;
         } else if(g_pointer->data==&g_flash_save && enabled) {
             uint32 primask;
             g_flash_save=false;
@@ -325,11 +341,15 @@ static void menu_adjust(int direction)
         else if (g_pointer->data == (void *)&motor_position_config.xy_kd)
             value = menu_clamp(value, 0.0f, 5.0f);
         else if (g_pointer->data == (void *)&motor_position_config.max_speed_cmps)
-            value = menu_clamp(value, 1.0f, 100.0f);
+            value = menu_clamp(value, 1.0f, 500.0f);
         else if (g_pointer->data == (void *)&motor_position_config.max_omega_radps)
             value = menu_clamp(value, 0.05f, 3.0f);
         else if (g_pointer->data == (void *)&motor_position_config.max_accel_cmps2)
             value = menu_clamp(value, 1.0f, 300.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.max_jerk_cmps3)
+            value = menu_clamp(value, 1.0f, 3000.0f);
+        else if (g_pointer->data == &g_calibration_x_cm || g_pointer->data == &g_calibration_y_cm)
+            value = menu_clamp(value, 10.0f, 10000.0f);
         else if (g_pointer->data == (void *)&motor_position_config.max_alpha_radps2)
             value = menu_clamp(value, 0.05f, 10.0f);
         else if (g_pointer->data == (void *)&motor_position_config.xy_tolerance_cm ||

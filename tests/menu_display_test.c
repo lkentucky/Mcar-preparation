@@ -49,6 +49,7 @@ static unsigned navigation_resets;
 static navigation_snapshot_t nav_snapshot;
 void app_navigation_get_snapshot(navigation_snapshot_t *out)
 { assert(irq_disabled); *out = nav_snapshot; }
+int32_t app_navigation_calibrate(unsigned axis,float measured) { (void)axis;(void)measured;return -3; }
 void app_navigation_request_reset(void) { ++navigation_resets; }
 
 void ips200_set_dir(ips200_dir_enum dir) { assert(dir == IPS200_PORTAIT); }
@@ -170,7 +171,7 @@ int main(void)
     press(KEY_1); press(KEY_4);
     assert(motor_position_goal.yaw_deg == -1.0f);
     press(KEY_3);
-    for (unsigned i = 0; i < 12; ++i) press(KEY_4); /* through every parameter, to ErrYaw */
+    for (unsigned i = 0; i < 15; ++i) press(KEY_4); /* through every parameter, to ErrYaw */
     assert(strstr(rows[7], "ErrYaw_deg") != NULL);
     press(KEY_1); press(KEY_2); /* Read-only values don't select or modify */
     assert(position_snapshot.yaw_error_deg == 0.0f);

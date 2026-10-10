@@ -30,6 +30,7 @@ typedef struct
     float max_alpha_radps2;
     float xy_tolerance_cm;
     float yaw_tolerance_deg;
+    float max_jerk_cmps3;
 
     /* Navigation 安装参数 */
     float mount_deg;

@@ -7,10 +7,11 @@
 
 #include <string.h>
 
-/* v2 adds the route. v1 keeps PID/navigation and uses default nodes.
+/* v3 adds S-curve jerk. v2 keeps the route; v1 uses default nodes.
  * Run and runtime state are never persisted. Unknown versions are rejected. */
 #define MENU_FLASH_MAGIC 0x4D454E55U
-#define MENU_FLASH_VERSION 2U
+#define MENU_FLASH_VERSION 3U
+#define MENU_FLASH_ROUTE_VERSION 2U
 #define MENU_FLASH_LEGACY_VERSION 1U
 #define MENU_FLASH_CHECK_XOR 0xA5A55A5AU
 
@@ -35,7 +36,9 @@
 #define MENU_FLASH_LEGACY_CHECKSUM 27U
 #define MENU_FLASH_WORD_ROUTE_COUNT 27U
 #define MENU_FLASH_WORD_ROUTE_FIRST 28U
-#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_ROUTE_FIRST + 3U * ROUTE_MAX_NODES)
+#define MENU_FLASH_V2_CHECKSUM (MENU_FLASH_WORD_ROUTE_FIRST + 3U * ROUTE_MAX_NODES)
+#define MENU_FLASH_WORD_JERK MENU_FLASH_V2_CHECKSUM
+#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_JERK + 1U)
 #define MENU_FLASH_WORD_COUNT (MENU_FLASH_WORD_CHECKSUM + 1U)
 
 #define MENU_FLAG_YAW_REVERSED (1UL << 0)
@@ -58,7 +61,8 @@ static float menu_flash_word_to_float(uint32 word)
 static uint32 menu_flash_checksum(void)
 {
     uint32 version = flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type;
-    uint32 end = version == MENU_FLASH_LEGACY_VERSION ? MENU_FLASH_LEGACY_CHECKSUM : MENU_FLASH_WORD_CHECKSUM;
+    uint32 end = version == MENU_FLASH_LEGACY_VERSION ? MENU_FLASH_LEGACY_CHECKSUM :
+                 version == MENU_FLASH_ROUTE_VERSION ? MENU_FLASH_V2_CHECKSUM : MENU_FLASH_WORD_CHECKSUM;
     uint32 checksum = MENU_FLASH_MAGIC ^ version ^ MENU_FLASH_CHECK_XOR;
     uint32 index;
 
@@ -72,9 +76,10 @@ static uint32 menu_flash_checksum(void)
 static uint8 menu_flash_buffer_valid(void)
 {
     uint32 version = flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type;
-    uint32 check = version == MENU_FLASH_LEGACY_VERSION ? MENU_FLASH_LEGACY_CHECKSUM : MENU_FLASH_WORD_CHECKSUM;
+    uint32 check = version == MENU_FLASH_LEGACY_VERSION ? MENU_FLASH_LEGACY_CHECKSUM :
+                 version == MENU_FLASH_ROUTE_VERSION ? MENU_FLASH_V2_CHECKSUM : MENU_FLASH_WORD_CHECKSUM;
     return (flash_union_buffer[MENU_FLASH_WORD_MAGIC].uint32_type == MENU_FLASH_MAGIC &&
-            (version == MENU_FLASH_VERSION || version == MENU_FLASH_LEGACY_VERSION) &&
+            (version == MENU_FLASH_VERSION || version == MENU_FLASH_ROUTE_VERSION || version == MENU_FLASH_LEGACY_VERSION) &&
             flash_union_buffer[check].uint32_type == menu_flash_checksum()) ? 1U : 0U;
 }
 
@@ -102,6 +107,7 @@ static uint8 menu_flash_config_valid(const menu_flash_config_t *config)
     if (!menu_flash_float_valid(config->max_accel_cmps2) || config->max_accel_cmps2 <= 0.0f) return 0U;
     if (!menu_flash_float_valid(config->max_alpha_radps2) || config->max_alpha_radps2 <= 0.0f) return 0U;
     if (!menu_flash_float_valid(config->xy_tolerance_cm) || config->xy_tolerance_cm <= 0.0f) return 0U;
+    if (!menu_flash_float_valid(config->max_jerk_cmps3) || config->max_jerk_cmps3 < 1 || config->max_jerk_cmps3 > 3000) return 0U;
     if (!menu_flash_float_valid(config->yaw_tolerance_deg) || config->yaw_tolerance_deg <= 0.0f) return 0U;
     if (!menu_flash_float_valid(config->mount_deg) ||
         config->mount_deg < -180.0f || config->mount_deg > 180.0f) return 0U;
@@ -161,6 +167,7 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
         flash_union_buffer[first + 1U].uint32_type = menu_flash_float_to_word(config->route_nodes[wheel].y_cm);
         flash_union_buffer[first + 2U].uint32_type = menu_flash_float_to_word(config->route_nodes[wheel].yaw_deg);
     }
+    flash_union_buffer[MENU_FLASH_WORD_JERK].uint32_type = menu_flash_float_to_word(config->max_jerk_cmps3);
     flash_union_buffer[MENU_FLASH_WORD_CHECKSUM].uint32_type = menu_flash_checksum();
 
     if (flash_check(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX) &&
@@ -237,6 +244,8 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
             loaded.route_nodes[wheel].yaw_deg = menu_flash_word_to_float(flash_union_buffer[first + 2U].uint32_type);
         }
     }
+    loaded.max_jerk_cmps3 = flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION
+        ? menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_JERK].uint32_type) : POSITION_DEFAULT_JERK_CMPS3;
     if (!menu_flash_config_valid(&loaded)) return 0U;
     *config = loaded;
     return 1U;
@@ -273,6 +282,7 @@ uint8 menu_flash_save_current(void)
     config.max_alpha_radps2 = motor_position_config.max_alpha_radps2;
     config.xy_tolerance_cm = motor_position_config.xy_tolerance_cm;
     config.yaw_tolerance_deg = motor_position_config.yaw_tolerance_deg;
+    config.max_jerk_cmps3 = motor_position_config.max_jerk_cmps3;
     config.mount_deg = navigation_mount_deg;
     config.scale_x = navigation_scale_x;
     config.scale_y = navigation_scale_y;
@@ -319,6 +329,7 @@ uint8 menu_flash_load_current(void)
     motor_position_config.max_alpha_radps2 = config.max_alpha_radps2;
     motor_position_config.xy_tolerance_cm = config.xy_tolerance_cm;
     motor_position_config.yaw_tolerance_deg = config.yaw_tolerance_deg;
+    motor_position_config.max_jerk_cmps3 = config.max_jerk_cmps3;
     navigation_mount_deg = config.mount_deg;
     navigation_scale_x = config.scale_x;
     navigation_scale_y = config.scale_y;

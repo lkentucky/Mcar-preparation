@@ -2,6 +2,11 @@
 #include "navigation_config.h"
 #include "imu.h"
 #include "Motor.h"
+#include "app_control.h"
+#include "route_follow.h"
+#include "odometry_calibration.h"
+#include "zf_common_interrupt.h"
+#include <math.h>
 
 #include <string.h>
 
@@ -44,6 +49,34 @@ void app_navigation_init(void)
 void app_navigation_request_reset(void)
 {
     g_reset_requested = true;
+}
+
+int32_t app_navigation_calibrate(unsigned axis, float measured_cm)
+{
+    float observed, cross, updated, yaw, speed;
+    int32_t result=1;
+    uint32 primask=interrupt_global_disable();
+    if (axis>1 || !isfinite(measured_cm)) result=-1;
+    else if (motor_run_enabled || route_run_flag) result=-2;
+    else if (g_reset_requested || !g_navigation.output.valid || !g_navigation.output.bias_ready ||
+             g_navigation.output.status!=NAV_RUNNING) result=-3;
+    else {
+        observed=(axis==0?g_navigation.output.x_m:g_navigation.output.y_m)*100;
+        cross=(axis==0?g_navigation.output.y_m:g_navigation.output.x_m)*100;
+        yaw=remainderf(g_navigation.output.yaw_deg,360);
+        speed=hypotf(g_navigation.output.vx_mps,g_navigation.output.vy_mps);
+        if (!isfinite(yaw) || fabsf(yaw)>3 || !isfinite(cross) ||
+            fabsf(cross)>fmaxf(2,.1f*fabsf(observed)) ||
+            !isfinite(speed) || speed>.03f) result=-4;
+        else if (!odometry_calibration_scale(axis==0?navigation_scale_x:navigation_scale_y,
+                                             observed,measured_cm,&updated)) result=-1;
+        else {
+            if (axis==0) navigation_scale_x=updated; else navigation_scale_y=updated;
+            g_reset_requested=true;
+        }
+    }
+    interrupt_global_enable(primask);
+    return result;
 }
 
 void app_navigation_get_snapshot(navigation_snapshot_t *snapshot)

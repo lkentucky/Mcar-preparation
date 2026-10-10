@@ -72,7 +72,7 @@ int main(void)
     route_follow_start(); route_state=ROUTE_ADVANCE; motor_run_enabled=true;
     assert(menu_flash_save_current());
     assert(!route_run_flag && !motor_run_enabled && route_state==ROUTE_IDLE);
-    assert(last_write_length==53 && storage[1]==2 && storage[27]==6 && recoveries==1);
+    assert(last_write_length==54 && storage[1]==3 && storage[27]==6 && recoveries==1);
     assert(Data_load_from_flash(&config));
     assert(config.route_node_count==6 && config.wheel_kp[0]==13.5f);
     memset(route_nodes,0,sizeof(route_nodes)); route_node_count=1;
@@ -99,19 +99,26 @@ int main(void)
     assert(Data_load_from_flash(&config)); sentinel=config;
     storage[28]^=1; assert(!Data_load_from_flash(&config));
     assert(!memcmp(&config,&sentinel,sizeof(config))); storage[28]^=1;
-    storage[27]=257; checksum(52); assert(!Data_load_from_flash(&config));
-    storage[27]=6; set_word(51,INFINITY); checksum(52);
+    storage[27]=257; checksum(53); assert(!Data_load_from_flash(&config));
+    storage[27]=6; set_word(51,INFINITY); checksum(53);
     assert(!Data_load_from_flash(&config));
     assert(menu_flash_save_current()); /* Replace corrupted stored data. */
+    /* v2 preserves all nodes; the newly introduced jerk gets its default. */
+    storage[1]=2; checksum(52);
+    motor_position_config.max_jerk_cmps3=500;
+    assert(menu_flash_load_current());
+    assert(motor_position_config.max_jerk_cmps3==POSITION_DEFAULT_JERK_CMPS3);
+    assert_nodes(expected);
+    assert(menu_flash_save_current());
     /* Version 1 has only PID/navigation data, at checksum word 27. */
     storage[1]=1; checksum(27);
     route_node_count=1; memset(route_nodes,0,sizeof(route_nodes));
     assert(menu_flash_load_current());
     assert(route_node_count==3 && ULpid.fKp==13.5f); assert_nodes(defaults);
     assert(!motor_run_enabled && !route_run_flag);
-    assert(menu_flash_save_current()); assert(storage[1]==2 && storage[27]==3);
-    storage[1]=99; checksum(52); assert(!Data_load_from_flash(&config));
-    storage[1]=2; checksum(52);
+    assert(menu_flash_save_current()); assert(storage[1]==3 && storage[27]==3);
+    storage[1]=99; checksum(53); assert(!Data_load_from_flash(&config));
+    storage[1]=3; checksum(53);
     fail_erase=1; assert(!menu_flash_save_current()); fail_erase=0;
     fail_write=1; assert(!menu_flash_save_current()); fail_write=0;
     assert(!motor_run_enabled && !route_run_flag && !irq_disabled);

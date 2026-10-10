@@ -79,6 +79,9 @@ static uint32 g_last_wifi_tx_ticks, g_last_wifi_rx_ticks;
     X(cmd_vx_cmps, motor_cmd_vx_cmps) X(cmd_vy_cmps, motor_cmd_vy_cmps) \
     X(cmd_omega_radps, motor_cmd_omega_radps) X(pos_status, pos.status) \
     X(distance_cm, pos.distance_cm) X(yaw_error_deg, pos.yaw_error_deg) \
+    X(ref_x_cm, pos.ref_x_cm) X(ref_y_cm, pos.ref_y_cm) \
+    X(ref_speed_cmps, pos.ref_speed_cmps) X(ref_accel_cmps2, pos.ref_accel_cmps2) \
+    X(profile_elapsed_s, pos.profile_elapsed_s) X(profile_total_s, pos.profile_total_s) X(profile_phase, pos.profile_phase) \
     X(run, motor_run_enabled) X(position_enabled, motor_position_enabled) \
     X(open_loop, motor_pwm_test_enabled) X(scale_x, navigation_scale_x) X(scale_y, navigation_scale_y) \
     X(accel_x_g, imu_accel_g[0]) X(accel_y_g, imu_accel_g[1]) X(accel_z_g, imu_accel_g[2]) \
@@ -124,14 +127,15 @@ typedef struct {
 #define SLIDER_PID(name, wheel, term) \
     {name, &wheel##PidInitStruct.term, 0, 1000, 0, &wheel##pid, &wheel##PidInitStruct}
 static const slider_parameter_t g_slider_parameters[] = {
-    SLIDER("scale_x", &navigation_scale_x, 0.01f, 10, 1),
-    SLIDER("scale_y", &navigation_scale_y, 0.01f, 10, 1),
+    SLIDER("scale_x", &navigation_scale_x, 0.1f, 5, 1),
+    SLIDER("scale_y", &navigation_scale_y, 0.1f, 5, 1),
     SLIDER("pos_xy_kp", &motor_position_config.xy_kp, 0.01f, 20, 0),
     SLIDER("pos_xy_kd", &motor_position_config.xy_kd, 0, 5, 0),
     SLIDER("pos_yaw_kp", &motor_position_config.yaw_kp, 0.01f, 20, 0),
-    SLIDER("pos_max_speed_cmps", &motor_position_config.max_speed_cmps, 1, 100, 0),
+    SLIDER("pos_max_speed_cmps", &motor_position_config.max_speed_cmps, 1, 500, 0),
     SLIDER("pos_max_omega_radps", &motor_position_config.max_omega_radps, 0.05f, 3, 0),
     SLIDER("pos_max_accel_cmps2", &motor_position_config.max_accel_cmps2, 1, 300, 0),
+    SLIDER("pos_max_jerk_cmps3", &motor_position_config.max_jerk_cmps3, 1, 3000, 0),
     SLIDER("pos_max_alpha_radps2", &motor_position_config.max_alpha_radps2, 0.05f, 10, 0),
     SLIDER("pos_xy_tolerance_cm", &motor_position_config.xy_tolerance_cm, 0.5f, 20, 0),
     SLIDER("pos_yaw_tolerance_deg", &motor_position_config.yaw_tolerance_deg, 0.5f, 20, 0),
@@ -292,6 +296,20 @@ static void process_command(char *line)
     char reply[80];
     ++wifi_telemetry_commands;
     if (*command=='[') { process_slider(command); return; }
+    if (strncmp(command,"CAL ",4)==0) {
+        char axis[8], extra;
+        float measured;
+        int32_t result;
+        if (sscanf(command+4,"%7s %f %c",axis,&measured,&extra)!=2 ||
+            (strcmp(axis,"X")!=0 && strcmp(axis,"Y")!=0)) {
+            command_error("expected CAL X/Y measured_cm"); return;
+        }
+        result=app_navigation_calibrate(strcmp(axis,"X")==0?0u:1u,measured);
+        if (result!=1) { command_error("calibration requires Run off, valid straight Zero-frame run >=10cm"); return; }
+        (void)snprintf(reply,sizeof(reply),"MCAR CAL %s %.9g\n",axis,
+                       (double)(strcmp(axis,"X")==0?navigation_scale_x:navigation_scale_y));
+        send_reply(reply); return;
+    }
     if (strcmp(command,"LIST?")==0) { reply_names(1); return; }
     if (strcmp(command,"GET?")==0) {
         reply_names(0);

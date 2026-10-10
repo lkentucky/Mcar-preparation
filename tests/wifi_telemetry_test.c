@@ -39,6 +39,7 @@ static uint8_t incoming[4096];
 static size_t incoming_size;
 uint32 interrupt_global_disable(void) { assert(!irq_disabled); irq_disabled=1; return 7; }
 void interrupt_global_enable(uint32 mask) { assert(irq_disabled && mask==7); irq_disabled=0; }
+int32_t app_navigation_calibrate(unsigned axis,float measured) { (void)axis;(void)measured;return -3; }
 void app_navigation_get_snapshot(navigation_snapshot_t *out) { assert(irq_disabled); *out=nav; }
 void app_control_get_position_snapshot(position_output_t *out) { assert(irq_disabled); *out=pos; }
 void motor_speed_debug_get_snapshot(motor_speed_debug_snapshot_t *out) { assert(irq_disabled); *out=motor; }
@@ -98,8 +99,8 @@ static void test_slider_packets(void) {
     assert(motor_position_config.xy_kp==2.5f && has_reply("MCAR SLIDER pos_xy_kp 2.5\n"));
     command("[\"slider\",\"pos_xy_kp\",2.75]\n");
     assert(motor_position_config.xy_kp==2.75f && has_reply("MCAR SLIDER pos_xy_kp 2.75\n"));
-    command(" [ slider , goal_x_cm , -1.25e2 ]\r\n");
-    assert(motor_position_goal.x_cm==-125 && has_reply("MCAR SLIDER goal_x_cm -125\n"));
+    command(" [ slider , TargetX_cm , -1.25e2 ]\r\n");
+    assert(motor_position_goal.x_cm==-125 && has_reply("MCAR SLIDER TargetX_cm -125\n"));
     command("[slider,pos_xy_kp,"); assert(packet_count==0);
     command("3.0][slider,pos_xy_kd,0.5]RATE 20\n");
     assert(motor_position_config.xy_kp==3 && motor_position_config.xy_kd==0.5f);
@@ -125,7 +126,7 @@ static void test_slider_packets(void) {
     motor_run_enabled=true;
     command("[slider,scale_x,0.6]");
     assert(navigation_scale_x==0.52f && has_reply("MCAR ERR parameter requires Run off\n"));
-    command("[slider,goal_y_cm,200]");
+    command("[slider,TargetY_cm,200]");
     assert(motor_position_goal.y_cm==100 && has_reply("MCAR ERR parameter requires Run off\n"));
     command("[slider,pos_xy_kp,4]"); assert(motor_position_config.xy_kp==4);
     ULpid.fError[0]=91;
@@ -135,7 +136,7 @@ static void test_slider_packets(void) {
     command("[slider,ul_kp,11]"); assert(ULpid.fError[0]==91);
     assert(motor_run_enabled && motor_position_enabled && !motor_pwm_test_enabled);
     motor_run_enabled=false;
-    command("[slider,scale_x,0.6][slider,goal_y_cm,200][slider,dr_kd,30]");
+    command("[slider,scale_x,0.6][slider,TargetY_cm,200][slider,dr_kd,30]");
     assert(navigation_scale_x==0.6f && motor_position_goal.y_cm==200);
     assert(DRPidInitStruct.fKd==30 && DRpid.fKd==30 && !motor_run_enabled);
     char oversized_slider[1100]; memset(oversized_slider,'x',sizeof(oversized_slider));
