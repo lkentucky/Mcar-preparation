@@ -1,6 +1,7 @@
 #include "Mymenu.h"
 #include "Motor.h"
 #include "Flash.h"
+#include "route_follow.h"
 #include "PID_config.h"
 #include "app_control.h"
 #include "app_navigation.h"
@@ -38,6 +39,7 @@ static float g_navigation_x_cm, g_navigation_y_cm;
 static Menu_Item *g_position_folder;
 static position_output_t g_position_snapshot;
 static bool g_flash_save;
+static char g_route_names[ROUTE_MAX_NODES][3][8];
 
 /* 240 像素 / 8 像素字体 = 30 字符，补空格清除旧文本。 */
 static void menu_show_line(uint16 y,const char *text)
@@ -152,6 +154,23 @@ static void menu_create(void)
     Create_Menu_File_dynamic(pid_dr,"Kp",&DRpid.fKp,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Ki",&DRpid.fKi,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Kd",&DRpid.fKd,float_Box);
+
+    /* Route 路线跟随：按节点顺序调用位置外环逐点行驶。
+     * Nodes 为生效节点数；N?X_cm/N?Y_cm/N?Yaw 为节点坐标（Zero 坐标系）。
+     * 超出节点数的槽位不执行，可留空。 */
+    Menu_Item *route=Create_Menu_Folder_dynamic(&g_root,"Route");
+    Create_Menu_File_dynamic(route,"Run",(void *)&route_run_flag,bool_Box);
+    Create_Menu_File_dynamic(route,"Nodes",(void *)&route_node_count,int16_Box);
+    Create_Menu_Readonly_dynamic(route,"Idx",(void *)&route_current_idx,int32_Box);
+    Create_Menu_Readonly_dynamic(route,"State",(void *)&route_state,int32_Box);
+    for(unsigned i=0;i<ROUTE_MAX_NODES;++i) {
+        snprintf(g_route_names[i][0],sizeof(g_route_names[i][0]),"N%dX_cm",i+1);
+        snprintf(g_route_names[i][1],sizeof(g_route_names[i][1]),"N%dY_cm",i+1);
+        snprintf(g_route_names[i][2],sizeof(g_route_names[i][2]),"N%dYaw",i+1);
+        Create_Menu_File_dynamic(route,g_route_names[i][0],&route_nodes[i].x_cm,float_Box);
+        Create_Menu_File_dynamic(route,g_route_names[i][1],&route_nodes[i].y_cm,float_Box);
+        Create_Menu_File_dynamic(route,g_route_names[i][2],&route_nodes[i].yaw_deg,float_Box);
+    }
 
     /* 根目录保存项：置 On 即把当前 PID/位置环/导航参数写入 Flash */
     g_flash_save=false;
@@ -279,6 +298,9 @@ static void menu_adjust(int direction)
             motor_run_enabled=false;
             interrupt_global_enable(primask);
             menu_flash_save_current();
+        } else if(g_pointer->data==(void *)&route_run_flag) {
+            /* Route/Run：On 启动路线（自动切入位置模式），Off 停车取消 */
+            if(enabled) route_follow_start(); else route_follow_stop();
         }
         return;
     }
@@ -321,16 +343,28 @@ static void menu_adjust(int direction)
         {
             value = menu_clamp(value, -20.0f, 20.0f);
         }
+        else if (route_follow_is_node_field(g_pointer->data))
+        {
+            /* Route 节点：X/Y ±10000cm，Yaw ±180°，允许负值 */
+            value = route_follow_clamp_node_field(g_pointer->data, value);
+        }
         else
         {
             value = menu_clamp(value, 0.0f, 1000.0f);
         }
         *(float *)g_pointer->data=value;
+        if(route_follow_is_node_field(g_pointer->data)) route_follow_config_edited();
     } else if(g_pointer->kind==int16_Box) {
         int step=(int)g_steps[g_step_index],value;
         if(step<1) step=1;
         value=*(int16_t *)g_pointer->data+step*direction;
-        *(int16_t *)g_pointer->data=(int16_t)Limit_int(LIMIT_PWM_MIN,value,LIMIT_PWM_MAX);
+        if(g_pointer->data==(void *)&route_node_count) {
+            value=Limit_int(1,value,ROUTE_MAX_NODES);
+            *(int16_t *)g_pointer->data=(int16_t)value;
+            route_follow_config_edited();
+        } else {
+            *(int16_t *)g_pointer->data=(int16_t)Limit_int(LIMIT_PWM_MIN,value,LIMIT_PWM_MAX);
+        }
     }
 }
 void Menu_Init(void)
