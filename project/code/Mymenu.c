@@ -97,6 +97,7 @@ static void menu_create(void)
     Create_Menu_File_dynamic(position, "YawBand", (void *)&motor_position_config.yaw_lin_band_rad, float_Box);
     Create_Menu_File_dynamic(position, "YawKd", (void *)&motor_position_config.yaw_kd, float_Box);
     Create_Menu_File_dynamic(position, "YawTrKd", (void *)&motor_position_config.yaw_kd_translate, float_Box);
+    Create_Menu_File_dynamic(position, "YawStic", (void *)&motor_position_config.yaw_stiction_radps, float_Box);
     Create_Menu_Readonly_dynamic(position, "ErrXY_cm", &g_position_snapshot.distance_cm, float_Box);
     Create_Menu_Readonly_dynamic(position, "ErrYaw_deg", &g_position_snapshot.yaw_error_deg, float_Box);
 
@@ -362,6 +363,8 @@ static void menu_adjust(int direction)
         else if (g_pointer->data == (void *)&motor_position_config.yaw_kd ||
                  g_pointer->data == (void *)&motor_position_config.yaw_kd_translate)
             value = menu_clamp(value, 0.0f, 2.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.yaw_stiction_radps)
+            value = menu_clamp(value, 0.0f, 1.0f);
         else if (g_pointer->data == (void *)&motor_cmd_vx_cmps ||
             g_pointer->data == (void *)&motor_cmd_vy_cmps)
         {

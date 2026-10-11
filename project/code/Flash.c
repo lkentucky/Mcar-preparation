@@ -7,12 +7,14 @@
 
 #include <string.h>
 
-/* v3 adds the ivision-style position planner parameters. v2 has the route,
- * v1 keeps PID/navigation and uses default nodes; both load with planner
- * defaults. Run and runtime state are never persisted. Unknown versions
+/* v4 adds yaw_stiction_radps (YawStic) after the v3 planner block. v3 has
+ * the ivision-style planner parameters, v2 the route, v1 PID/navigation
+ * with default nodes; older archives load with defaults for the missing
+ * fields. Run and runtime state are never persisted. Unknown versions
  * are rejected. */
 #define MENU_FLASH_MAGIC 0x4D454E55U
-#define MENU_FLASH_VERSION 3U
+#define MENU_FLASH_VERSION 4U
+#define MENU_FLASH_VERSION_V3 3U
 #define MENU_FLASH_VERSION_V2 2U
 #define MENU_FLASH_LEGACY_VERSION 1U
 #define MENU_FLASH_CHECK_XOR 0xA5A55A5AU
@@ -40,7 +42,8 @@
 #define MENU_FLASH_WORD_ROUTE_FIRST 28U
 #define MENU_FLASH_WORD_CHECKSUM_V2 (MENU_FLASH_WORD_ROUTE_FIRST + 3U * ROUTE_MAX_NODES)
 #define MENU_FLASH_WORD_COUNT_V2 (MENU_FLASH_WORD_CHECKSUM_V2 + 1U)
-/* v3：路线块之后追加 10 个规划参数字，校验字后移 */
+/* v3：路线块之后追加 10 个规划参数字，校验字后移；
+ * v4：再追加 YawStic 一个字，校验字再后移一格 */
 #define MENU_FLASH_WORD_PLANNER_FIRST MENU_FLASH_WORD_CHECKSUM_V2
 #define MENU_FLASH_WORD_BRAKE_LIMIT (MENU_FLASH_WORD_PLANNER_FIRST + 0U)
 #define MENU_FLASH_WORD_BRAKE_CEILING (MENU_FLASH_WORD_PLANNER_FIRST + 1U)
@@ -52,7 +55,10 @@
 #define MENU_FLASH_WORD_YAW_BAND (MENU_FLASH_WORD_PLANNER_FIRST + 7U)
 #define MENU_FLASH_WORD_YAW_KD (MENU_FLASH_WORD_PLANNER_FIRST + 8U)
 #define MENU_FLASH_WORD_YAW_KD_TRN (MENU_FLASH_WORD_PLANNER_FIRST + 9U)
-#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_PLANNER_FIRST + 10U)
+#define MENU_FLASH_WORD_YAW_STICTION (MENU_FLASH_WORD_PLANNER_FIRST + 10U)
+/* v3 的校验字恰好落在 v4 的 YAW_STICTION 槽位，读旧档时不能按参数解析 */
+#define MENU_FLASH_WORD_CHECKSUM_V3 (MENU_FLASH_WORD_PLANNER_FIRST + 10U)
+#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_PLANNER_FIRST + 11U)
 #define MENU_FLASH_WORD_COUNT (MENU_FLASH_WORD_CHECKSUM + 1U)
 
 #define MENU_FLAG_YAW_REVERSED (1UL << 0)
@@ -81,6 +87,7 @@ static uint32 menu_flash_checksum(void)
 
     if (version == MENU_FLASH_LEGACY_VERSION) end = MENU_FLASH_LEGACY_CHECKSUM;
     else if (version == MENU_FLASH_VERSION_V2) end = MENU_FLASH_WORD_CHECKSUM_V2;
+    else if (version == MENU_FLASH_VERSION_V3) end = MENU_FLASH_WORD_CHECKSUM_V3;
     else end = MENU_FLASH_WORD_CHECKSUM;
 
     for (index = MENU_FLASH_WORD_KP_FIRST; index < end; index++)
@@ -97,10 +104,11 @@ static uint8 menu_flash_buffer_valid(void)
 
     if (version == MENU_FLASH_LEGACY_VERSION) check = MENU_FLASH_LEGACY_CHECKSUM;
     else if (version == MENU_FLASH_VERSION_V2) check = MENU_FLASH_WORD_CHECKSUM_V2;
+    else if (version == MENU_FLASH_VERSION_V3) check = MENU_FLASH_WORD_CHECKSUM_V3;
     else check = MENU_FLASH_WORD_CHECKSUM;
     return (flash_union_buffer[MENU_FLASH_WORD_MAGIC].uint32_type == MENU_FLASH_MAGIC &&
-            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V2 ||
-             version == MENU_FLASH_LEGACY_VERSION) &&
+            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V3 ||
+             version == MENU_FLASH_VERSION_V2 || version == MENU_FLASH_LEGACY_VERSION) &&
             flash_union_buffer[check].uint32_type == menu_flash_checksum()) ? 1U : 0U;
 }
 
@@ -149,6 +157,8 @@ static uint8 menu_flash_config_valid(const menu_flash_config_t *config)
         config->yaw_kd < 0.0f || config->yaw_kd > 2.0f) return 0U;
     if (!menu_flash_float_valid(config->yaw_kd_translate) ||
         config->yaw_kd_translate < 0.0f || config->yaw_kd_translate > 2.0f) return 0U;
+    if (!menu_flash_float_valid(config->yaw_stiction_radps) ||
+        config->yaw_stiction_radps < 0.0f || config->yaw_stiction_radps > 1.0f) return 0U;
     if (!menu_flash_float_valid(config->mount_deg) ||
         config->mount_deg < -180.0f || config->mount_deg > 180.0f) return 0U;
     if (!menu_flash_float_valid(config->scale_x) ||
@@ -217,6 +227,7 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
     flash_union_buffer[MENU_FLASH_WORD_YAW_BAND].uint32_type = menu_flash_float_to_word(config->yaw_lin_band_rad);
     flash_union_buffer[MENU_FLASH_WORD_YAW_KD].uint32_type = menu_flash_float_to_word(config->yaw_kd);
     flash_union_buffer[MENU_FLASH_WORD_YAW_KD_TRN].uint32_type = menu_flash_float_to_word(config->yaw_kd_translate);
+    flash_union_buffer[MENU_FLASH_WORD_YAW_STICTION].uint32_type = menu_flash_float_to_word(config->yaw_stiction_radps);
     flash_union_buffer[MENU_FLASH_WORD_CHECKSUM].uint32_type = menu_flash_checksum();
 
     if (flash_check(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX) &&
@@ -293,7 +304,8 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
             loaded.route_nodes[wheel].yaw_deg = menu_flash_word_to_float(flash_union_buffer[first + 2U].uint32_type);
         }
     }
-    if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION)
+    if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION ||
+        flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V3)
     {
         loaded.brake_limit = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_BRAKE_LIMIT].uint32_type);
         loaded.brake_ceiling_cmps2 = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_BRAKE_CEILING].uint32_type);
@@ -305,6 +317,16 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         loaded.yaw_lin_band_rad = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_YAW_BAND].uint32_type);
         loaded.yaw_kd = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_YAW_KD].uint32_type);
         loaded.yaw_kd_translate = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_YAW_KD_TRN].uint32_type);
+        if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION)
+        {
+            loaded.yaw_stiction_radps = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_YAW_STICTION].uint32_type);
+        }
+        else
+        {
+            /* v3 旧存档没有 YawStic：该槽位存的是 v3 校验字，不能按参数解析 */
+            static const position_config_t pos_defaults = POSITION_CONFIG_DEFAULT;
+            loaded.yaw_stiction_radps = pos_defaults.yaw_stiction_radps;
+        }
     }
     else
     {
@@ -320,6 +342,7 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         loaded.yaw_lin_band_rad = pos_defaults.yaw_lin_band_rad;
         loaded.yaw_kd = pos_defaults.yaw_kd;
         loaded.yaw_kd_translate = pos_defaults.yaw_kd_translate;
+        loaded.yaw_stiction_radps = pos_defaults.yaw_stiction_radps;
     }
     if (!menu_flash_config_valid(&loaded)) return 0U;
     *config = loaded;
@@ -367,6 +390,7 @@ uint8 menu_flash_save_current(void)
     config.yaw_lin_band_rad = motor_position_config.yaw_lin_band_rad;
     config.yaw_kd = motor_position_config.yaw_kd;
     config.yaw_kd_translate = motor_position_config.yaw_kd_translate;
+    config.yaw_stiction_radps = motor_position_config.yaw_stiction_radps;
     config.mount_deg = navigation_mount_deg;
     config.scale_x = navigation_scale_x;
     config.scale_y = navigation_scale_y;
@@ -423,6 +447,7 @@ uint8 menu_flash_load_current(void)
     motor_position_config.yaw_lin_band_rad = config.yaw_lin_band_rad;
     motor_position_config.yaw_kd = config.yaw_kd;
     motor_position_config.yaw_kd_translate = config.yaw_kd_translate;
+    motor_position_config.yaw_stiction_radps = config.yaw_stiction_radps;
     navigation_mount_deg = config.mount_deg;
     navigation_scale_x = config.scale_x;
     navigation_scale_y = config.scale_y;

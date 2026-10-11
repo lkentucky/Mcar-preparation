@@ -41,6 +41,8 @@ typedef struct
     float yaw_lin_band_rad;
     float yaw_kd;
     float yaw_kd_translate;
+    /* Flash v4 新增（v1/v2/v3 存档加载时用默认值） */
+    float yaw_stiction_radps;
 
     /* Navigation 安装参数 */
     float mount_deg;

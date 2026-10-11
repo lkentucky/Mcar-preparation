@@ -46,7 +46,13 @@
 #define YAW_KD 0.22f            /* 静止转向陀螺阻尼 */
 #define YAW_KD_TRANSLATE 0.36f  /* 平移时陀螺阻尼 */
 #define YAW_TRANSLATE_GAIN 1.0f
-#define YAW_STICTION_RADPS 0.0f /* 静摩擦角速度地板，默认关闭 */
+#define YAW_STICTION_RADPS 0.15f /* 静摩擦角速度地板默认值（菜单 YawStic 可改，0=关闭） */
+/* ---------------- 末端蠕行（替代"进容差圈即砍零"） ----------------
+ * 进容差圈后保持 CRAWL 速度爬向目标，到 CUTOFF 半径才切断命令。
+ * 切断瞬间速度从 ~10cm/s 降到 3cm/s，主动急刹造成的轮子打滑/编码器
+ * 少计随之大幅缩小；若地面摩擦使车在圈内爬不动，静止沉降照常判到达。 */
+#define POS_CRAWL_SPEED_CMPS 3.0f
+#define POS_CRAWL_STOP_CM 0.8f
 /* ---------------- 方向滤波（ivision PATH_DIRECTION_FILTER_ALPHA） ---------------- */
 #define DIR_FILTER_ALPHA 0.25f
 
@@ -137,9 +143,11 @@ static float plan_translation(position_control_t *control,
         accel_ramp = max_acc * short_gain; /* 只提加速斜坡，不动刹车 */
     }
 
-    /* 弹簧静止死区：进容差圈直接命令零速，不再追毫米级残差
-     * （等价 ivision spring_terminal，半径取到达容差）。 */
-    if (distance_cm <= config->xy_tolerance_cm)
+    /* 蠕行切断半径：不超过容差的一半，小容差时自动缩小 */
+    float stop_radius = fminf(POS_CRAWL_STOP_CM, 0.5f * config->xy_tolerance_cm);
+
+    /* 到切断半径：命令零速，剩余距离靠极低速的惯性/摩擦收尾 */
+    if (distance_cm <= stop_radius)
     {
         control->plan_v_cmps = 0.0f;
         return 0.0f;
@@ -172,6 +180,15 @@ static float plan_translation(position_control_t *control,
         target_v = sqrtf(2.0f * brake_acc * distance_cm);
     }
     if (target_v > max_speed) target_v = max_speed;
+
+    /* 容差圈内限速蠕行（上限钳制）：一进容差圈就把速度压到 CRAWL 慢慢
+     * 爬向切断半径。目的：切断瞬间动量最小化——即使随后的刹车让轮子
+     * 打滑，编码器少计也被限制在约 1cm 以内，而不是 3~4cm。
+     * 注意这是"上限"而非下限：曲线本身更低（更接近目标）时照用曲线。 */
+    if (distance_cm <= config->xy_tolerance_cm && target_v > POS_CRAWL_SPEED_CMPS)
+    {
+        target_v = POS_CRAWL_SPEED_CMPS;
+    }
 
     /* 每拍斜坡：加速用 accel_ramp，减速一律用物理刹车能力。 */
     if (target_v > control->plan_v_cmps)
@@ -228,8 +245,11 @@ static float plan_yaw(position_control_t *control,
     }
     if (target_abs_vw > max_ang_vel) target_abs_vw = max_ang_vel;
 
-    /* 静摩擦补偿地板（默认关闭）。 */
-    stiction_vw = fminf(YAW_STICTION_RADPS, max_ang_vel);
+    /* 静摩擦补偿地板（菜单 YawStic，默认 0.15）：误差仍大于"地板速度制动距离"
+     * 时，命令角速度不低于地板值，保证传动系真的在转，避免小误差下靠
+     * 蠕动式走走停停长时间收敛。 */
+    stiction_vw = fminf(cfg_or(config->yaw_stiction_radps, 0.0f, 1.0f, YAW_STICTION_RADPS),
+                        max_ang_vel);
     if (stiction_vw > 0.0f)
     {
         if (translating) stiction_vw *= 0.4f;
@@ -301,6 +321,7 @@ void position_control_update(position_control_t *control,
     if (goal_changed) {
         /* 换目标即重新规划（ivision：target 变化 reset 规划器）。 */
         control->settled_seconds = 0.0f;
+        control->stall_seconds = 0.0f;
         control->plan_v_cmps = 0.0f;
         control->plan_vw_radps = 0.0f;
         control->world_vx_cmps = 0.0f;
@@ -348,17 +369,53 @@ void position_control_update(position_control_t *control,
     control->output.omega_radps = omega;
 
     control->output.status = xy_inside && yaw_inside ? POSITION_SETTLING : POSITION_MOVING;
-    /* 规划器到零、车也静止后，再保持一个沉降窗口才判到达。 */
-    if (xy_inside && yaw_inside && resting &&
-        control->plan_v_cmps < 0.001f &&
-        fabsf(control->plan_vw_radps) < 0.001f &&
-        hypotf(control->world_vx_cmps, control->world_vy_cmps) < 0.001f) {
-        control->settled_seconds += dt;
-        if (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f) {
+    /* 到位判定（三路，互不混淆）：
+     * a) 正常：蠕行到切断半径后命令零速，车实测停稳，沉降 0.2s；
+     * b) 平移静摩擦卡死：圈内仍命令蠕行（plan_v≥半幅蠕行），但实测车速≈0
+     *    （<1cm/s，明显低于蠕行本身），累计 0.3s 判到达；
+     * c) 航向卡死兜底：XY 已在容差内，但命令旋转（|plan_vw|≥0.05）而实测
+     *    角速度≈0，旋转执行不出来——累计 0.3s 也判到达，带小航向误差
+     *    继续下一点，避免在点上无限期停留。正常缓慢收敛（实测在转）
+     *    不会触发本路。
+     * 正常蠕行中实测速度≈蠕行值，既不是命令零速也不算"≈0"，不累加。 */
+    {
+        float measured_cmps = hypotf(pose->vx_mps, pose->vy_mps) * 100.0f;
+        bool cmd_zero = control->plan_v_cmps < 0.001f &&
+                        fabsf(control->plan_vw_radps) < 0.001f;
+        bool hard_stopped = measured_cmps < 1.0f &&
+                            fabsf(yaw_rate) <= POSITION_REST_OMEGA_RADPS;
+        bool xy_stalled = hard_stopped &&
+                          control->plan_v_cmps >= 0.5f * POS_CRAWL_SPEED_CMPS;
+        /* 航向"冻结"判据比平移更严：实测角速度 <0.02rad/s（≈1°/s）才算
+         * 执行不出来；还在缓慢收敛（>1°/s）时不触发，让它继续转。 */
+        bool yaw_stalled = measured_cmps < 1.0f &&
+                           fabsf(yaw_rate) < 0.02f &&
+                           fabsf(control->plan_vw_radps) >= 0.05f;
+        bool step = false;
+        if (xy_inside && yaw_inside) {
+            if (resting && cmd_zero) {
+                control->stall_seconds = 0.0f;
+                control->settled_seconds += dt;
+                step = true;
+            } else if (xy_stalled) {
+                control->settled_seconds = 0.0f;
+                control->stall_seconds += dt;
+                step = true;
+            }
+        } else if (xy_inside && yaw_stalled) {
+            /* XY 已到位、航向执行卡死：兜底放行 */
+            control->settled_seconds = 0.0f;
+            control->stall_seconds += dt;
+            step = true;
+        }
+        if (!step) {
+            control->settled_seconds = 0.0f;
+            control->stall_seconds = 0.0f;
+        }
+        if (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f ||
+            control->stall_seconds >= 0.30f) {
             control->output.status = POSITION_REACHED;
             control->output.vx_cmps = control->output.vy_cmps = control->output.omega_radps = 0.0f;
         }
-    } else {
-        control->settled_seconds = 0.0f;
     }
 }
