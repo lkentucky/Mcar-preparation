@@ -22,6 +22,11 @@ try {
         'tests/wifi_disabled_test.c', 'project/code/wifispi.c') @('-DIMU_WIFI_ENABLED=0')
     Invoke-NavigationHostTest 'vofa_packet_test' @(
         'tests/vofa_packet_test.c', 'project/code/wifispi.c') @('-DIMU_WIFI_ENABLED=0', '-Wl,--wrap=wifispi_send_floats')
+    Invoke-NavigationHostTest 'deadzone_slider_test' @(
+        'tests/deadzone_slider_test.c', 'project/code/wifispi.c', 'project/code/pid.c', 'project/code/PID_config.c')
+    Invoke-NavigationHostTest 'deadzone_menu_test' @(
+        'tests/deadzone_menu_test.c', 'project/code/Mymenu.c', 'project/code/menu.c',
+        'project/code/PID_config.c', 'project/code/route_follow.c')
     Invoke-NavigationHostTest 'wifi_telemetry_test' @(
         'tests/wifi_telemetry_test.c', 'project/code/wifispi.c',
         'project/code/pid.c', 'project/code/PID_config.c')

@@ -76,6 +76,7 @@ static void menu_create(void)
 
     Create_Menu_File_dynamic(position, "Enable", (void *)&motor_position_enabled, bool_Box);
     Create_Menu_File_dynamic(position, "Run", (void *)&motor_run_enabled, bool_Box);
+    Create_Menu_File_dynamic(position, "Zero", &g_navigation_zero, bool_Box);
     Create_Menu_File_dynamic(position, "TargetX_cm", (void *)&motor_position_goal.x_cm, float_Box);
     Create_Menu_File_dynamic(position, "TargetY_cm", (void *)&motor_position_goal.y_cm, float_Box);
     Create_Menu_File_dynamic(position, "TargetYaw", (void *)&motor_position_goal.yaw_deg, float_Box);
@@ -115,6 +116,14 @@ static void menu_create(void)
     Create_Menu_File_dynamic(drive,"Vx_cmps",(void *)&motor_cmd_vx_cmps,float_Box);
     Create_Menu_File_dynamic(drive,"Vy_cmps",(void *)&motor_cmd_vy_cmps,float_Box);
     Create_Menu_File_dynamic(drive,"Omega",(void *)&motor_cmd_omega_radps,float_Box);
+    Create_Menu_File_dynamic(drive,"UL_DeadF",(void *)&motor_deadzone_fwd[MOTOR_WHEEL_UL],int32_Box);
+    Create_Menu_File_dynamic(drive,"UL_DeadR",(void *)&motor_deadzone_rev[MOTOR_WHEEL_UL],int32_Box);
+    Create_Menu_File_dynamic(drive,"UR_DeadF",(void *)&motor_deadzone_fwd[MOTOR_WHEEL_UR],int32_Box);
+    Create_Menu_File_dynamic(drive,"UR_DeadR",(void *)&motor_deadzone_rev[MOTOR_WHEEL_UR],int32_Box);
+    Create_Menu_File_dynamic(drive,"DL_DeadF",(void *)&motor_deadzone_fwd[MOTOR_WHEEL_DL],int32_Box);
+    Create_Menu_File_dynamic(drive,"DL_DeadR",(void *)&motor_deadzone_rev[MOTOR_WHEEL_DL],int32_Box);
+    Create_Menu_File_dynamic(drive,"DR_DeadF",(void *)&motor_deadzone_fwd[MOTOR_WHEEL_DR],int32_Box);
+    Create_Menu_File_dynamic(drive,"DR_DeadR",(void *)&motor_deadzone_rev[MOTOR_WHEEL_DR],int32_Box);
     Create_Menu_File_dynamic(pwm_test,"OpenLoop",(void *)&motor_pwm_test_enabled,bool_Box);
     Create_Menu_File_dynamic(pwm_test,"Run",(void *)&motor_run_enabled,bool_Box);
     Create_Menu_File_dynamic(pwm_test,"UL_PWM",(void *)&motor_test_pwm[MOTOR_WHEEL_UL],int16_Box);
@@ -169,6 +178,7 @@ static void menu_create(void)
      * 超出节点数的槽位不执行，可留空。 */
     Menu_Item *route=Create_Menu_Folder_dynamic(&g_root,"Route");
     Create_Menu_File_dynamic(route,"Run",(void *)&route_run_flag,bool_Box);
+    Create_Menu_File_dynamic(route,"Zero",&g_navigation_zero,bool_Box);
     Create_Menu_File_dynamic(route,"Nodes",(void *)&route_node_count,int16_Box);
     Create_Menu_Readonly_dynamic(route,"Idx",(void *)&route_current_idx,int32_Box);
     Create_Menu_Readonly_dynamic(route,"State",(void *)&route_state,int32_Box);
@@ -298,7 +308,10 @@ static void menu_adjust(int direction)
                 g_encoder_zero_counts[wheel]=g_motor_snapshot.cumulative_raw_counts[wheel];
             g_encoder_zero=false;
         } else if(g_pointer->data==&g_navigation_zero && enabled) {
+            uint32 mask=interrupt_global_disable();
+            route_follow_stop();
             app_navigation_request_reset();
+            interrupt_global_enable(mask);
             g_navigation_zero=false;
         } else if(g_pointer->data==&g_flash_save && enabled) {
             uint32 primask;
@@ -385,6 +398,15 @@ static void menu_adjust(int direction)
         }
         *(float *)g_pointer->data=value;
         if(route_follow_is_node_field(g_pointer->data)) route_follow_config_edited();
+    } else if(g_pointer->kind==int32_Box) {
+        int step=(int)g_steps[g_step_index];
+        uint32 primask;
+        int value;
+        if(step<1) step=1;
+        primask=interrupt_global_disable();
+        value=*(volatile int *)g_pointer->data+step*direction;
+        *(volatile int *)g_pointer->data=Limit_int(0,value,LIMIT_PWM_MAX);
+        interrupt_global_enable(primask);
     } else if(g_pointer->kind==int16_Box) {
         int step=g_pointer->data==(void *)&route_node_count ? 1 : (int)g_steps[g_step_index],value;
         if(step<1) step=1;

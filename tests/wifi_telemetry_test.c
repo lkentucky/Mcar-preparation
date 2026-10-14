@@ -20,6 +20,8 @@ volatile int32 imu_attitude_status=1;
 volatile float imu_roll_deg=12, imu_pitch_deg=-4, imu_yaw_deg=30;
 volatile float imu_accel_g[3]={0,0,1}, imu_gyro_dps[3]={1,2,3};
 volatile float imu_calibration_percent=100;
+volatile int motor_deadzone_fwd[4]={MOTOR_UL_DEADZONE_FWD,MOTOR_UR_DEADZONE_FWD,MOTOR_DL_DEADZONE_FWD,MOTOR_DR_DEADZONE_FWD};
+volatile int motor_deadzone_rev[4]={MOTOR_UL_DEADZONE_REV,MOTOR_UR_DEADZONE_REV,MOTOR_DL_DEADZONE_REV,MOTOR_DR_DEADZONE_REV};
 volatile bool motor_run_enabled, motor_position_enabled=true, motor_pwm_test_enabled;
 volatile float motor_cmd_vx_cmps=5, motor_cmd_vy_cmps=6, motor_cmd_omega_radps=0.2f;
 volatile position_goal_t motor_position_goal={100,100,90};

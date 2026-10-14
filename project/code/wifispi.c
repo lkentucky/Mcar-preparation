@@ -96,6 +96,14 @@ static uint32 g_last_wifi_tx_ticks, g_last_wifi_rx_ticks;
     X(dl_target, motor.target_counts[2]) X(dr_target, motor.target_counts[3]) \
     X(ul_pwm, motor.final_pwm[0]) X(ur_pwm, motor.final_pwm[1]) \
     X(dl_pwm, motor.final_pwm[2]) X(dr_pwm, motor.final_pwm[3]) \
+    X(ul_deadzone_fwd, motor_deadzone_fwd[MOTOR_WHEEL_UL]) \
+    X(ul_deadzone_rev, motor_deadzone_rev[MOTOR_WHEEL_UL]) \
+    X(ur_deadzone_fwd, motor_deadzone_fwd[MOTOR_WHEEL_UR]) \
+    X(ur_deadzone_rev, motor_deadzone_rev[MOTOR_WHEEL_UR]) \
+    X(dl_deadzone_fwd, motor_deadzone_fwd[MOTOR_WHEEL_DL]) \
+    X(dl_deadzone_rev, motor_deadzone_rev[MOTOR_WHEEL_DL]) \
+    X(dr_deadzone_fwd, motor_deadzone_fwd[MOTOR_WHEEL_DR]) \
+    X(dr_deadzone_rev, motor_deadzone_rev[MOTOR_WHEEL_DR]) \
     X(control_ticks, motor.control_ticks)
 #define VARIABLE_ID(name, expr) TV_##name,
 enum { TELEMETRY_VARIABLES(VARIABLE_ID) TV_COUNT };
@@ -119,10 +127,12 @@ typedef struct {
     int needs_stop;
     tagPID_T *pid;
     PIDInitStruct *pid_init;
+    volatile int *integer;
 } slider_parameter_t;
-#define SLIDER(name, address, low, high, stop) {name, address, low, high, stop, NULL, NULL}
+#define SLIDER(name, address, low, high, stop) {name, address, low, high, stop, NULL, NULL, NULL}
 #define SLIDER_PID(name, wheel, term) \
-    {name, &wheel##PidInitStruct.term, 0, 1000, 0, &wheel##pid, &wheel##PidInitStruct}
+    {name, &wheel##PidInitStruct.term, 0, 1000, 0, &wheel##pid, &wheel##PidInitStruct, NULL}
+#define SLIDER_INT(name, address) {name, NULL, 0, LIMIT_PWM_MAX, 0, NULL, NULL, address}
 static const slider_parameter_t g_slider_parameters[] = {
     SLIDER("scale_x", &navigation_scale_x, 0.01f, 10, 1),
     SLIDER("scale_y", &navigation_scale_y, 0.01f, 10, 1),
@@ -141,6 +151,15 @@ static const slider_parameter_t g_slider_parameters[] = {
     SLIDER("Vx_cmps",&motor_cmd_vx_cmps,-500,500,0),
     SLIDER("Vy_cmps",&motor_cmd_vy_cmps,-500,500,0),
 
+    SLIDER_INT("ul_deadzone_fwd", &motor_deadzone_fwd[MOTOR_WHEEL_UL]),
+    SLIDER_INT("ul_deadzone_rev", &motor_deadzone_rev[MOTOR_WHEEL_UL]),
+    SLIDER_INT("ur_deadzone_fwd", &motor_deadzone_fwd[MOTOR_WHEEL_UR]),
+    SLIDER_INT("ur_deadzone_rev", &motor_deadzone_rev[MOTOR_WHEEL_UR]),
+    SLIDER_INT("dl_deadzone_fwd", &motor_deadzone_fwd[MOTOR_WHEEL_DL]),
+    SLIDER_INT("dl_deadzone_rev", &motor_deadzone_rev[MOTOR_WHEEL_DL]),
+    SLIDER_INT("dr_deadzone_fwd", &motor_deadzone_fwd[MOTOR_WHEEL_DR]),
+    SLIDER_INT("dr_deadzone_rev", &motor_deadzone_rev[MOTOR_WHEEL_DR]),
+
     SLIDER_PID("ul_kp", UL, fKp), SLIDER_PID("ul_ki", UL, fKi), SLIDER_PID("ul_kd", UL, fKd),
     SLIDER_PID("ur_kp", UR, fKp), SLIDER_PID("ur_ki", UR, fKi), SLIDER_PID("ur_kd", UR, fKd),
     SLIDER_PID("dl_kp", DL, fKp), SLIDER_PID("dl_ki", DL, fKi), SLIDER_PID("dl_kd", DL, fKd),
@@ -148,6 +167,7 @@ static const slider_parameter_t g_slider_parameters[] = {
 };
 #undef SLIDER
 #undef SLIDER_PID
+#undef SLIDER_INT
 
 static void telemetry_reset(void)
 {
@@ -241,14 +261,18 @@ static void process_slider(char *command)
     if (value<parameter->minimum || value>parameter->maximum) {
         command_error("parameter out of range"); return;
     }
+    if (parameter->integer!=NULL && truncf(value)!=value) {
+        command_error("parameter requires integer"); return;
+    }
     primask=interrupt_global_disable();
     if (parameter->needs_stop && motor_run_enabled) {
         interrupt_global_enable(primask);
         command_error("parameter requires Run off"); return;
     }
     {
-        int changed=(*parameter->value!=value);
-        *parameter->value=value;
+        int changed=parameter->integer!=NULL ? (*parameter->integer!=(int)value) : (*parameter->value!=value);
+        if (parameter->integer!=NULL) *parameter->integer=(int)value;
+        else *parameter->value=value;
         if (parameter->pid!=NULL && (changed ||
             parameter->pid->fKp!=parameter->pid_init->fKp ||
             parameter->pid->fKi!=parameter->pid_init->fKi ||
@@ -257,7 +281,7 @@ static void process_slider(char *command)
             PID_Clear(parameter->pid);
         }
     }
-    value=*parameter->value;
+    value=parameter->integer!=NULL ? (float)*parameter->integer : *parameter->value;
     interrupt_global_enable(primask);
     (void)snprintf(reply,sizeof(reply),"MCAR SLIDER %s %.9g\n",name,(double)value);
     send_reply(reply);
