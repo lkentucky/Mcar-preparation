@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Sync VS Code from Keil",
+      "type": "process",
+      "command": "python",
+      "args": ["${workspaceFolder}/tools/sync_vscode_keil.py"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "Check firmware with Arm compiler",
+      "type": "process",
+      "command": "python",
+      "args": ["${workspaceFolder}/tools/sync_vscode_keil.py", "--check"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Build firmware with Keil",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/build.ps1"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "dependsOn": "Sync VS Code from Keil",
+      "group": {"kind": "build", "isDefault": true},
+      "problemMatcher": "$gcc"
+    }
+  ]
+}

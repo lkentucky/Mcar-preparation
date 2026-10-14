@@ -39,7 +39,7 @@
 #endif
 #define IMU_WIFI_SSID            "HDUASC"
 #define IMU_WIFI_PASSWORD        "zyz520520"
-#define IMU_WIFI_TARGET_IP       "192.168.50.154"
+#define IMU_WIFI_TARGET_IP       "192.168.0.117"
 
 #define IMU_WIFI_TARGET_PORT     "8081"
 #define IMU_WIFI_LOCAL_PORT      "5001"

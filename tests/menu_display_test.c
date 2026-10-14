@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+volatile int motor_deadzone_fwd[4]={MOTOR_UL_DEADZONE_FWD,MOTOR_UR_DEADZONE_FWD,MOTOR_DL_DEADZONE_FWD,MOTOR_DR_DEADZONE_FWD};
+volatile int motor_deadzone_rev[4]={MOTOR_UL_DEADZONE_REV,MOTOR_UR_DEADZONE_REV,MOTOR_DL_DEADZONE_REV,MOTOR_DR_DEADZONE_REV};
 volatile bool motor_run_enabled, motor_pwm_test_enabled;
 volatile int16_t motor_test_pwm[4];
 volatile float motor_cmd_vx_cmps, motor_cmd_vy_cmps, motor_cmd_omega_radps;

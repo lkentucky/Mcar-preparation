@@ -1,4 +1,16 @@
 {
   "files.encoding": "utf8",
-  "files.autoGuessEncoding": true
+  "files.autoGuessEncoding": true,
+  "files.associations": {"*.h": "c", "*.c": "c"},
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
+  "files.exclude": {
+    "**/project/mdk/Objects": true,
+    "**/project/mdk/Listings": true
+  },
+  "search.exclude": {
+    "**/project/mdk/Objects/**": true,
+    "**/project/mdk/Listings/**": true
+  }
 }
