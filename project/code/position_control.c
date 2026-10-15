@@ -318,10 +318,12 @@ void position_control_update(position_control_t *control,
                    goal->yaw_deg != control->previous_goal.yaw_deg;
     if (control->have_previous)
         yaw_rate = wrap_degrees(theta - control->previous_yaw_deg) * DEG_TO_RAD / dt;
+    if (control->output.status == POSITION_YAW_STALLED && !goal_changed) return;
     if (goal_changed) {
         /* 换目标即重新规划（ivision：target 变化 reset 规划器）。 */
         control->settled_seconds = 0.0f;
         control->stall_seconds = 0.0f;
+        control->yaw_stall_seconds = 0.0f;
         control->plan_v_cmps = 0.0f;
         control->plan_vw_radps = 0.0f;
         control->world_vx_cmps = 0.0f;
@@ -369,15 +371,9 @@ void position_control_update(position_control_t *control,
     control->output.omega_radps = omega;
 
     control->output.status = xy_inside && yaw_inside ? POSITION_SETTLING : POSITION_MOVING;
-    /* 到位判定（三路，互不混淆）：
-     * a) 正常：蠕行到切断半径后命令零速，车实测停稳，沉降 0.2s；
-     * b) 平移静摩擦卡死：圈内仍命令蠕行（plan_v≥半幅蠕行），但实测车速≈0
-     *    （<1cm/s，明显低于蠕行本身），累计 0.3s 判到达；
-     * c) 航向卡死兜底：XY 已在容差内，但命令旋转（|plan_vw|≥0.05）而实测
-     *    角速度≈0，旋转执行不出来——累计 0.3s 也判到达，带小航向误差
-     *    继续下一点，避免在点上无限期停留。正常缓慢收敛（实测在转）
-     *    不会触发本路。
-     * 正常蠕行中实测速度≈蠕行值，既不是命令零速也不算"≈0"，不累加。 */
+    /* Arrival always requires XY and yaw tolerances together.
+     * Translational crawl may settle inside both tolerances. Failure to turn
+     * is a fault after 2s, never a successful waypoint/route advance. */
     {
         float measured_cmps = hypotf(pose->vx_mps, pose->vy_mps) * 100.0f;
         bool cmd_zero = control->plan_v_cmps < 0.001f &&
@@ -402,18 +398,22 @@ void position_control_update(position_control_t *control,
                 control->stall_seconds += dt;
                 step = true;
             }
-        } else if (xy_inside && yaw_stalled) {
-            /* XY 已到位、航向执行卡死：兜底放行 */
-            control->settled_seconds = 0.0f;
-            control->stall_seconds += dt;
-            step = true;
         }
         if (!step) {
             control->settled_seconds = 0.0f;
             control->stall_seconds = 0.0f;
         }
-        if (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f ||
-            control->stall_seconds >= 0.30f) {
+        if (xy_inside && !yaw_inside && yaw_stalled) control->yaw_stall_seconds += dt;
+        else control->yaw_stall_seconds = 0.0f;
+        if (control->yaw_stall_seconds >= 2.0f) {
+            control->output.status = POSITION_YAW_STALLED;
+            control->output.vx_cmps = control->output.vy_cmps = control->output.omega_radps = 0.0f;
+            control->plan_v_cmps = control->plan_vw_radps = 0.0f;
+            control->world_vx_cmps = control->world_vy_cmps = 0.0f;
+            return;
+        }
+        if (xy_inside && yaw_inside && (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f ||
+            control->stall_seconds >= 0.30f)) {
             control->output.status = POSITION_REACHED;
             control->output.vx_cmps = control->output.vy_cmps = control->output.omega_radps = 0.0f;
         }

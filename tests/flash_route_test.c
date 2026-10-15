@@ -12,6 +12,7 @@ flash_data_union flash_union_buffer[FLASH_DATA_BUFFER_SIZE];
 static uint32 storage[FLASH_DATA_BUFFER_SIZE];
 static unsigned present, erased, writes, recoveries, resets, irq_disabled, fail_erase, fail_write;
 static uint16 last_write_length;
+volatile int motor_deadzone_fwd[4],motor_deadzone_rev[4];
 volatile bool motor_run_enabled, motor_position_enabled, motor_pwm_test_enabled;
 volatile position_goal_t motor_position_goal;
 volatile position_config_t motor_position_config = POSITION_CONFIG_DEFAULT;

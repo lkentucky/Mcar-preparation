@@ -70,13 +70,13 @@
 /* Closed-loop motor parameters in logical order: UL, UR, DL, DR. */
 #define MOTOR_DEADZONE_TARGET_MIN_COUNTS  2
 
-#define MOTOR_UL_DEADZONE_FWD             420
-#define MOTOR_UL_DEADZONE_REV             390
-#define MOTOR_UR_DEADZONE_FWD             495
+#define MOTOR_UL_DEADZONE_FWD             160
+#define MOTOR_UL_DEADZONE_REV             152
+#define MOTOR_UR_DEADZONE_FWD             0
 #define MOTOR_UR_DEADZONE_REV             429
-#define MOTOR_DL_DEADZONE_FWD             435
+#define MOTOR_DL_DEADZONE_FWD             550
 #define MOTOR_DL_DEADZONE_REV             390
-#define MOTOR_DR_DEADZONE_FWD             550
+#define MOTOR_DR_DEADZONE_FWD             694
 #define MOTOR_DR_DEADZONE_REV             637
 
 /* Right-strafe launch compensation, limited to the first 5 cm.
