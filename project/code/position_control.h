@@ -49,6 +49,7 @@ typedef struct {
                                  0.22f, 0.22f, 0.36f, 0.15f}
 
 enum {
+    POSITION_YAW_STALLED = -3,
     POSITION_BAD_CONFIG = -2,
     POSITION_NO_POSE = -1,
     POSITION_IDLE = 0,
@@ -74,6 +75,7 @@ typedef struct {
     float plan_vw_radps;       /* 航向角速度参考（YawProfiled.current_vw） */
     float initial_distance_cm; /* 启动/换目标瞬间锁定的段长，用于短段提升与接近区比例 */
     bool have_initial;
+    float yaw_stall_seconds;
     float stall_seconds;       /* 容差圈内"命令蠕行但实测停住"的失速累计（静摩擦判到达） */
 } position_control_t;
 

@@ -19,6 +19,9 @@ typedef struct
     float wheel_kp[MOTOR_WHEEL_COUNT];
     float wheel_ki[MOTOR_WHEEL_COUNT];
     float wheel_kd[MOTOR_WHEEL_COUNT];
+    /* v5: nonnegative PWM magnitudes, UL/UR/DL/DR. */
+    int32 wheel_deadzone_fwd[MOTOR_WHEEL_COUNT];
+    int32 wheel_deadzone_rev[MOTOR_WHEEL_COUNT];
 
     /* Position 外环参数，与 position_config_t 字段一一对应 */
     float xy_kp;

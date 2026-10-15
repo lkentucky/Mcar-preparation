@@ -32,8 +32,13 @@ try {
         'project/code/pid.c', 'project/code/PID_config.c')
     Invoke-NavigationHostTest 'navigation_fusion_test' @(
         'tests/navigation_fusion_test.c', 'project/code/navigation_fusion.c')
+    Invoke-NavigationHostTest 'yaw_arrival_test' @(
+        'tests/yaw_arrival_test.c', 'project/code/position_control.c')
     Invoke-NavigationHostTest 'position_control_test' @(
         'tests/position_control_test.c', 'project/code/position_control.c')
+    Invoke-NavigationHostTest 'flash_deadzone_test' @(
+        'tests/flash_deadzone_test.c', 'project/code/Flash.c', 'project/code/route_follow.c',
+        'project/code/pid.c', 'project/code/PID_config.c')
     Invoke-NavigationHostTest 'flash_route_test' @(
         'tests/flash_route_test.c', 'project/code/Flash.c', 'project/code/route_follow.c',
         'project/code/pid.c', 'project/code/PID_config.c')
