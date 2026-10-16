@@ -46,6 +46,9 @@ typedef struct
     float yaw_kd_translate;
     /* Flash v4 新增（v1/v2/v3 存档加载时用默认值） */
     float yaw_stiction_radps;
+    /* Flash v6 新增：斜向调整两参数（v1~v5 存档加载时用默认值） */
+    float diag_speed_k;
+    float diag_comp;
 
     /* Navigation 安装参数 */
     float mount_deg;

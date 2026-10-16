@@ -28,6 +28,8 @@ static void fault(navigation_fusion_t *s, int32_t status)
     s->output.valid = false;
     s->output.stationary = false;
     s->output.slipping = false;
+    s->stationary_seconds = 0.0f;
+    s->output.stationary_seconds = 0.0f;
     s->velocity[0] = s->velocity[1] = 0.0f;
     s->predicted_delta[0] = s->predicted_delta[1] = 0.0f;
     s->output.vx_mps = s->output.vy_mps = 0.0f;
@@ -47,6 +49,8 @@ void navigation_fusion_init(navigation_fusion_t *s, const navigation_config_t *c
         !isfinite(config->forward_scale) || config->forward_scale <= 0.0f || config->forward_scale > 5.0f ||
         !isfinite(config->lateral_scale) || config->lateral_scale <= 0.0f || config->lateral_scale > 5.0f ||
         !isfinite(config->lateral_to_forward) || fabsf(config->lateral_to_forward) > 5.0f ||
+        !isfinite(config->diagonal_lateral_scale) || config->diagonal_lateral_scale < 0.5f ||
+        config->diagonal_lateral_scale > 1.5f ||
         !isfinite(config->imu_mount_yaw_deg) || fabsf(config->imu_mount_yaw_deg) > 180.0f) {
         fault(s, NAV_BAD_INPUT);
         return;
@@ -168,6 +172,15 @@ void navigation_fusion_encoder(navigation_fusion_t *s, const int16_t counts[4], 
     }
     dx = 0.25f * (wheel[0] + wheel[1] + wheel[2] + wheel[3]) * s->config.forward_scale;
     dy = 0.25f * (-wheel[0] + wheel[1] + wheel[2] - wheel[3]) * s->config.lateral_scale;
+    /* 斜向横移补偿（DiagCmp，1=关闭）：斜向时滚子滑差让横移计数系统性
+     * 偏离物理位移，按车体系运动混合度（0=纯轴，1=45°）线性混入系数，
+     * 只修正定位积分，纯轴运动不受影响。混合度做一阶滤波抗编码器量化。 */
+    {
+        float adx = fabsf(dx), ady = fabsf(dy), mix;
+        mix = fmaxf(adx, ady) > 1e-6f ? fminf(adx, ady) / fmaxf(adx, ady) : 0.0f;
+        s->diag_mix_filt += (mix - s->diag_mix_filt) * NAV_DIAG_MIX_ALPHA;
+        dy *= 1.0f + (s->config.diagonal_lateral_scale - 1.0f) * s->diag_mix_filt;
+    }
     dx += s->config.lateral_to_forward * dy;
     half = 0.5f * (s->heading_rad - s->wheel_heading_rad);
     mid = s->wheel_heading_rad + half;
@@ -192,6 +205,9 @@ void navigation_fusion_encoder(navigation_fusion_t *s, const int16_t counts[4], 
         s->stationary_ticks = 0;
     }
     s->output.stationary = s->stationary_ticks >= NAV_STATIC_CONFIRM_TICKS;
+    if (s->output.stationary) s->stationary_seconds += dt_s;
+    else s->stationary_seconds = 0.0f;
+    s->output.stationary_seconds = s->stationary_seconds;
     if (s->output.stationary) {
         s->body_bias[0] += NAV_STATIC_BIAS_ALPHA * ax;
         s->body_bias[1] += NAV_STATIC_BIAS_ALPHA * ay;

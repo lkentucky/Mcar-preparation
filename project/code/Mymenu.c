@@ -99,6 +99,7 @@ static void menu_create(void)
     Create_Menu_File_dynamic(position, "YawKd", (void *)&motor_position_config.yaw_kd, float_Box);
     Create_Menu_File_dynamic(position, "YawTrKd", (void *)&motor_position_config.yaw_kd_translate, float_Box);
     Create_Menu_File_dynamic(position, "YawStic", (void *)&motor_position_config.yaw_stiction_radps, float_Box);
+    Create_Menu_File_dynamic(position, "DiagK", (void *)&motor_position_config.diag_speed_k, float_Box);
     Create_Menu_Readonly_dynamic(position, "ErrXY_cm", &g_position_snapshot.distance_cm, float_Box);
     Create_Menu_Readonly_dynamic(position, "ErrYaw_deg", &g_position_snapshot.yaw_error_deg, float_Box);
 
@@ -111,6 +112,7 @@ static void menu_create(void)
     Create_Menu_File_dynamic(navigation, "Zero", &g_navigation_zero, bool_Box);
     Create_Menu_File_dynamic(navigation, "ScaleX", (void *)&navigation_scale_x, float_Box);
     Create_Menu_File_dynamic(navigation, "ScaleY", (void *)&navigation_scale_y, float_Box);
+    Create_Menu_File_dynamic(navigation, "DiagCmp", (void *)&navigation_diag_comp, float_Box);
 
     Create_Menu_File_dynamic(drive,"Run",(void *)&motor_run_enabled,bool_Box);
     Create_Menu_File_dynamic(drive,"Vx_cmps",(void *)&motor_cmd_vx_cmps,float_Box);
@@ -140,6 +142,7 @@ static void menu_create(void)
     Create_Menu_Readonly_dynamic(imu,"Roll",(void *)&imu_roll_deg,float_Box);
     Create_Menu_Readonly_dynamic(imu,"Pitch",(void *)&imu_pitch_deg,float_Box);
     Create_Menu_Readonly_dynamic(imu,"Yaw",(void *)&imu_yaw_deg,float_Box);
+    Create_Menu_Readonly_dynamic(imu,"GzBias",(void *)&imu_gyro_bias_z_dps,float_Box);
     Create_Menu_File_dynamic(imu,"Recal",&g_imu_recalibrate,bool_Box);
     Create_Menu_Readonly_dynamic(sensor,"Gx_dps",(void *)&imu_gyro_dps[0],float_Box);
     Create_Menu_Readonly_dynamic(sensor,"Gy_dps",(void *)&imu_gyro_dps[1],float_Box);
@@ -336,6 +339,8 @@ static void menu_adjust(int direction)
         else if (g_pointer->data == (void *)&navigation_scale_x ||
                  g_pointer->data == (void *)&navigation_scale_y)
             value = menu_clamp(value, 0.1f, 5.0f);
+        else if (g_pointer->data == (void *)&navigation_diag_comp)
+            value = menu_clamp(value, 0.5f, 1.5f);
         else if (g_pointer->data == (void *)&motor_position_goal.x_cm ||
                  g_pointer->data == (void *)&motor_position_goal.y_cm)
             value = menu_clamp(value, -10000.0f, 10000.0f);
@@ -378,6 +383,8 @@ static void menu_adjust(int direction)
             value = menu_clamp(value, 0.0f, 2.0f);
         else if (g_pointer->data == (void *)&motor_position_config.yaw_stiction_radps)
             value = menu_clamp(value, 0.0f, 1.0f);
+        else if (g_pointer->data == (void *)&motor_position_config.diag_speed_k)
+            value = menu_clamp(value, 0.2f, 1.0f);
         else if (g_pointer->data == (void *)&motor_cmd_vx_cmps ||
             g_pointer->data == (void *)&motor_cmd_vy_cmps)
         {

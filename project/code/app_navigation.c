@@ -8,6 +8,7 @@
 volatile float navigation_mount_deg;
 volatile bool navigation_yaw_reversed;
 volatile float navigation_scale_x, navigation_scale_y;
+volatile float navigation_diag_comp;
 static navigation_fusion_t g_navigation;
 static volatile bool g_reset_requested;
 static uint32_t g_imu_sequence, g_imu_generation;
@@ -23,6 +24,7 @@ static void reset_state(void)
     config.forward_scale = navigation_scale_x;
     config.lateral_scale = LATERAL_CORRECTION_FACTOR * navigation_scale_y;
     config.lateral_to_forward = LATERAL_TO_LONGITUDINAL_COUPLING_FACTOR;
+    config.diagonal_lateral_scale = navigation_diag_comp;
     config.imu_mount_yaw_deg = navigation_mount_deg;
     config.imu_yaw_reversed = navigation_yaw_reversed;
     navigation_fusion_init(&g_navigation, &config);
@@ -37,6 +39,7 @@ void app_navigation_init(void)
     navigation_yaw_reversed = false;
     navigation_scale_x = NAV_FORWARD_SCALE_DEFAULT;
     navigation_scale_y = NAV_LEFT_SCALE_DEFAULT;
+    navigation_diag_comp = NAV_DIAG_LATERAL_SCALE_DEFAULT;
     g_reset_requested = false;
     reset_state();
 }
@@ -84,6 +87,7 @@ void app_navigation_encoder_tick_10ms(void)
     if (g_reset_requested || navigation_mount_deg != g_navigation.config.imu_mount_yaw_deg ||
         navigation_yaw_reversed != g_navigation.config.imu_yaw_reversed ||
         navigation_scale_x != g_navigation.config.forward_scale ||
+        navigation_diag_comp != g_navigation.config.diagonal_lateral_scale ||
         LATERAL_CORRECTION_FACTOR * navigation_scale_y != g_navigation.config.lateral_scale) {
         g_reset_requested = false;
         reset_state();
@@ -94,4 +98,6 @@ void app_navigation_encoder_tick_10ms(void)
     if (g_have_imu && (imu_attitude_status != IMU_ATTITUDE_RUNNING || g_imu_age_s > NAV_IMU_STALE_S))
         navigation_fusion_invalidate(&g_navigation);
     navigation_fusion_encoder(&g_navigation, counts, 0.01f);
+    /* 深度静止时缓慢跟踪陀螺 z 零偏（温漂补偿），运动期间自动停止。 */
+    imu_track_gyro_bias(g_navigation.stationary_seconds, 0.01f);
 }

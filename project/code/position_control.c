@@ -47,6 +47,12 @@
 #define YAW_KD_TRANSLATE 0.36f  /* 平移时陀螺阻尼 */
 #define YAW_TRANSLATE_GAIN 1.0f
 #define YAW_STICTION_RADPS 0.15f /* 静摩擦角速度地板默认值（菜单 YawStic 可改，0=关闭） */
+/* 容差死区内保留的陀螺阻尼双地板：实测角速度低于 MIN_RATE 视为静止不产生
+ * 阻尼；产生的阻尼低于 MIN_RADPS 时过不了轮死区门槛（±2 counts）执行不出来，
+ * 反而可能引起 PWM 抖动——两者都归零，保证静止时 cmd_zero 严格成立，
+ * 沉降到达判定不受影响。 */
+#define YAW_DEADBAND_DAMP_MIN_RATE_RADPS 0.02f
+#define YAW_DEADBAND_DAMP_MIN_RADPS 0.05f
 /* ---------------- 末端蠕行（替代"进容差圈即砍零"） ----------------
  * 进容差圈后保持 CRAWL 速度爬向目标，到 CUTOFF 半径才切断命令。
  * 切断瞬间速度从 ~10cm/s 降到 3cm/s，主动急刹造成的轮子打滑/编码器
@@ -118,8 +124,11 @@ static float plan_translation(position_control_t *control,
                               const position_config_t *config,
                               float distance_cm, float dt)
 {
-    float max_speed = config->max_speed_cmps;
-    float max_acc = config->max_accel_cmps2;
+    /* 斜向降速（菜单 DiagK，1=关闭）：滚子滑差随速度上升，按段启动时锁定
+     * 的混合度成比例同时缩放巡航速度与加速度；刹车能力 = max_acc×BrakeLim
+     * 随之同比例变小，sqrt 制动规划与实际减速能力保持一致。 */
+    float diag_k = cfg_or(config->diag_speed_k, 0.2f, 1.0f, 1.0f);
+    float max_speed, max_acc;
     float brake_limit = cfg_or(config->brake_limit, 0.05f, 2.0f, BRAKE_LIMIT);
     float brake_ceiling = cfg_or(config->brake_ceiling_cmps2, 50.0f, 5000.0f,
                                  BRAKE_ACC_CEILING_CMPS2);
@@ -128,9 +137,14 @@ static float plan_translation(position_control_t *control,
     float zone_cfg = cfg_or(config->approach_zone_cm, 0.0f, 50.0f, APPROACH_ZONE_CM);
     float zone_ratio = cfg_or(config->approach_ratio, 0.0f, 1.0f, APPROACH_RATIO);
     float approach_k = cfg_or(config->approach_acc_k, 0.05f, 0.95f, APPROACH_ACC_K);
-    float brake_acc = max_acc * brake_limit;
-    float accel_ramp = max_acc;
+    float brake_acc, accel_ramp;
     float zone, approach_acc, target_v;
+
+    diag_k = 1.0f - (1.0f - diag_k) * control->diag_mix;
+    max_speed = config->max_speed_cmps * diag_k;
+    max_acc = config->max_accel_cmps2 * diag_k;
+    brake_acc = max_acc * brake_limit;
+    accel_ramp = max_acc;
 
     if (brake_ceiling > 1.0f && brake_ceiling < brake_acc)
     {
@@ -217,11 +231,25 @@ static float plan_yaw(position_control_t *control,
     float max_ang_vel, max_ang_acc, lin_band, v_edge, target_abs_vw;
     float stiction_vw, stiction_brake_err, target_vw, kd, max_dv;
 
-    /* 容差死区：到位后彻底切断动力，防持续微调抖动 */
+    /* 容差死区：不再追角度（防持续微调抖动），但保留陀螺阻尼抵抗真实
+     * 转动——横向起步死区冲量、斜向滑差拧转等扰动落在容差内时以前是
+     * 零抵抗，现在会被顶回去。双地板量化保证静止时输出严格为零，
+     * 沉降到达判定与 YAW_STALLED 故障检测都不受影响。 */
     if (abs_err <= config->yaw_tolerance_deg * DEG_TO_RAD)
     {
-        control->plan_vw_radps = 0.0f;
-        return 0.0f;
+        float damp = 0.0f, max_dv;
+        if (fabsf(yaw_rate_radps) >= YAW_DEADBAND_DAMP_MIN_RATE_RADPS)
+        {
+            float kd = translating ? cfg_or(config->yaw_kd_translate, 0.0f, 2.0f, YAW_KD_TRANSLATE)
+                                   : cfg_or(config->yaw_kd, 0.0f, 2.0f, YAW_KD);
+            damp = -kd * yaw_rate_radps;
+            if (fabsf(damp) < YAW_DEADBAND_DAMP_MIN_RADPS) damp = 0.0f;
+        }
+        max_dv = fmaxf(config->max_alpha_radps2, 0.001f) * dt;
+        if (damp > control->plan_vw_radps + max_dv) control->plan_vw_radps += max_dv;
+        else if (damp < control->plan_vw_radps - max_dv) control->plan_vw_radps -= max_dv;
+        else control->plan_vw_radps = damp;
+        return control->plan_vw_radps;
     }
 
     max_ang_vel = fmaxf(config->max_omega_radps, 0.0f);
@@ -330,6 +358,14 @@ void position_control_update(position_control_t *control,
         control->world_vy_cmps = 0.0f;
         control->initial_distance_cm = distance;
         control->have_initial = true;
+        /* 斜向混合度同样在换目标瞬间锁定：min/max 分量比，0=纯轴，1=45°。
+         * 行驶中不更新——接近目标时残差方向抖动会误触发降速。 */
+        {
+            float adx = fabsf(ex), ady = fabsf(ey);
+            control->diag_mix = (distance >= 2.0f && fmaxf(adx, ady) > 1e-3f)
+                                    ? fminf(adx, ady) / fmaxf(adx, ady)
+                                    : 0.0f;
+        }
     }
     control->previous_goal = *goal;
     control->previous_yaw_deg = theta;

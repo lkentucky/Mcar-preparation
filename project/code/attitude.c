@@ -56,6 +56,21 @@ int calibration_push(ImuCalibration *c, const float g[3], const float a[3])
         c->bias_dps[i]=c->sum_g[i]/c->count;
         c->initial_accel[i]=c->sum_a[i]/c->count;
     }
+    c->bias_z_ref_dps=c->bias_dps[2];
+    return 1;
+}
+/* 深度静止期间缓慢跟踪 z 轴陀螺零偏：把零偏以时间常数 TAU 一阶拉向当前
+ * 原始读数（静止时原始读数≈真实零偏），偏离标定基准不超过 LIMIT，防止
+ * 误把缓慢真实转动吸收成零偏。只在标定完成后生效；返回 1 表示有更新。 */
+int calibration_track_gyro_z(ImuCalibration *c, float raw_gz_dps, float dt)
+{
+    float next;
+    if (c->count < CALIBRATION_SAMPLES) return 0;
+    if (!finite_float(raw_gz_dps) || !finite_float(dt) || dt <= 0.0f || dt > MAX_SAMPLE_DT) return 0;
+    next = c->bias_dps[2] + (dt / IMU_BIAS_TRACK_TAU_S) * (raw_gz_dps - c->bias_dps[2]);
+    c->bias_dps[2] = attitude_clamp(next,
+                                    c->bias_z_ref_dps - IMU_BIAS_TRACK_LIMIT_DPS,
+                                    c->bias_z_ref_dps + IMU_BIAS_TRACK_LIMIT_DPS);
     return 1;
 }
 int attitude_init(float q[4], float *accel_norm, const float a[3])

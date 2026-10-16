@@ -21,6 +21,7 @@ extern volatile float imu_accel_norm_g; /* 加速度模长，g */
 extern volatile float imu_calibration_percent; /* 静止标定进度，0~100 */
 extern volatile float imu_accel_g[3]; /* 原始 X/Y/Z 加速度，g */
 extern volatile float imu_gyro_dps[3]; /* 未扣静止零偏的角速度，deg/s */
+extern volatile float imu_gyro_bias_z_dps; /* 当前生效的 z 轴零偏（含静止跟踪修正） */
 extern const uint8 imu_attitude_method;
 
 /* 同一成功采样帧的姿态、加速度和扣零偏角速度，供定位融合使用。
@@ -37,6 +38,10 @@ void imu_update_5ms(void); /* 5ms 周期入口 */
 void imu_request_recalibration(void); /* 只置请求标志 */
 void imu_recover_after_stall(void); /* 长时间关中断（如 Flash 擦写）后恢复采样 */
 void imu_service(void); /* 主循环处理重标定 */
+/* 10ms 周期调用：融合层确认深度静止（stationary_seconds 达门槛）时，
+ * 缓慢跟踪 z 轴陀螺零偏补偿温漂。运动期间 stationary_seconds 清零，
+ * 跟踪自动停止，不会吸收真实转动。 */
+void imu_track_gyro_bias(float stationary_seconds, float dt_s);
 
 #ifdef __cplusplus
 }

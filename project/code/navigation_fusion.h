@@ -20,6 +20,7 @@ typedef struct {
     float forward_scale;
     float lateral_scale;
     float lateral_to_forward;
+    float diagonal_lateral_scale;   /* 斜向横移补偿：按混合度对 dy 额外乘系数，1=关闭 */
     float imu_mount_yaw_deg;        /* 水平传感器 +X 相对车头的逆时针角度 */
     bool imu_yaw_reversed;
 } navigation_config_t;
@@ -39,6 +40,7 @@ typedef struct {
     float encoder_vx_mps, encoder_vy_mps;
     float accel_bias_forward, accel_bias_left;
     float encoder_weight;
+    float stationary_seconds;       /* 连续静止时长 s（陀螺零偏跟踪门槛可视化） */
     uint32_t rejected_encoder_samples;
     bool valid, bias_ready, stationary, slipping;
 } navigation_snapshot_t;
@@ -53,6 +55,8 @@ typedef struct {
     float body_acc[2], bias_sum[2], body_bias[2];
     float velocity[2], predicted_delta[2], previous_encoder_velocity[2];
     float gyro_norm_dps, max_wheel_speed;
+    float diag_mix_filt;            /* 一阶滤波后的斜向混合度（0=纯轴，1=45°） */
+    float stationary_seconds;       /* 连续静止时长（陀螺零偏跟踪的深度静止门槛用） */
     unsigned bias_samples, stationary_ticks, encoder_samples, slip_ticks;
     bool have_heading, fault_latched;
 } navigation_fusion_t;

@@ -15,6 +15,7 @@ typedef struct {
     float min_g[3], max_g[3]; /* 角速度窗口极值，deg/s */
     float min_a[3], max_a[3]; /* 加速度窗口极值，g */
     float bias_dps[3], initial_accel[3]; /* 陀螺静止零偏和初始重力 */
+    float bias_z_ref_dps; /* 标定完成时的 z 零偏，跟踪限幅基准 */
 } ImuCalibration;
 
 typedef struct {
@@ -32,6 +33,8 @@ typedef struct {
 /* 运动时丢弃整段标定窗口；收满样本返回 1。 */
 void calibration_reset(ImuCalibration *c);
 int calibration_push(ImuCalibration *c, const float gyro_dps[3], const float accel_g[3]);
+/* 深度静止期间缓慢跟踪 z 轴陀螺零偏（温漂补偿）；发生更新返回 1。 */
+int calibration_track_gyro_z(ImuCalibration *c, float raw_gz_dps, float dt);
 
 /* 保留仓库原公共数学接口。静止 +Z=+1g，初始 yaw=0。 */
 int attitude_init(float q[4], float *accel_norm, const float accel_g[3]);

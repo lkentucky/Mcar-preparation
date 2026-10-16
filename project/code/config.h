@@ -29,6 +29,14 @@
 #define CAL_ACCEL_SPAN_G         0.08f
 #define IMU_TIMEOUT_MS           100u
 
+/* 深度静止时的陀螺 z 零偏自动跟踪（温漂补偿）：六轴 yaw 无绝对基准，
+ * 上电 2s 标定的残余零偏会持续积分成航向漂移。融合层确认深度静止
+ * （轮速/陀螺/加速度三门限连续 MIN_STILL 秒）后，把 z 零偏以时间常数
+ * TAU 一阶拉向当前原始读数，偏离标定基准不得超过 LIMIT。 */
+#define IMU_BIAS_TRACK_MIN_STILL_S 1.0f
+#define IMU_BIAS_TRACK_TAU_S       5.0f
+#define IMU_BIAS_TRACK_LIMIT_DPS   1.0f
+
 /* WiFi-SPI2.0 UDP settings ported from rt1064_imu_vofa. */
 /* SPI1 D12-D15 is free with the current Motor.h wiring. */
 #ifndef IMU_WIFI_ENABLED

@@ -18,6 +18,7 @@ volatile int32 imu_attitude_status=IMU_ATTITUDE_INIT_FAILED;
 volatile float imu_roll_deg, imu_pitch_deg, imu_yaw_deg;
 volatile float imu_accel_norm_g, imu_calibration_percent;
 volatile float imu_accel_g[3], imu_gyro_dps[3];
+volatile float imu_gyro_bias_z_dps;
 const uint8 imu_attitude_method=AHRS_METHOD;
 static Ahrs6 g_attitude;
 static ImuCalibration g_calibration;
@@ -109,6 +110,7 @@ static void imu_reset_pipeline(void)
     g_have_sample=0u; g_calibrated=0u;
     imu_roll_deg=0.0f; imu_pitch_deg=0.0f; imu_yaw_deg=0.0f;
     imu_accel_norm_g=0.0f; imu_calibration_percent=0.0f;
+    imu_gyro_bias_z_dps=0.0f;
     g_last_sample_ticks=imu_ticks();
     g_last_success_ticks=g_last_sample_ticks;
 }
@@ -157,6 +159,7 @@ void imu_update_5ms(void)
             if (!g_calibrated) { imu_attitude_status=IMU_ATTITUDE_FILTER_ERROR; return; }
             ahrs6_euler(&g_attitude,euler);
             imu_roll_deg=euler[0]; imu_pitch_deg=euler[1]; imu_yaw_deg=euler[2];
+            imu_gyro_bias_z_dps=g_calibration.bias_dps[2];
             imu_attitude_status=IMU_ATTITUDE_RUNNING;
             imu_publish_navigation(gyro_dps,accel_g,dt);
         }
@@ -175,6 +178,18 @@ void imu_update_5ms(void)
     imu_publish_navigation(gyro_dps,accel_g,dt);
 }
 void imu_request_recalibration(void) { g_recalibration_requested=1u; }
+/* 10ms 周期由 app_navigation 调用：融合层静止检测（轮速<0.3cm/s、陀螺
+ * <1.5dps、加速度<0.25m/s²，连续确认）给出的深度静止秒数达到门槛后，
+ * 把 z 轴零偏往当前原始读数缓慢拉（tau=5s，限幅 ±1dps），补偿温漂。
+ * 零偏是速率级修正，姿态/航向输出连续无跳变。 */
+void imu_track_gyro_bias(float stationary_seconds, float dt_s)
+{
+    if (!g_update_enabled || !g_calibrated || g_recalibration_requested) return;
+    if (imu_attitude_status!=IMU_ATTITUDE_RUNNING) return;
+    if (!(stationary_seconds>=IMU_BIAS_TRACK_MIN_STILL_S)) return;
+    if (calibration_track_gyro_z(&g_calibration, imu_gyro_dps[2], dt_s))
+        imu_gyro_bias_z_dps=g_calibration.bias_dps[2];
+}
 /* Flash 擦写等长时间关中断会让采样间隔超过 MAX_SAMPLE_DT，锁止到 BAD_DT。
  * 在干扰源结束后调用：清除锁止、重建采样时间基准，保留已有标定与姿态，
  * 不递增 generation，导航无需重新 Zero。 */

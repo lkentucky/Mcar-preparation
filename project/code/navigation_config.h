@@ -24,4 +24,12 @@
 #define NAV_FORWARD_SCALE_DEFAULT      0.97f
 #define NAV_LEFT_SCALE_DEFAULT         1.04f
 
+/* 斜向滚子滑差二次修正（菜单 DiagCmp）：麦轮斜向运动时滚子轴向滑动
+ * 编码器不可见，实测横移增量被系统性多计。斜向时在 lateral_scale 之上
+ * 再对 dy 乘本系数（<1 = 缩小横移计数），1 = 关闭。混合度按车体系运动
+ * 方向 min(|dx|,|dy|)/max(|dx|,|dy|) 计（0=纯轴，1=45°），补偿随混合度
+ * 线性混入，纯轴运动完全不受影响。只改定位，不改编码器计数与轮速 PID。 */
+#define NAV_DIAG_LATERAL_SCALE_DEFAULT 1.0f
+#define NAV_DIAG_MIX_ALPHA             0.1f /* 混合度一阶滤波 @100Hz，时间常数约 0.1s */
+
 #endif
