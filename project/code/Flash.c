@@ -2,6 +2,7 @@
 #include "PID_config.h"
 #include "app_control.h"
 #include "app_navigation.h"
+#include "navigation_config.h"
 #include "imu.h"
 #include "zf_common_interrupt.h"
 
@@ -19,7 +20,8 @@ static uint8 invalid_field(uint32 word) { menu_flash_bad_word=word; return 0U; }
  * fields. Run and runtime state are never persisted. Unknown versions
  * are rejected. */
 #define MENU_FLASH_MAGIC 0x4D454E55U
-#define MENU_FLASH_VERSION 5U
+#define MENU_FLASH_VERSION 6U
+#define MENU_FLASH_VERSION_V5 5U
 #define MENU_FLASH_VERSION_V4 4U
 #define MENU_FLASH_VERSION_V3 3U
 #define MENU_FLASH_VERSION_V2 2U
@@ -63,12 +65,17 @@ static uint8 invalid_field(uint32 word) { menu_flash_bad_word=word; return 0U; }
 #define MENU_FLASH_WORD_YAW_KD (MENU_FLASH_WORD_PLANNER_FIRST + 8U)
 #define MENU_FLASH_WORD_YAW_KD_TRN (MENU_FLASH_WORD_PLANNER_FIRST + 9U)
 #define MENU_FLASH_WORD_YAW_STICTION (MENU_FLASH_WORD_PLANNER_FIRST + 10U)
-/* v3 的校验字恰好落在 v4 的 YAW_STICTION 槽位，读旧档时不能按参数解析 */
+/* v3 的校验字恰好落在 v4 的 YAW_STICTION 槽位，v4 的校验字恰好落在 v5 的
+ * DEAD_FWD[UL] 槽位，v5 的校验字恰好落在 v6 的 DIAG_SPEED_K 槽位，
+ * 读旧档时都不能按参数解析 */
 #define MENU_FLASH_WORD_CHECKSUM_V3 (MENU_FLASH_WORD_PLANNER_FIRST + 10U)
 #define MENU_FLASH_WORD_CHECKSUM_V4 (MENU_FLASH_WORD_PLANNER_FIRST + 11U)
 #define MENU_FLASH_WORD_DEAD_FWD MENU_FLASH_WORD_CHECKSUM_V4
 #define MENU_FLASH_WORD_DEAD_REV (MENU_FLASH_WORD_DEAD_FWD + MOTOR_WHEEL_COUNT)
-#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_DEAD_REV + MOTOR_WHEEL_COUNT)
+#define MENU_FLASH_WORD_DIAG_SPEED_K (MENU_FLASH_WORD_DEAD_REV + MOTOR_WHEEL_COUNT)
+#define MENU_FLASH_WORD_DIAG_COMP (MENU_FLASH_WORD_DIAG_SPEED_K + 1U)
+#define MENU_FLASH_WORD_CHECKSUM_V5 (MENU_FLASH_WORD_DEAD_REV + MOTOR_WHEEL_COUNT)
+#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_DIAG_COMP + 1U)
 #define MENU_FLASH_WORD_COUNT (MENU_FLASH_WORD_CHECKSUM + 1U)
 
 #define MENU_FLAG_YAW_REVERSED (1UL << 0)
@@ -99,6 +106,7 @@ static uint32 menu_flash_checksum(void)
     else if (version == MENU_FLASH_VERSION_V2) end = MENU_FLASH_WORD_CHECKSUM_V2;
     else if (version == MENU_FLASH_VERSION_V3) end = MENU_FLASH_WORD_CHECKSUM_V3;
     else if (version == MENU_FLASH_VERSION_V4) end = MENU_FLASH_WORD_CHECKSUM_V4;
+    else if (version == MENU_FLASH_VERSION_V5) end = MENU_FLASH_WORD_CHECKSUM_V5;
     else end = MENU_FLASH_WORD_CHECKSUM;
 
     for (index = MENU_FLASH_WORD_KP_FIRST; index < end; index++)
@@ -117,9 +125,11 @@ static uint8 menu_flash_buffer_valid(void)
     else if (version == MENU_FLASH_VERSION_V2) check = MENU_FLASH_WORD_CHECKSUM_V2;
     else if (version == MENU_FLASH_VERSION_V3) check = MENU_FLASH_WORD_CHECKSUM_V3;
     else if (version == MENU_FLASH_VERSION_V4) check = MENU_FLASH_WORD_CHECKSUM_V4;
+    else if (version == MENU_FLASH_VERSION_V5) check = MENU_FLASH_WORD_CHECKSUM_V5;
     else check = MENU_FLASH_WORD_CHECKSUM;
     return (flash_union_buffer[MENU_FLASH_WORD_MAGIC].uint32_type == MENU_FLASH_MAGIC &&
-            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V4 || version == MENU_FLASH_VERSION_V3 ||
+            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V5 ||
+             version == MENU_FLASH_VERSION_V4 || version == MENU_FLASH_VERSION_V3 ||
              version == MENU_FLASH_VERSION_V2 || version == MENU_FLASH_LEGACY_VERSION) &&
             flash_union_buffer[check].uint32_type == menu_flash_checksum()) ? 1U : 0U;
 }
@@ -250,6 +260,9 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
         flash_union_buffer[MENU_FLASH_WORD_DEAD_FWD + wheel].uint32_type = (uint32)config->wheel_deadzone_fwd[wheel];
         flash_union_buffer[MENU_FLASH_WORD_DEAD_REV + wheel].uint32_type = (uint32)config->wheel_deadzone_rev[wheel];
     }
+    /* v6 斜向两参数；v5 及更旧存档不含此块（槽位 71 在 v5 中是校验字） */
+    flash_union_buffer[MENU_FLASH_WORD_DIAG_SPEED_K].uint32_type = menu_flash_float_to_word(config->diag_speed_k);
+    flash_union_buffer[MENU_FLASH_WORD_DIAG_COMP].uint32_type = menu_flash_float_to_word(config->diag_comp);
     flash_union_buffer[MENU_FLASH_WORD_CHECKSUM].uint32_type = menu_flash_checksum();
 
     memcpy(expected,flash_union_buffer,sizeof(expected));
@@ -339,6 +352,7 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         }
     }
     if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION ||
+        flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V5 ||
         flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V4 ||
         flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V3)
     {
@@ -383,7 +397,7 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         static const int defaults_fwd[MOTOR_WHEEL_COUNT] = {MOTOR_UL_DEADZONE_FWD, MOTOR_UR_DEADZONE_FWD, MOTOR_DL_DEADZONE_FWD, MOTOR_DR_DEADZONE_FWD};
         static const int defaults_rev[MOTOR_WHEEL_COUNT] = {MOTOR_UL_DEADZONE_REV, MOTOR_UR_DEADZONE_REV, MOTOR_DL_DEADZONE_REV, MOTOR_DR_DEADZONE_REV};
         for (wheel = 0U; wheel < MOTOR_WHEEL_COUNT; wheel++) {
-            if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION) {
+            if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type >= MENU_FLASH_VERSION_V5) {
                 uint32 fwd=flash_union_buffer[MENU_FLASH_WORD_DEAD_FWD + wheel].uint32_type;
                 uint32 rev=flash_union_buffer[MENU_FLASH_WORD_DEAD_REV + wheel].uint32_type;
                 if (fwd > LIMIT_PWM_MAX || rev > LIMIT_PWM_MAX) return 0U;
@@ -394,6 +408,15 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
                 loaded.wheel_deadzone_rev[wheel]=defaults_rev[wheel];
             }
         }
+    }
+    /* v6 斜向两参数；v5 及更旧存档该槽位是校验字或不存在，取编译期默认值 */
+    if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION) {
+        loaded.diag_speed_k = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_DIAG_SPEED_K].uint32_type);
+        loaded.diag_comp = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_DIAG_COMP].uint32_type);
+    } else {
+        static const position_config_t pos_defaults = POSITION_CONFIG_DEFAULT;
+        loaded.diag_speed_k = pos_defaults.diag_speed_k;
+        loaded.diag_comp = NAV_DIAG_LATERAL_SCALE_DEFAULT;
     }
     if (!menu_flash_config_valid(&loaded)) return 0U;
     *config = loaded;
@@ -448,6 +471,8 @@ uint8 menu_flash_save_current(void)
     config.yaw_kd = motor_position_config.yaw_kd;
     config.yaw_kd_translate = motor_position_config.yaw_kd_translate;
     config.yaw_stiction_radps = motor_position_config.yaw_stiction_radps;
+    config.diag_speed_k = motor_position_config.diag_speed_k;
+    config.diag_comp = navigation_diag_comp;
     config.mount_deg = navigation_mount_deg;
     config.scale_x = navigation_scale_x;
     config.scale_y = navigation_scale_y;
@@ -507,6 +532,8 @@ uint8 menu_flash_load_current(void)
     motor_position_config.yaw_kd = config.yaw_kd;
     motor_position_config.yaw_kd_translate = config.yaw_kd_translate;
     motor_position_config.yaw_stiction_radps = config.yaw_stiction_radps;
+    motor_position_config.diag_speed_k = config.diag_speed_k;
+    navigation_diag_comp = config.diag_comp;
     navigation_mount_deg = config.mount_deg;
     navigation_scale_x = config.scale_x;
     navigation_scale_y = config.scale_y;

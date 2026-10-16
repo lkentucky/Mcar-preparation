@@ -42,11 +42,12 @@ typedef struct {
     float yaw_kd;            /* 静止转向陀螺阻尼 */
     float yaw_kd_translate;  /* 平移时陀螺阻尼 */
     float yaw_stiction_radps;/* 航向静摩擦地板 rad/s：误差还大时命令角速度不低于此值，0=关闭 */
+    float diag_speed_k;      /* 斜向降速系数：斜段按混合度缩放平移速度/加速度，1=不降速 */
 } position_config_t;
 
 #define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 20.0f, 1.0f, 40.0f, 2.0f, 2.0f, 3.0f, \
                                  0.90f, 450.0f, 40.0f, 1.40f, 10.0f, 0.25f, 0.45f, \
-                                 0.22f, 0.22f, 0.36f, 0.15f}
+                                 0.22f, 0.22f, 0.36f, 0.15f, 1.0f}
 
 enum {
     POSITION_YAW_STALLED = -3,
@@ -74,6 +75,7 @@ typedef struct {
     float plan_v_cmps;         /* 平移标量速度参考（Trajectory.current_v） */
     float plan_vw_radps;       /* 航向角速度参考（YawProfiled.current_vw） */
     float initial_distance_cm; /* 启动/换目标瞬间锁定的段长，用于短段提升与接近区比例 */
+    float diag_mix;            /* 段启动时锁定的斜向混合度（0=纯轴，1=45°），用于 DiagK 降速 */
     bool have_initial;
     float yaw_stall_seconds;
     float stall_seconds;       /* 容差圈内"命令蠕行但实测停住"的失速累计（静摩擦判到达） */

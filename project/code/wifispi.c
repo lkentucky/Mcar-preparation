@@ -84,6 +84,7 @@ static uint32 g_last_wifi_tx_ticks, g_last_wifi_rx_ticks;
     X(accel_x_g, imu_accel_g[0]) X(accel_y_g, imu_accel_g[1]) X(accel_z_g, imu_accel_g[2]) \
     X(gyro_x_dps, imu_gyro_dps[0]) X(gyro_y_dps, imu_gyro_dps[1]) X(gyro_z_dps, imu_gyro_dps[2]) \
     X(imu_status, imu_attitude_status) X(imu_cal_percent, imu_calibration_percent) \
+    X(gz_bias_dps, imu_gyro_bias_z_dps) X(still_s, nav.stationary_seconds) \
     X(ul_raw, motor.raw_counts[0]) X(ur_raw, motor.raw_counts[1]) \
     X(dl_raw, motor.raw_counts[2]) X(dr_raw, motor.raw_counts[3]) \
     X(ul_filt, motor.filtered_counts[0]) X(ur_filt, motor.filtered_counts[1]) \
