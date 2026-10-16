@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include "zf_common_typedef.h"
 
-#define ROUTE_MAX_NODES 8
+#define ROUTE_MAX_NODES 50
 #define ROUTE_DEFAULT_NODE_COUNT 3
 #define ROUTE_DEFAULT_NODES {{0.0f,0.0f,0.0f},{20.0f,40.0f,0.0f},{50.0f,80.0f,0.0f}}
 

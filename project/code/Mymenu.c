@@ -86,6 +86,7 @@ static void menu_create(void)
     Create_Menu_File_dynamic(position, "TolXY_cm", (void *)&motor_position_config.xy_tolerance_cm, float_Box);
     Create_Menu_File_dynamic(position, "TolYaw_deg", (void *)&motor_position_config.yaw_tolerance_deg, float_Box);
     Create_Menu_File_dynamic(position, "Acc_cmps2", (void *)&motor_position_config.max_accel_cmps2, float_Box);
+    Create_Menu_Readonly_dynamic(position, "FlashAcc", (void *)&menu_flash_stored_accel, float_Box);
     Create_Menu_File_dynamic(position, "Alpha", (void *)&motor_position_config.max_alpha_radps2, float_Box);
     /* ivision 式开环规划参数（替代原 XY_Kp/XY_Kd/Yaw_Kp，后三者已不参与控制） */
     Create_Menu_File_dynamic(position, "BrakeLim", (void *)&motor_position_config.brake_limit, float_Box);
@@ -198,6 +199,9 @@ static void menu_create(void)
     g_flash_save=false;
     Create_Menu_File_dynamic(route,"SaveCfg",&g_flash_save,bool_Box);
     Create_Menu_File_dynamic(&g_root,"SaveCfg",&g_flash_save,bool_Box);
+    Create_Menu_Readonly_dynamic(&g_root,"SaveState",(void *)&menu_flash_save_status,int32_Box);
+    Create_Menu_Readonly_dynamic(&g_root,"LoadState",(void *)&menu_flash_load_status,int32_Box);
+    Create_Menu_Readonly_dynamic(&g_root,"BadWord",(void *)&menu_flash_bad_word,uint32_Box);
 }
 static void menu_format_value(const Menu_Item *item,char *buffer,size_t size)
 {

@@ -8,8 +8,12 @@
 
 #include <string.h>
 
-/* v6 adds diagonal tuning (DiagK / DiagCmp) after the v5 deadzone block.
- * v5 adds eight wheel deadzones after the v4 block.
+volatile int32 menu_flash_save_status, menu_flash_load_status;
+volatile uint32 menu_flash_bad_word;
+volatile float menu_flash_stored_accel;
+static uint8 invalid_field(uint32 word) { menu_flash_bad_word=word; return 0U; }
+
+/* v5 adds eight wheel deadzones after the v4 block.
  * v4 adds yaw_stiction_radps (YawStic) after the v3 planner block. v3 has
  * the ivision-style planner parameters, v2 the route, v1 PID/navigation
  * with default nodes; older archives load with defaults for the missing
@@ -139,70 +143,70 @@ static uint8 menu_flash_float_valid(float value)
 static uint8 menu_flash_config_valid(const menu_flash_config_t *config)
 {
     uint8 wheel;
+    menu_flash_bad_word=0;
 
     for (wheel = 0U; wheel < MOTOR_WHEEL_COUNT; wheel++)
     {
-        if (config->wheel_deadzone_fwd[wheel] < 0 || config->wheel_deadzone_fwd[wheel] > LIMIT_PWM_MAX ||
-            config->wheel_deadzone_rev[wheel] < 0 || config->wheel_deadzone_rev[wheel] > LIMIT_PWM_MAX) return 0U;
-        if (!menu_flash_float_valid(config->wheel_kp[wheel]) || config->wheel_kp[wheel] < 0.0f) return 0U;
-        if (!menu_flash_float_valid(config->wheel_ki[wheel]) || config->wheel_ki[wheel] < 0.0f) return 0U;
-        if (!menu_flash_float_valid(config->wheel_kd[wheel]) || config->wheel_kd[wheel] < 0.0f) return 0U;
+        if (config->wheel_deadzone_fwd[wheel] < 0 || config->wheel_deadzone_fwd[wheel] > LIMIT_PWM_MAX) return invalid_field(MENU_FLASH_WORD_DEAD_FWD+wheel);
+        if (config->wheel_deadzone_rev[wheel] < 0 || config->wheel_deadzone_rev[wheel] > LIMIT_PWM_MAX) return invalid_field(MENU_FLASH_WORD_DEAD_REV+wheel);
+        if (!menu_flash_float_valid(config->wheel_kp[wheel]) || config->wheel_kp[wheel] < 0.0f) return invalid_field(MENU_FLASH_WORD_KP_FIRST + wheel);
+        if (!menu_flash_float_valid(config->wheel_ki[wheel]) || config->wheel_ki[wheel] < 0.0f) return invalid_field(MENU_FLASH_WORD_KI_FIRST + wheel);
+        if (!menu_flash_float_valid(config->wheel_kd[wheel]) || config->wheel_kd[wheel] < 0.0f) return invalid_field(MENU_FLASH_WORD_KD_FIRST + wheel);
     }
-    if (!menu_flash_float_valid(config->xy_kp) || config->xy_kp <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->xy_kd) || config->xy_kd < 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->yaw_kp) || config->yaw_kp <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->max_speed_cmps) || config->max_speed_cmps <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->max_omega_radps) || config->max_omega_radps <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->max_accel_cmps2) || config->max_accel_cmps2 <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->max_alpha_radps2) || config->max_alpha_radps2 <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->xy_tolerance_cm) || config->xy_tolerance_cm <= 0.0f) return 0U;
-    if (!menu_flash_float_valid(config->yaw_tolerance_deg) || config->yaw_tolerance_deg <= 0.0f) return 0U;
+    if (!menu_flash_float_valid(config->xy_kp) || config->xy_kp <= 0.0f) return invalid_field(MENU_FLASH_WORD_XY_KP);
+    if (!menu_flash_float_valid(config->xy_kd) || config->xy_kd < 0.0f) return invalid_field(MENU_FLASH_WORD_XY_KD);
+    if (!menu_flash_float_valid(config->yaw_kp) || config->yaw_kp <= 0.0f) return invalid_field(MENU_FLASH_WORD_YAW_KP);
+    if (!menu_flash_float_valid(config->max_speed_cmps) || config->max_speed_cmps <= 0.0f) return invalid_field(MENU_FLASH_WORD_MAX_SPEED);
+    if (!menu_flash_float_valid(config->max_omega_radps) || config->max_omega_radps <= 0.0f) return invalid_field(MENU_FLASH_WORD_MAX_OMEGA);
+    if (!menu_flash_float_valid(config->max_accel_cmps2) || config->max_accel_cmps2 <= 0.0f) return invalid_field(MENU_FLASH_WORD_MAX_ACCEL);
+    if (!menu_flash_float_valid(config->max_alpha_radps2) || config->max_alpha_radps2 <= 0.0f) return invalid_field(MENU_FLASH_WORD_MAX_ALPHA);
+    if (!menu_flash_float_valid(config->xy_tolerance_cm) || config->xy_tolerance_cm <= 0.0f) return invalid_field(MENU_FLASH_WORD_TOL_XY);
+    if (!menu_flash_float_valid(config->yaw_tolerance_deg) || config->yaw_tolerance_deg <= 0.0f) return invalid_field(MENU_FLASH_WORD_TOL_YAW);
     if (!menu_flash_float_valid(config->brake_limit) ||
-        config->brake_limit < 0.05f || config->brake_limit > 2.0f) return 0U;
+        config->brake_limit < 0.05f || config->brake_limit > 2.0f) return invalid_field(MENU_FLASH_WORD_BRAKE_LIMIT);
     if (!menu_flash_float_valid(config->brake_ceiling_cmps2) ||
-        config->brake_ceiling_cmps2 < 50.0f || config->brake_ceiling_cmps2 > 5000.0f) return 0U;
+        config->brake_ceiling_cmps2 < 50.0f || config->brake_ceiling_cmps2 > 5000.0f) return invalid_field(MENU_FLASH_WORD_BRAKE_CEILING);
     if (!menu_flash_float_valid(config->short_segment_cm) ||
-        config->short_segment_cm < 1.0f || config->short_segment_cm > 200.0f) return 0U;
+        config->short_segment_cm < 1.0f || config->short_segment_cm > 200.0f) return invalid_field(MENU_FLASH_WORD_SHORT_SEGMENT);
     if (!menu_flash_float_valid(config->short_boost_gain) ||
-        config->short_boost_gain < 1.0f || config->short_boost_gain > 3.0f) return 0U;
+        config->short_boost_gain < 1.0f || config->short_boost_gain > 3.0f) return invalid_field(MENU_FLASH_WORD_SHORT_BOOST);
     if (!menu_flash_float_valid(config->approach_zone_cm) ||
-        config->approach_zone_cm < 0.0f || config->approach_zone_cm > 50.0f) return 0U;
+        config->approach_zone_cm < 0.0f || config->approach_zone_cm > 50.0f) return invalid_field(MENU_FLASH_WORD_APP_ZONE);
     if (!menu_flash_float_valid(config->approach_ratio) ||
-        config->approach_ratio < 0.0f || config->approach_ratio > 1.0f) return 0U;
+        config->approach_ratio < 0.0f || config->approach_ratio > 1.0f) return invalid_field(MENU_FLASH_WORD_APP_RATIO);
     if (!menu_flash_float_valid(config->approach_acc_k) ||
-        config->approach_acc_k < 0.05f || config->approach_acc_k > 0.95f) return 0U;
+        config->approach_acc_k < 0.05f || config->approach_acc_k > 0.95f) return invalid_field(MENU_FLASH_WORD_APP_ACC_K);
     if (!menu_flash_float_valid(config->yaw_lin_band_rad) ||
-        config->yaw_lin_band_rad < 0.02f || config->yaw_lin_band_rad > 1.0f) return 0U;
+        config->yaw_lin_band_rad < 0.02f || config->yaw_lin_band_rad > 1.0f) return invalid_field(MENU_FLASH_WORD_YAW_BAND);
     if (!menu_flash_float_valid(config->yaw_kd) ||
-        config->yaw_kd < 0.0f || config->yaw_kd > 2.0f) return 0U;
+        config->yaw_kd < 0.0f || config->yaw_kd > 2.0f) return invalid_field(MENU_FLASH_WORD_YAW_KD);
     if (!menu_flash_float_valid(config->yaw_kd_translate) ||
-        config->yaw_kd_translate < 0.0f || config->yaw_kd_translate > 2.0f) return 0U;
+        config->yaw_kd_translate < 0.0f || config->yaw_kd_translate > 2.0f) return invalid_field(MENU_FLASH_WORD_YAW_KD_TRN);
     if (!menu_flash_float_valid(config->yaw_stiction_radps) ||
-        config->yaw_stiction_radps < 0.0f || config->yaw_stiction_radps > 1.0f) return 0U;
-    if (!menu_flash_float_valid(config->diag_speed_k) ||
-        config->diag_speed_k < 0.2f || config->diag_speed_k > 1.0f) return 0U;
-    if (!menu_flash_float_valid(config->diag_comp) ||
-        config->diag_comp < 0.5f || config->diag_comp > 1.5f) return 0U;
+        config->yaw_stiction_radps < 0.0f || config->yaw_stiction_radps > 1.0f) return invalid_field(MENU_FLASH_WORD_YAW_STICTION);
     if (!menu_flash_float_valid(config->mount_deg) ||
-        config->mount_deg < -180.0f || config->mount_deg > 180.0f) return 0U;
+        config->mount_deg < -180.0f || config->mount_deg > 180.0f) return invalid_field(MENU_FLASH_WORD_MOUNT_DEG);
     if (!menu_flash_float_valid(config->scale_x) ||
-        config->scale_x < 0.1f || config->scale_x > 5.0f) return 0U;
+        config->scale_x < 0.1f || config->scale_x > 5.0f) return invalid_field(MENU_FLASH_WORD_SCALE_X);
     if (!menu_flash_float_valid(config->scale_y) ||
-        config->scale_y < 0.1f || config->scale_y > 5.0f) return 0U;
-    if (config->route_node_count < 1U || config->route_node_count > ROUTE_MAX_NODES) return 0U;
+        config->scale_y < 0.1f || config->scale_y > 5.0f) return invalid_field(MENU_FLASH_WORD_SCALE_Y);
+    if (config->route_node_count < 1U || config->route_node_count > ROUTE_MAX_NODES) return invalid_field(MENU_FLASH_WORD_ROUTE_COUNT);
     for (wheel = 0U; wheel < ROUTE_MAX_NODES; wheel++)
     {
         const route_node_t *node = &config->route_nodes[wheel];
-        if (!menu_flash_float_valid(node->x_cm) || node->x_cm < -10000.0f || node->x_cm > 10000.0f) return 0U;
-        if (!menu_flash_float_valid(node->y_cm) || node->y_cm < -10000.0f || node->y_cm > 10000.0f) return 0U;
-        if (!menu_flash_float_valid(node->yaw_deg) || node->yaw_deg < -180.0f || node->yaw_deg > 180.0f) return 0U;
+        if (!menu_flash_float_valid(node->x_cm) || node->x_cm < -10000.0f || node->x_cm > 10000.0f) return invalid_field(MENU_FLASH_WORD_ROUTE_FIRST+3U*wheel+0U);
+        if (!menu_flash_float_valid(node->y_cm) || node->y_cm < -10000.0f || node->y_cm > 10000.0f) return invalid_field(MENU_FLASH_WORD_ROUTE_FIRST+3U*wheel+1U);
+        if (!menu_flash_float_valid(node->yaw_deg) || node->yaw_deg < -180.0f || node->yaw_deg > 180.0f) return invalid_field(MENU_FLASH_WORD_ROUTE_FIRST+3U*wheel+2U);
     }
     return 1U;
 }
 
 uint8 Data_save_to_flash(const menu_flash_config_t *config)
 {
+    uint32 expected[MENU_FLASH_WORD_COUNT];
     uint32 flags = 0U;
+    menu_flash_save_status=-1;
+    menu_flash_bad_word=0;
     uint8 wheel;
 
     if (config == NULL || !menu_flash_config_valid(config))
@@ -261,6 +265,8 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
     flash_union_buffer[MENU_FLASH_WORD_DIAG_COMP].uint32_type = menu_flash_float_to_word(config->diag_comp);
     flash_union_buffer[MENU_FLASH_WORD_CHECKSUM].uint32_type = menu_flash_checksum();
 
+    memcpy(expected,flash_union_buffer,sizeof(expected));
+    menu_flash_save_status=-2;
     if (flash_check(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX) &&
         flash_erase_page(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX) != 0U)
     {
@@ -268,6 +274,7 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
     }
     /* 只写入实际使用的字，缩短关中断时间（整页写约 16ms，这里约 1ms）。
      * 擦除仍是最大耗时项，保存后需调用 imu_recover_after_stall() 恢复 IMU。 */
+    menu_flash_save_status=-3;
     if (flash_write_page(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX,
                          (const uint32 *)&flash_union_buffer[0], MENU_FLASH_WORD_COUNT) != 0U)
     {
@@ -275,7 +282,12 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
     }
 
     flash_read_page_to_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX);
-    return menu_flash_buffer_valid();
+    if (!menu_flash_buffer_valid() || memcmp(expected,flash_union_buffer,sizeof(expected))!=0) {
+        menu_flash_save_status=-4; return 0U;
+    }
+    menu_flash_stored_accel=config->max_accel_cmps2;
+    menu_flash_save_status=1;
+    return 1U;
 }
 
 uint8 Data_load_from_flash(menu_flash_config_t *config)
@@ -283,6 +295,8 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
     menu_flash_config_t loaded;
     static const route_node_t defaults[ROUTE_MAX_NODES] = ROUTE_DEFAULT_NODES;
     uint32 flags;
+    menu_flash_load_status=-1;
+    menu_flash_bad_word=0;
     uint8 wheel;
 
     if (config == NULL || !flash_check(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX))
@@ -291,11 +305,13 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
     }
 
     flash_read_page_to_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX);
+    menu_flash_load_status=-2;
     if (!menu_flash_buffer_valid())
     {
         return 0U;
     }
 
+    menu_flash_load_status=-3;
     for (wheel = 0U; wheel < MOTOR_WHEEL_COUNT; wheel++)
     {
         loaded.wheel_kp[wheel] = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_KP_FIRST + wheel].uint32_type);
@@ -404,6 +420,8 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
     }
     if (!menu_flash_config_valid(&loaded)) return 0U;
     *config = loaded;
+    menu_flash_stored_accel=loaded.max_accel_cmps2;
+    menu_flash_load_status=1;
     return 1U;
 }
 
@@ -415,6 +433,8 @@ uint8 Data_clear_flash(void)
 
 uint8 menu_flash_save_current(void)
 {
+    if (menu_flash_load_status==-4) { menu_flash_save_status=-5; return 0U; }
+    menu_flash_save_status=-1; menu_flash_bad_word=0;
     menu_flash_config_t config;
     uint8 wheel;
     uint32 primask;
@@ -461,7 +481,7 @@ uint8 menu_flash_save_current(void)
     count = route_node_count;
     memcpy(config.route_nodes, route_nodes, sizeof(config.route_nodes));
     interrupt_global_enable(primask);
-    if (count < 1 || count > ROUTE_MAX_NODES) return 0U;
+    if (count < 1 || count > ROUTE_MAX_NODES) return invalid_field(MENU_FLASH_WORD_ROUTE_COUNT);
     config.route_node_count = (uint8)count;
     uint8 result = Data_save_to_flash(&config);
     /* 擦写期间全局关中断数十毫秒以上，IMU 采样间隔超限会锁止到 BAD_DT(-3)，

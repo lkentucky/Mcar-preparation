@@ -12,6 +12,8 @@ flash_data_union flash_union_buffer[FLASH_DATA_BUFFER_SIZE];
 static uint32 storage[FLASH_DATA_BUFFER_SIZE];
 static unsigned present, erased, writes, recoveries, resets, irq_disabled, fail_erase, fail_write;
 static uint16 last_write_length;
+static int stale_read;
+static uint32 stale_data[FLASH_DATA_BUFFER_SIZE];
 volatile int motor_deadzone_fwd[4],motor_deadzone_rev[4];
 volatile bool motor_run_enabled, motor_position_enabled, motor_pwm_test_enabled;
 volatile position_goal_t motor_position_goal;
@@ -40,7 +42,7 @@ uint8 flash_write_page(uint32 sector, flash_page_enum page,const uint32 *data,ui
     assert(length<=FLASH_DATA_BUFFER_SIZE); memcpy(storage,data,length*sizeof(uint32)); present=1; return 0;
 }
 void flash_read_page_to_buffer(uint32 sector, flash_page_enum page)
-{ assert(!irq_disabled); (void)flash_check(sector,page); memcpy(flash_union_buffer,storage,sizeof(storage)); }
+{ assert(!irq_disabled); (void)flash_check(sector,page); memcpy(flash_union_buffer,stale_read?stale_data:storage,sizeof(storage)); }
 static void checksum(unsigned index)
 {
     uint32 value=storage[0]^storage[1]^0xa5a55a5au;
