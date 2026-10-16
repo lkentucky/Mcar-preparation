@@ -18,8 +18,8 @@ int main(void)
     route_follow_init();
     /* Flash 参数存取：先初始化 FlexSPI ROM 驱动，再尝试加载上次保存的参数。
      * 首次运行或校验失败时返回 0，继续使用代码中的默认值。 */
-    flash_init();
-    menu_flash_load_current();
+    if (flash_init()==0) menu_flash_load_current();
+    else { menu_flash_load_status=-4; menu_flash_save_status=-5; }
     imu_init();
     Menu_Init();
 

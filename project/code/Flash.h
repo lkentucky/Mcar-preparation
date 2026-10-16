@@ -58,6 +58,13 @@ typedef struct
     route_node_t route_nodes[ROUTE_MAX_NODES];
 } menu_flash_config_t;
 
+/* Save: 1 OK; -1 config, -2 erase, -3 program, -4 verify, -5 init.
+ * Load: 1 OK; -1 empty, -2 header/checksum, -3 config, -4 init.
+ * BadWord is the offending serialized field index (19=Acc,63..70=deadzones). */
+extern volatile int32 menu_flash_save_status, menu_flash_load_status;
+extern volatile uint32 menu_flash_bad_word;
+extern volatile float menu_flash_stored_accel;
+
 uint8 Data_save_to_flash(const menu_flash_config_t *config);
 uint8 Data_load_from_flash(menu_flash_config_t *config);
 uint8 Data_clear_flash(void);

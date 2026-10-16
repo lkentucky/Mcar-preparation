@@ -64,20 +64,20 @@
 #define D_Y                     0.20     //底盘X轴上两轮中心的间距
 #define PID_RATE                100       //PID调节PWM值的频率
 
-#define LIMIT_PWM_MIN              -2000
-#define LIMIT_PWM_MAX               2000
+#define LIMIT_PWM_MIN              -4000
+#define LIMIT_PWM_MAX               4000
 
 /* Closed-loop motor parameters in logical order: UL, UR, DL, DR. */
 #define MOTOR_DEADZONE_TARGET_MIN_COUNTS  2
 
-#define MOTOR_UL_DEADZONE_FWD             160
-#define MOTOR_UL_DEADZONE_REV             152
-#define MOTOR_UR_DEADZONE_FWD             0
-#define MOTOR_UR_DEADZONE_REV             429
-#define MOTOR_DL_DEADZONE_FWD             550
-#define MOTOR_DL_DEADZONE_REV             390
-#define MOTOR_DR_DEADZONE_FWD             694
-#define MOTOR_DR_DEADZONE_REV             637
+#define MOTOR_UL_DEADZONE_FWD             1000
+#define MOTOR_UL_DEADZONE_REV             1000
+#define MOTOR_UR_DEADZONE_FWD             754
+#define MOTOR_UR_DEADZONE_REV             818
+#define MOTOR_DL_DEADZONE_FWD             776
+#define MOTOR_DL_DEADZONE_REV             672
+#define MOTOR_DR_DEADZONE_FWD             481
+#define MOTOR_DR_DEADZONE_REV             891
 
 /* Right-strafe launch compensation, limited to the first 5 cm.
  * Derive distance counts from the configured wheel diameter/resolution. */

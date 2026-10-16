@@ -33,6 +33,9 @@ volatile uint32_t wifi_telemetry_stream_enabled, wifi_telemetry_commands, wifi_t
 static key_state_enum events[KEY_NUMBER];
 static motor_speed_debug_snapshot_t snapshot;
 static unsigned draw_calls, irq_disabled;
+volatile int32 menu_flash_save_status,menu_flash_load_status;
+volatile uint32 menu_flash_bad_word;
+volatile float menu_flash_stored_accel;
 static unsigned flash_saves;
 uint8 menu_flash_save_current(void)
 {

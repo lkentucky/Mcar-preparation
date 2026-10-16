@@ -39,5 +39,19 @@ int main(void)
     fail_write=1;assert(!menu_flash_save_current());fail_write=0;
     assert(!motor_run_enabled && !route_run_flag);
     puts("Flash deadzones passed: 8 values, bounds, corruption, v1-v4 migration, stopped boot, write failure");
+    motor_position_config.max_accel_cmps2=123;
+    assert(menu_flash_save_current() && menu_flash_save_status==1 && menu_flash_stored_accel==123);
+    memcpy(stale_data,storage,sizeof(storage));
+    motor_position_config.max_accel_cmps2=40;
+    assert(menu_flash_load_current() && menu_flash_load_status==1);
+    assert(motor_position_config.max_accel_cmps2==123 && menu_flash_stored_accel==123);
+    /* A valid OLD archive is not proof that the NEW write succeeded. */
+    motor_position_config.max_accel_cmps2=156;stale_read=1;
+    assert(!menu_flash_save_current() && menu_flash_save_status==-4);
+    stale_read=0;
+    assert(menu_flash_save_current() && menu_flash_stored_accel==156);
+    assert(Data_load_from_flash(&config));config.max_accel_cmps2=0;
+    assert(!Data_save_to_flash(&config) && menu_flash_save_status==-1 && menu_flash_bad_word==19);
+    puts("acceleration persistence passed: non-default reboot restore, stale-read detection, field-specific failure");
     return 0;
 }
