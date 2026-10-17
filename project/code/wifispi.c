@@ -13,6 +13,8 @@
 #include "Motor.h"
 #include "app_navigation.h"
 #include "app_control.h"
+#include "route_follow.h"
+#include <errno.h>
 #include "PID_config.h"
 #include <math.h>
 #include <stdio.h>
@@ -308,6 +310,87 @@ static void reply_names(int all)
     reply[used++]='\n'; reply[used]='\0';
     send_reply(reply);
 }
+/* Serial-number ordering prevents a delayed GOTO from undoing a newer STOP.
+ * Duplicate requests acknowledge the original acceptance without restarting. */
+static uint32_t g_remote_sequence;
+static int g_remote_have_sequence, g_remote_last_was_goal;
+static float g_remote_x, g_remote_y, g_remote_yaw;
+
+static void remote_error(uint32_t id, const char *reason)
+{
+    char reply[120];
+    ++wifi_telemetry_command_errors;
+    (void)snprintf(reply,sizeof(reply),"MCAR NAVERR %lu %s\n",(unsigned long)id,reason);
+    send_reply(reply);
+}
+
+static int process_remote(char *command)
+{
+    char *p, *end;
+    char reply[160];
+    unsigned long number;
+    uint32_t id, primask;
+    float goal[3];
+    unsigned i;
+    int is_goal;
+    navigation_snapshot_t nav;
+    if (strncmp(command,"GOTO ",5)==0) { p=trim(command+5); is_goal=1; }
+    else if (strncmp(command,"STOP ",5)==0) { p=trim(command+5); is_goal=0; }
+    else return 0;
+    errno=0;
+    if (*p<'0' || *p>'9') { remote_error(0,"invalid_id"); return 1; }
+    number=strtoul(p,&end,10);
+    if (errno || end==p || number>0xffffffffUL || (*end && *end!=' ' && *end!='\t')) {
+        remote_error(0,"invalid_id"); return 1;
+    }
+    id=(uint32_t)number;
+    p=trim(end);
+    if (is_goal) {
+        for (i=0;i<3;++i) {
+            errno=0; goal[i]=strtof(p,&end);
+            if (errno || end==p || !isfinite(goal[i]) || (*end && *end!=' ' && *end!='\t')) {
+                remote_error(id,"invalid_goal"); return 1;
+            }
+            p=trim(end);
+        }
+        if (*p || fabsf(goal[0])>10000 || fabsf(goal[1])>10000 || fabsf(goal[2])>180) {
+            remote_error(id,"goal_out_of_range"); return 1;
+        }
+        if (g_remote_have_sequence && (int32_t)(id-g_remote_sequence)<=0) {
+            if (id!=g_remote_sequence || !g_remote_last_was_goal ||
+                goal[0]!=g_remote_x || goal[1]!=g_remote_y || goal[2]!=g_remote_yaw) {
+                remote_error(id,"stale_request"); return 1;
+            }
+        } else {
+            primask=interrupt_global_disable();
+            app_navigation_get_snapshot(&nav);
+            if (!nav.valid) {
+                interrupt_global_enable(primask);
+                remote_error(id,"pose_invalid"); return 1;
+            }
+            route_follow_stop();
+            app_control_remote_goal(goal[0],goal[1],goal[2]);
+            interrupt_global_enable(primask);
+            g_remote_sequence=id; g_remote_have_sequence=1; g_remote_last_was_goal=1;
+            g_remote_x=goal[0]; g_remote_y=goal[1]; g_remote_yaw=goal[2];
+        }
+        (void)snprintf(reply,sizeof(reply),"MCAR NAV %lu %.9g %.9g %.9g\n",
+            (unsigned long)id,(double)goal[0],(double)goal[1],(double)goal[2]);
+    } else {
+        if (*p) { remote_error(id,"invalid_stop"); return 1; }
+        primask=interrupt_global_disable();
+        route_follow_stop();
+        app_control_remote_stop();
+        interrupt_global_enable(primask);
+        if (!g_remote_have_sequence || (int32_t)(id-g_remote_sequence)>=0) {
+            g_remote_sequence=id; g_remote_have_sequence=1; g_remote_last_was_goal=0;
+        }
+        (void)snprintf(reply,sizeof(reply),"MCAR STOP %lu\n",(unsigned long)id);
+    }
+    send_reply(reply);
+    return 1;
+}
+
 static void process_command(char *line)
 {
     char *command=trim(line), *arg, *end;
@@ -316,6 +399,7 @@ static void process_command(char *line)
     unsigned long number;
     char reply[80];
     ++wifi_telemetry_commands;
+    if (process_remote(command)) return;
     if (*command=='[') { process_slider(command); return; }
     if (strcmp(command,"LIST?")==0) { reply_names(1); return; }
     if (strcmp(command,"GET?")==0) {

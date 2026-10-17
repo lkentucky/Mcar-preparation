@@ -20,6 +20,9 @@ extern volatile position_config_t motor_position_config;
 /* Main-loop callers must take this snapshot with interrupts disabled. */
 void app_control_get_position_snapshot(position_output_t *out);
 
+/* Main-loop callers must disable interrupts around these requests. */
+void app_control_remote_goal(float x_cm, float y_cm, float yaw_deg);
+void app_control_remote_stop(void);
 void app_control_init(void);
 void app_control_motor_tick_10ms(void);
 

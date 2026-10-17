@@ -22,6 +22,7 @@ import dearpygui.dearpygui as dpg
 
 from attitude_3d import draw_aircraft_attitude
 from packet_parser import FieldRule, TYPE_FORMATS, parse_packet
+from route_page import RoutePage
 from live_plot import LivePlot
 from plot_history import PlotHistory
 from slider_workspace import SliderWorkspace
@@ -43,7 +44,7 @@ def get_ui_scale() -> float:
         return 1.0
 
 
-class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
+class WifiSpiMonitor(RoutePage, LivePlot, SliderWorkspace, CommandButtons):
     """组合 UDP、解析、记录与 DearPyGui 控件的上位机主类。"""
 
     REFRESH_INTERVAL = 1 / 120  # 队列处理最多 120 Hz，避免高帧率报文拖慢界面
@@ -56,6 +57,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
         self.initialize_workspace("MCAR", __file__)
         self.initialize_buttons()
         self.initialize_plot()
+        self.initialize_route()
         self.latest_values: dict[str, Any] = {}
         self.value_tags: dict[str, int] = {}
         self.plot_checks: dict[str, int] = {}
@@ -110,7 +112,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
 
     def switch_page(self, page: str) -> None:
         """左侧导航只显示一个页面；收包线程不受页面切换影响。"""
-        if page not in ("params", "plot", "imu"):
+        if page not in ("params", "plot", "imu", "route"):
             return
         if self.active_page == "params" and page != "params":
             self.release_command_buttons(momentary_only=True)
@@ -118,7 +120,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
         slider_host = "plot_slider_host" if page == "plot" else "params_slider_host"
         dpg.move_item("shared_slider_panel", parent=slider_host)
         dpg.configure_item("shared_slider_panel", height=self.px(230 if page == "plot" else 320))
-        for name in ("params", "plot", "imu"):
+        for name in ("params", "plot", "imu", "route"):
             dpg.configure_item(f"page_{name}", show=name == page)
             dpg.bind_item_theme(f"nav_{name}", "theme_nav_active" if name == page else "theme_nav_idle")
         if page == "plot":
@@ -268,6 +270,9 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
 
     def handle_mcar_reply(self, kind: str, value: str) -> None:
         """ASCII 应答只进入日志/配置，不进入数据、曲线或 CSV。"""
+        if self.handle_navigation_reply(kind, value):
+            self.log(f"导航回执：{kind} {value}", "rx")
+            return
         if kind == "SLIDER":
             self.handle_slider_reply(value)
             self.log(f"设备已确认调参：{value}", "rx")
@@ -355,6 +360,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
             return
         values, errors = parse_packet(packet, rules)
         self.latest_values = values
+        self.accept_route(values, timestamp, address)
         self.packet_times.append(time.monotonic())
         # 高频传感器可能数百 Hz，接收日志限为每 0.5 秒一条，避免日志本身拖慢 GUI。
         if time.monotonic() - self._last_rx_log >= 0.5:
@@ -428,6 +434,7 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
         if now - self._last_refresh < self.REFRESH_INTERVAL:
             return
         self._last_refresh = now
+        self.poll_navigation()
         retry = self.subscription.poll(now)
         if retry is not None:
             self.send_mcar(retry)
@@ -469,6 +476,8 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
                 self._update_plot()
         elif self.active_page == "imu":
             self._update_attitude()
+        elif self.active_page == "route":
+            self.refresh_route()
 
     # ----------------------------- CSV -----------------------------
     def save_csv(self) -> None:
@@ -522,6 +531,8 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
                     dpg.add_spacer(height=px(5))
                     dpg.add_button(label="03   IMU 姿态", tag="nav_imu", width=-1, height=px(48),
                                    callback=lambda: self.switch_page("imu"))
+                    dpg.add_button(label="04   路线图", tag="nav_route", width=-1, height=px(48),
+                                   callback=lambda: self.switch_page("route"))
                     dpg.add_spacer(height=px(20))
                     dpg.add_separator()
                     dpg.add_text("连接状态", color=(98, 185, 255))
@@ -640,6 +651,9 @@ class WifiSpiMonitor(LivePlot, SliderWorkspace, CommandButtons):
                                         dpg.add_plot_axis(dpg.mvXAxis, label="会话时间 / s", tag="plot_x_axis")
                                         dpg.add_plot_axis(dpg.mvYAxis, label="数值", tag="plot_y_axis")
                                 dpg.add_group(tag="plot_slider_host")
+
+                    with dpg.child_window(width=-1, height=-1, border=False, tag="page_route", show=False):
+                        self.build_route_page()
 
                     with dpg.child_window(width=-1, height=-1, border=False, tag="page_imu", show=False):
                         dpg.add_text("IMU 三维姿态", color=(98, 185, 255))

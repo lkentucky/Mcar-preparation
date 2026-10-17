@@ -1,5 +1,5 @@
 /** 5ms 流水线：读 IMU -> 校验 dt -> 标定/姿态融合 -> 发布欧拉角。
- * 保持仓库原错误状态和恢复行为，不改变寄存器、量程和采样周期。
+ * 保持仓库原错误状态和恢复行为，不改变采样周期；陀螺量程为 ±500dps。
  */
 #include "imu.h"
 #include "attitude.h"
@@ -84,22 +84,22 @@ static uint8 imu_read_sample(float gyro_dps[3],float accel_g[3])
         int16 acc_raw=(int16)((uint16)data[1u+2u*i]|((uint16)data[2u+2u*i]<<8));
         int16 gyro_raw=(int16)((uint16)data[7u+2u*i]|((uint16)data[8u+2u*i]<<8));
         accel_g[i]=(float)acc_raw/4096.0f;
-        gyro_dps[i]=(float)gyro_raw/16.4f;
+        gyro_dps[i]=(float)gyro_raw/65.6f;
     }
     return 1u;
 }
 static uint8 imu_hardware_init(void)
 {
     if (imu660ra_init()!=0u) return 0u;
-    /* 加速度与陀螺均为 200Hz，回读确认配置成功。 */
+    /* 加速度与陀螺均为 200Hz，量程 ±8g/±500dps，回读确认配置成功。 */
     imu_reg_write(IMU660RA_ACC_CONF,0xA9u);
     imu_reg_write(IMU660RA_GYR_CONF,0xA9u);
     imu_reg_write(IMU660RA_ACC_RANGE,0x02u);
-    imu_reg_write(IMU660RA_GYR_RANGE,0x00u);
+    imu_reg_write(IMU660RA_GYR_RANGE,0x02u);
     return (imu_reg_read(IMU660RA_ACC_CONF)==0xA9u &&
             imu_reg_read(IMU660RA_GYR_CONF)==0xA9u &&
             imu_reg_read(IMU660RA_ACC_RANGE)==0x02u &&
-            imu_reg_read(IMU660RA_GYR_RANGE)==0x00u)?1u:0u;
+            imu_reg_read(IMU660RA_GYR_RANGE)==0x02u)?1u:0u;
 }
 static void imu_reset_pipeline(void)
 {

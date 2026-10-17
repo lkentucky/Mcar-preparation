@@ -20,6 +20,7 @@ volatile int32 imu_attitude_status=1;
 volatile float imu_roll_deg=12, imu_pitch_deg=-4, imu_yaw_deg=30;
 volatile float imu_accel_g[3]={0,0,1}, imu_gyro_dps[3]={1,2,3};
 volatile float imu_calibration_percent=100;
+volatile float imu_gyro_bias_z_dps;
 volatile int motor_deadzone_fwd[4]={MOTOR_UL_DEADZONE_FWD,MOTOR_UR_DEADZONE_FWD,MOTOR_DL_DEADZONE_FWD,MOTOR_DR_DEADZONE_FWD};
 volatile int motor_deadzone_rev[4]={MOTOR_UL_DEADZONE_REV,MOTOR_UR_DEADZONE_REV,MOTOR_DL_DEADZONE_REV,MOTOR_DR_DEADZONE_REV};
 volatile bool motor_run_enabled, motor_position_enabled=true, motor_pwm_test_enabled;
@@ -42,6 +43,14 @@ static size_t incoming_size;
 uint32 interrupt_global_disable(void) { assert(!irq_disabled); irq_disabled=1; return 7; }
 void interrupt_global_enable(uint32 mask) { assert(irq_disabled && mask==7); irq_disabled=0; }
 void app_navigation_get_snapshot(navigation_snapshot_t *out) { assert(irq_disabled); *out=nav; }
+static unsigned remote_goals, remote_stops;
+void route_follow_stop(void) { assert(irq_disabled); motor_run_enabled=false; }
+void app_control_remote_goal(float x,float y,float yaw) {
+    assert(irq_disabled); ++remote_goals;
+    motor_position_goal=(position_goal_t){x,y,yaw};
+    motor_pwm_test_enabled=false; motor_position_enabled=true; motor_run_enabled=true;
+}
+void app_control_remote_stop(void) { assert(irq_disabled); ++remote_stops; motor_run_enabled=false; }
 void app_control_get_position_snapshot(position_output_t *out) { assert(irq_disabled); *out=pos; }
 void motor_speed_debug_get_snapshot(motor_speed_debug_snapshot_t *out) { assert(irq_disabled); *out=motor; }
 void system_delay_ms(uint32 ms) { assert(!irq_disabled); (void)ms; }

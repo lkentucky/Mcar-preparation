@@ -21,6 +21,7 @@ static bool g_previous_pwm_test_enabled;
 static bool g_previous_position_enabled;
 static bool g_position_was_running;
 static position_control_t g_position;
+static volatile bool g_remote_pending;
 
 void app_control_get_position_snapshot(position_output_t *out)
 {
@@ -51,6 +52,23 @@ static void stop_position(void)
     motor_pwm(0, 0, 0, 0);
 }
 
+/* Called with interrupts disabled: install all goal components atomically. */
+void app_control_remote_stop(void)
+{
+    g_remote_pending = false;
+    position_control_reset(&g_position);
+    stop_position();
+}
+
+void app_control_remote_goal(float x_cm, float y_cm, float yaw_deg)
+{
+    app_control_remote_stop();
+    motor_pwm_test_enabled = false;
+    motor_position_enabled = true;
+    motor_position_goal = (position_goal_t){x_cm, y_cm, yaw_deg};
+    g_remote_pending = true;
+}
+
 //限制车体速度
 static float clampf(float value, float low, float high)
 {
@@ -59,6 +77,7 @@ static float clampf(float value, float low, float high)
 
 void app_control_init(void)
 {
+    g_remote_pending = false;
     motor_init();
     encoder_init();
     PID_Init(&ULpid, &ULPidInitStruct);
@@ -103,6 +122,11 @@ void app_control_motor_tick_10ms(void)
             speed_encoder[wheel] = 0;
         motor_pwm(0, 0, 0, 0);
         return;
+    }
+    if (g_remote_pending && position_enabled && !pwm_test_enabled)
+    {
+        g_remote_pending = false;
+        motor_run_enabled = true;
     }
     if (position_enabled && pwm_test_enabled)
     {

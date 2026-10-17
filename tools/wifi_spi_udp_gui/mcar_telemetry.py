@@ -36,8 +36,19 @@ def control_reply(packet: bytes) -> tuple[str, str] | None:
         raise ValueError("MCAR 应答缺少换行")
     text = packet.decode("ascii").strip()
     parts = text.split(" ", 2)
-    if len(parts) != 3 or parts[1] not in {"SUB", "LIST", "RATE", "STREAM", "ERR", "SLIDER"}:
+    if len(parts) != 3 or parts[1] not in {"SUB", "LIST", "RATE", "STREAM", "ERR", "SLIDER", "NAV", "STOP", "NAVERR"}:
         raise ValueError("无效的 MCAR 应答")
+    if parts[1] in {"NAV", "STOP", "NAVERR"}:
+        tokens = parts[2].split()
+        counts = {"NAV": 4, "STOP": 1}
+        if not tokens or not tokens[0].isdigit() or not 0 <= int(tokens[0]) <= 0xffffffff:
+            raise ValueError("无效的导航回执编号")
+        if parts[1] in counts and len(tokens) != counts[parts[1]]:
+            raise ValueError("无效的导航回执长度")
+        if parts[1] == "NAV" and not all(math.isfinite(float(t)) for t in tokens[1:]):
+            raise ValueError("无效的导航目标回执")
+        if parts[1] == "NAVERR" and len(tokens) < 2:
+            raise ValueError("无效的导航错误回执")
     if parts[1] == "SLIDER":
         parameter = parts[2].split()
         if len(parameter) != 2 or not math.isfinite(float(parameter[1])):
