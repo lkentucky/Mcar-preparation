@@ -13,9 +13,9 @@
 #define ROUTE_BLEND_MIN_CM 0.1f
 #define ROUTE_FLOW_DEFAULT_CM 20.0f
 
-#define ROUTE_MAX_NODES 50
-#define ROUTE_DEFAULT_NODE_COUNT 3
-#define ROUTE_DEFAULT_NODES {{0.0f,0.0f,0.0f},{0.0f,100.0f,0.0f},{100.0f,200.0f,0.0f},{0.0f,0.0f,0.0f}}
+#define ROUTE_MAX_NODES 15
+#define ROUTE_DEFAULT_NODE_COUNT 5
+#define ROUTE_DEFAULT_NODES {{0.0f,0.0f,0.0f},{0.0f,100.0f,0.0f},{100.0f,100.0f,0.0f},{200.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}}
 
 enum {
     ROUTE_FAULT = -1,   /* 位置环故障（定位无效/参数非法），已停车 */
