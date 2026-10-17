@@ -177,7 +177,8 @@ static void menu_create(void)
     Create_Menu_File_dynamic(pid_dr,"Ki",&DRpid.fKi,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Kd",&DRpid.fKd,float_Box);
 
-    /* Route 路线跟随：Blend_cm 控制中间点圆滑通过的偏差，0=逐点停车。
+    /* Route 路线跟随：Blend_cm 是名义跟踪容差，0=逐点停车；
+     * Flow_cm 独立控制过点曲线的切向控制柄长度。
      * Nodes 为生效节点数；N?X_cm/N?Y_cm/N?Yaw 为节点坐标（Zero 坐标系）。
      * 超出节点数的槽位不执行，可留空。 */
     Menu_Item *route=Create_Menu_Folder_dynamic(&g_root,"Route");
@@ -185,8 +186,13 @@ static void menu_create(void)
     Create_Menu_File_dynamic(route,"Zero",&g_navigation_zero,bool_Box);
     Create_Menu_File_dynamic(route,"Nodes",(void *)&route_node_count,int16_Box);
     Create_Menu_File_dynamic(route,"Blend_cm",(void *)&route_blend_cm,float_Box);
+    Create_Menu_File_dynamic(route,"Flow_cm",(void *)&route_flow_cm,float_Box);
     Create_Menu_Readonly_dynamic(route,"Idx",(void *)&route_current_idx,int32_Box);
     Create_Menu_Readonly_dynamic(route,"State",(void *)&route_state,int32_Box);
+    Create_Menu_Readonly_dynamic(route,"FlowMode",(void *)&route_flow_mode,int32_Box);
+    Create_Menu_Readonly_dynamic(route,"StopWhy",(void *)&route_stop_reason,int32_Box);
+    Create_Menu_Readonly_dynamic(route,"Vref_cmps",(void *)&route_vref_cmps,float_Box);
+    Create_Menu_Readonly_dynamic(route,"Err_cm",(void *)&route_error_cm,float_Box);
     for(unsigned i=0;i<ROUTE_MAX_NODES;++i) {
         snprintf(g_route_names[i][0],sizeof(g_route_names[i][0]),"N%dX_cm",i+1);
         snprintf(g_route_names[i][1],sizeof(g_route_names[i][1]),"N%dY_cm",i+1);
@@ -403,6 +409,9 @@ static void menu_adjust(int direction)
             value = menu_clamp(value, 0.0f, 20.0f);
             if (value > 0.0f && value < ROUTE_BLEND_MIN_CM) value = ROUTE_BLEND_MIN_CM;
         }
+        else if (g_pointer->data == (void *)&route_flow_cm) {
+            value = menu_clamp(value, 1.0f, 100.0f);
+        }
         else if (route_follow_is_node_field(g_pointer->data))
         {
             /* Route 节点：X/Y ±10000cm，Yaw ±180°，允许负值 */
@@ -414,7 +423,8 @@ static void menu_adjust(int direction)
         }
         *(float *)g_pointer->data=value;
         if(route_follow_is_node_field(g_pointer->data) ||
-           g_pointer->data == (void *)&route_blend_cm) route_follow_config_edited();
+           g_pointer->data == (void *)&route_blend_cm ||
+           g_pointer->data == (void *)&route_flow_cm) route_follow_config_edited();
     } else if(g_pointer->kind==int32_Box) {
         int step=(int)g_steps[g_step_index];
         uint32 primask;

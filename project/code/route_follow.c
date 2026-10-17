@@ -9,9 +9,12 @@
  * 坐标是 Navigation/Zero 坐标系下的 cm；先静止 Zero，再开 Run。 */
 bool route_run_flag;
 volatile float route_blend_cm = ROUTE_BLEND_DEFAULT_CM;
+volatile float route_flow_cm = ROUTE_FLOW_DEFAULT_CM;
 volatile int16_t route_node_count = ROUTE_DEFAULT_NODE_COUNT;
 volatile int32_t route_state = ROUTE_IDLE;
 volatile int32_t route_current_idx;
+volatile int32_t route_flow_mode, route_stop_reason;
+volatile float route_vref_cmps, route_error_cm;
 route_node_t route_nodes[ROUTE_MAX_NODES] = ROUTE_DEFAULT_NODES;
 
 /* 切入位置模式后等待的控制周期数：一拍被模式切换逻辑消耗，再留一拍稳定 */
@@ -19,8 +22,8 @@ route_node_t route_nodes[ROUTE_MAX_NODES] = ROUTE_DEFAULT_NODES;
 
 static uint32 route_arm_ticks;
 
-/* Fixed storage, no heap/new Keil units. Tangent-continuous quadratic
- * Bezier corners are represented by 16 short chords. */
+/* Fixed storage, no heap/new Keil units. Cubic through-node curves are
+ * represented by short chords, with shared tangent handles at nodes. */
 #define CURVE_STEPS 16U
 #define PATH_CAPACITY (2U + ROUTE_MAX_NODES * (CURVE_STEPS + 1U))
 typedef struct {
@@ -29,7 +32,8 @@ typedef struct {
 } route_sample_t;
 static route_sample_t path[PATH_CAPACITY];
 static unsigned path_count, path_segment;
-static float path_progress, path_blend;
+static uint8 path_stop_idx;
+static float path_progress, path_blend, path_flow;
 static bool path_ready, profile_ready, path_invalid, continuous, terminal;
 static position_config_t path_config;
 
@@ -46,6 +50,9 @@ static void path_reset(void)
     path_ready = profile_ready = path_invalid = continuous = terminal = false;
     path_count = path_segment = 0U;
     path_progress = 0.0f;
+    route_flow_mode = ROUTE_MODE_WAIT;
+    route_stop_reason = ROUTE_STOP_NONE;
+    route_vref_cmps = route_error_cm = 0.0f;
 }
 
 void route_follow_init(void)
@@ -140,68 +147,128 @@ static void route_set_goal(uint8 idx)
     motor_position_goal.yaw_deg = route_nodes[idx].yaw_deg;
 }
 
-/* Zero-length yaw-only legs and turns >150 degrees retain stop-at-node
- * behavior for the whole route; do not round a cusp or skip a rotation. */
-static bool build_path(const navigation_snapshot_t *pose)
+/* Cubic curvature in inverse cm; a vanishing tangent is a cusp. */
+static float cubic_curvature(float t, float ax, float ay, float bx, float by,
+                             float cx, float cy, float dx, float dy)
+{
+    float u=1.0f-t;
+    float vx=3.0f*(u*u*(bx-ax)+2.0f*u*t*(cx-bx)+t*t*(dx-cx));
+    float vy=3.0f*(u*u*(by-ay)+2.0f*u*t*(cy-by)+t*t*(dy-cy));
+    float qx=6.0f*(u*(cx-2.0f*bx+ax)+t*(dx-2.0f*cx+bx));
+    float qy=6.0f*(u*(cy-2.0f*by+ay)+t*(dy-2.0f*cy+by));
+    float v=hypotf(vx,vy);
+    return v > 0.00001f ? fabsf(vx*qy-vy*qx)/(v*v*v) : 1.0e6f;
+}
+/* A process node is interpolated exactly. Its tangent is the incoming leg:
+ * retain that direction at ordinary corners, then turn on the next leg.
+ * Obtuse direction changes share the turn across both sides of the node
+ * to avoid a tight hook immediately after it. Never chase a passed node.
+ * Yaw-only legs and exact reversals stop only their local block. */
+static bool build_path(const navigation_snapshot_t *pose, const position_config_t *config)
 {
     route_node_t points[ROUTE_MAX_NODES + 1U];
     uint8 indices[ROUTE_MAX_NODES + 1U];
     unsigned n = 1U, count = route_count_clamped();
     float allowance = route_blend_cm;
     path_count = 0U;
+    path_stop_idx = (uint8)(count-1U);
+    route_stop_reason = allowance == 0.0f ? ROUTE_STOP_DISABLED : ROUTE_STOP_NONE;
     if (!isfinite(allowance) || allowance <= 0.0f || allowance > 20.0f ||
+        !isfinite(route_flow_cm) || route_flow_cm < 1.0f || route_flow_cm > 100.0f ||
         !pose->valid || !pose->bias_ready || pose->status != NAV_RUNNING) return false;
     points[0] = (route_node_t){pose->x_m*100.0f,pose->y_m*100.0f,pose->yaw_deg};
     indices[0] = 0U;
-    for (unsigned i = 0; i < count; ++i) {
+    for (unsigned i = (unsigned)route_current_idx; i < count; ++i) {
         route_node_t b = route_nodes[i];
         if (!isfinite(b.x_cm) || !isfinite(b.y_cm) || !isfinite(b.yaw_deg) ||
             fabsf(b.x_cm) > 10000.0f || fabsf(b.y_cm) > 10000.0f ||
             fabsf(b.yaw_deg) > 180.0f) { path_invalid = true; return false; }
-        if (hypotf(b.x_cm-points[n-1U].x_cm,b.y_cm-points[n-1U].y_cm) < 0.01f) {
-            if (fabsf(wrap(b.yaw_deg-points[n-1U].yaw_deg)) > 0.01f) return false;
+        float distance = hypotf(b.x_cm-points[n-1U].x_cm,b.y_cm-points[n-1U].y_cm);
+        float yaw_error = fabsf(wrap(b.yaw_deg-points[n-1U].yaw_deg));
+        /* A stored start point already satisfied by the measured pose is
+         * not a tiny new leg or a mandatory yaw-only stop. */
+        if (n == 1U && i+1U < count && distance <= config->xy_tolerance_cm &&
+            yaw_error <= config->yaw_tolerance_deg) {
+            indices[0] = (uint8)i;
+            continue;
+        }
+        if (n == 1U && distance <= config->xy_tolerance_cm &&
+            yaw_error > config->yaw_tolerance_deg) {
+            route_stop_reason = ROUTE_STOP_YAW;
+            path_stop_idx = (uint8)i;
+            break;
+        }
+        if (distance < 0.01f) {
+            if (yaw_error > config->yaw_tolerance_deg) {
+                route_stop_reason = ROUTE_STOP_YAW;
+                path_stop_idx = n == 1U ? (uint8)i : indices[n-1U];
+                break;
+            }
             indices[n-1U] = (uint8)i;
+            points[n-1U].yaw_deg = b.yaw_deg;
             continue;
         }
         points[n] = b; indices[n++] = (uint8)i;
     }
-    if (n < 2U) return false;
+    if (n < 2U) {
+        if (route_stop_reason == ROUTE_STOP_NONE) route_stop_reason = ROUTE_STOP_SINGLE;
+        return false;
+    }
     path[path_count++] = (route_sample_t){points[0].x_cm,points[0].y_cm,
         wrap(points[0].yaw_deg),0,0,0,indices[0],0};
-    for (unsigned i = 1U; i < n; ++i) {
-        route_node_t a = points[i-1U], b = points[i];
-        float ix = b.x_cm-a.x_cm, iy = b.y_cm-a.y_cm;
-        float in_len = hypotf(ix,iy), trim = 0.0f, curvature = 0.0f;
-        float ox = 0.0f, oy = 0.0f, out_len = 1.0f;
-        ix /= in_len; iy /= in_len;
-        if (i+1U < n) {
-            ox = points[i+1U].x_cm-b.x_cm; oy = points[i+1U].y_cm-b.y_cm;
-            out_len = hypotf(ox,oy); ox /= out_len; oy /= out_len;
-            float dot = fmaxf(-1.0f,fminf(1.0f,ix*ox+iy*oy));
-            if (dot < -0.8660254f) return false;
-            if (dot < 0.99999f) {
-                float sin_half = sqrtf(0.5f*(1.0f-dot));
-                /* Midpoint distance to node = trim*sin(theta/2)/2.
-                 * Use half the allowance as geometry, leaving tracking margin.
-                 * Adjacent trims consume <=80% of a shared leg. */
-                trim = fminf(allowance/sin_half,0.4f*fminf(in_len,out_len));
-                curvature = sin_half/(trim*0.5f*(1.0f+dot));
+    float tx[ROUTE_MAX_NODES+1U], ty[ROUTE_MAX_NODES+1U];
+    float handles[ROUTE_MAX_NODES+1U];
+    for (unsigned i=0U; i<n; ++i) {
+        unsigned j=i ? i-1U : 0U, k=i ? i : 1U;
+        float dx=points[k].x_cm-points[j].x_cm;
+        float dy=points[k].y_cm-points[j].y_cm;
+        float len=hypotf(dx,dy);
+        tx[i]=dx/len; ty[i]=dy/len;
+        float adjacent=len;
+        if (i+1U<n) {
+            dx=points[i+1U].x_cm-points[i].x_cm;
+            dy=points[i+1U].y_cm-points[i].y_cm;
+            float next=hypotf(dx,dy);
+            if (i && (tx[i]*dx+ty[i]*dy)/next <= -0.9999f) {
+                n = i+1U;
+                path_stop_idx = indices[i];
+                route_stop_reason = ROUTE_STOP_REVERSE;
+                handles[i] = fminf(route_flow_cm,0.3f*len);
+                break;
             }
+            adjacent=fminf(adjacent,next);
         }
-        float entry_x = b.x_cm-trim*ix, entry_y = b.y_cm-trim*iy;
-        float entry_yaw = yaw_lerp(a.yaw_deg,b.yaw_deg,1.0f-trim/in_len);
-        path[path_count++] = (route_sample_t){entry_x,entry_y,entry_yaw,0,curvature,0,indices[i],0};
-        if (trim > 0.0f) {
-            float exit_x = b.x_cm+trim*ox, exit_y = b.y_cm+trim*oy;
-            float exit_yaw = yaw_lerp(b.yaw_deg,points[i+1U].yaw_deg,trim/out_len);
-            for (unsigned j = 1U; j <= CURVE_STEPS; ++j) {
-                float t = (float)j/CURVE_STEPS, u = 1.0f-t;
-                path[path_count++] = (route_sample_t){
-                    u*u*entry_x+2.0f*u*t*b.x_cm+t*t*exit_x,
-                    u*u*entry_y+2.0f*u*t*b.y_cm+t*t*exit_y,
-                    yaw_lerp(yaw_lerp(entry_yaw,b.yaw_deg,t),yaw_lerp(b.yaw_deg,exit_yaw,t),t),
-                    0,curvature,0,indices[i],1};
+        handles[i]=fminf(route_flow_cm,0.3f*adjacent);
+    }
+    for (unsigned i=1U; i+1U<n; ++i) {
+        float ox=points[i+1U].x_cm-points[i].x_cm;
+        float oy=points[i+1U].y_cm-points[i].y_cm;
+        float length=hypotf(ox,oy); ox/=length; oy/=length;
+        float dot=tx[i]*ox+ty[i]*oy;
+        float weight=0.5f*fmaxf(0.0f,-dot);
+        float x=(1.0f-weight)*tx[i]+weight*ox;
+        float y=(1.0f-weight)*ty[i]+weight*oy;
+        length=hypotf(x,y); tx[i]=x/length; ty[i]=y/length;
+    }
+    for (unsigned i=1U; i<n; ++i) {
+        route_node_t a=points[i-1U], d=points[i];
+        float bx=a.x_cm+handles[i-1U]*tx[i-1U];
+        float by=a.y_cm+handles[i-1U]*ty[i-1U];
+        float cx=d.x_cm-handles[i]*tx[i], cy=d.y_cm-handles[i]*ty[i];
+        for (unsigned j=1U; j<=CURVE_STEPS; ++j) {
+            float t=(float)j/CURVE_STEPS, u=1.0f-t, curvature=0.0f;
+            /* Sample within each chord, conservatively sharing its bound
+             * between both endpoints for the braking pass. */
+            for (unsigned k=0U; k<=4U; ++k) {
+                float q=((float)(j-1U)+0.25f*k)/CURVE_STEPS;
+                curvature=fmaxf(curvature,cubic_curvature(q,a.x_cm,a.y_cm,bx,by,cx,cy,d.x_cm,d.y_cm));
             }
+            path[path_count-1U].curvature=fmaxf(path[path_count-1U].curvature,curvature);
+            path[path_count++]=(route_sample_t){
+                u*u*u*a.x_cm+3.0f*u*u*t*bx+3.0f*u*t*t*cx+t*t*t*d.x_cm,
+                u*u*u*a.y_cm+3.0f*u*u*t*by+3.0f*u*t*t*cy+t*t*t*d.y_cm,
+                yaw_lerp(a.yaw_deg,d.yaw_deg,t),0,curvature,0,indices[i],
+                curvature>0.000001f ? 1U : 0U};
         }
     }
     for (unsigned i = 1U; i < path_count; ++i)
@@ -221,7 +288,8 @@ static float braking(const position_config_t *c)
  * use half the acceleration budget; the vector limiter enforces the total. */
 static void speed_profile(const position_config_t *c)
 {
-    float acc = 0.5f*c->max_accel_cmps2*route_diag(c), brake = braking(c);
+    float brake = braking(c);
+    float acc = 0.5f*fminf(c->max_accel_cmps2*route_diag(c),brake);
     for (unsigned i = 0U; i < path_count; ++i) {
         float limit = c->max_speed_cmps*route_diag(c);
         if (path[i].curvature > 0.000001f) limit = fminf(limit,sqrtf(acc/path[i].curvature));
@@ -248,21 +316,26 @@ void route_follow_control_update(position_control_t *control,
                                  const position_goal_t *goal,
                                  const navigation_snapshot_t *pose, float dt)
 {
+    route_vref_cmps = route_error_cm = 0.0f;
     if (route_state != ROUTE_RUNNING || !route_run_flag) {
         position_control_update(control,config,goal,pose,dt);
         return;
     }
     if (!isfinite(route_blend_cm) || route_blend_cm < 0.0f || route_blend_cm > 20.0f ||
-        (route_blend_cm > 0.0f && route_blend_cm < ROUTE_BLEND_MIN_CM)) {
+        (route_blend_cm > 0.0f && route_blend_cm < ROUTE_BLEND_MIN_CM) ||
+        !isfinite(route_flow_cm) || route_flow_cm < 1.0f || route_flow_cm > 100.0f) {
         position_control_reset(control);
         control->output.status = POSITION_BAD_CONFIG;
         return;
     }
     if (!path_ready) {
-        continuous = build_path(pose);
+        continuous = build_path(pose,config);
+        route_flow_mode = continuous ? ROUTE_MODE_CURVE :
+            (route_blend_cm == 0.0f ? ROUTE_MODE_POINT : ROUTE_MODE_SETTLE);
         path_ready = true;
         path_config = *config;
         path_blend = route_blend_cm;
+        path_flow = route_flow_cm;
     }
     if (path_invalid) {
         position_control_reset(control);
@@ -270,14 +343,21 @@ void route_follow_control_update(position_control_t *control,
         return;
     }
     if (!continuous || terminal) {
-        position_control_update(control,config,goal,pose,dt);
+        position_goal_t target = *goal;
+        if (!continuous && route_blend_cm > 0.0f) {
+            route_current_idx = path_stop_idx;
+            route_set_goal(path_stop_idx);
+            target = motor_position_goal;
+        }
+        position_control_update(control,config,&target,pose,dt);
+        route_vref_cmps = hypotf(control->output.vx_cmps,control->output.vy_cmps);
         return;
     }
     /* Validate with the shared controller before projection arithmetic. */
     position_control_t validated = *control;
     position_control_track(&validated,config,goal,pose,0.0f,0.0f,dt);
     if (validated.output.status < 0) { *control = validated; return; }
-    if (memcmp(&path_config,config,sizeof(*config)) != 0 || route_blend_cm != path_blend) {
+    if (memcmp(&path_config,config,sizeof(*config)) != 0 || route_blend_cm != path_blend || route_flow_cm != path_flow) {
         position_control_reset(control);
         control->output.status = POSITION_BAD_CONFIG;
         return;
@@ -307,7 +387,8 @@ void route_follow_control_update(position_control_t *control,
     float remaining = path[path_count-1U].s-progress;
     if (seg+2U == path_count && remaining <= fmaxf(3.0f,2.0f*config->xy_tolerance_cm)) {
         terminal = true;
-        route_current_idx = (int32_t)route_count_clamped()-1;
+        route_flow_mode = ROUTE_MODE_SETTLE;
+        route_current_idx = path_stop_idx;
         route_set_goal((uint8)route_current_idx);
         position_goal_t final_goal = motor_position_goal;
         /* Handoff without resetting translation/yaw velocity states. */
@@ -316,20 +397,35 @@ void route_follow_control_update(position_control_t *control,
         control->have_initial = true;
         control->diag_mix = 0.0f;
         position_control_update(control,config,&final_goal,pose,dt);
+        route_vref_cmps = hypotf(control->output.vx_cmps,control->output.vy_cmps);
         return;
     }
     route_current_idx = b.node;
     float speed = fminf(config->max_speed_cmps*route_diag(config),
         fminf(sqrtf(a.limit*a.limit+2.0f*config->max_accel_cmps2*route_diag(config)*(progress-a.s)),
               sqrtf(b.limit*b.limit+2.0f*braking(config)*(b.s-progress))));
-    if (b.curved) speed = fminf(speed,sqrtf(0.5f*config->max_accel_cmps2*route_diag(config)/b.curvature));
+    if (b.curved) speed = fminf(speed,sqrtf(0.5f*fminf(config->max_accel_cmps2*route_diag(config),braking(config))/b.curvature));
     float dyaw = fabsf(wrap(b.yaw-a.yaw))*0.01745329252f;
     if (dyaw > 0.000001f) speed = fminf(speed,0.7f*config->max_omega_radps*ds/dyaw);
     speed = fminf(speed,control->plan_v_cmps+config->max_accel_cmps2*route_diag(config)*dt);
     float ex = a.x+t*(b.x-a.x)-px, ey = a.y+t*(b.y-a.y)-py;
-    float vx = speed*(b.x-a.x)/ds+4.0f*ex, vy = speed*(b.y-a.y)/ds+4.0f*ey;
-    float norm = hypotf(vx,vy);
-    if (norm > speed && norm > 0.00001f) { vx*=speed/norm; vy*=speed/norm; }
+    /* Progress is monotone. After a disturbance its reference can remain
+     * ahead of/behind the car; never let that tangential error command a
+     * return to a passed reference. Correct only the cross-track error. */
+    float tx = (b.x-a.x)/ds, ty = (b.y-a.y)/ds;
+    float along_error = ex*tx+ey*ty;
+    ex -= along_error*tx; ey -= along_error*ty;
+    /* Correct laterally without a second error-dependent speed collapse.
+     * Reserve at least 80% of the planned speed for forward progress.
+     * A smaller tolerance increases correction gain within this budget. */
+    float error = hypotf(ex,ey);
+    float gain = 4.0f*fmaxf(0.25f,fminf(4.0f,ROUTE_BLEND_DEFAULT_CM/route_blend_cm));
+    float correction = fminf(gain*error,0.6f*speed);
+    float forward = sqrtf(fmaxf(0.0f,speed*speed-correction*correction));
+    float factor = error > 0.00001f ? correction/error : 0.0f;
+    float vx=forward*tx+factor*ex, vy=forward*ty+factor*ey;
+    route_error_cm = error;
+    route_vref_cmps = speed;
     position_goal_t ref = {a.x+t*(b.x-a.x),a.y+t*(b.y-a.y),yaw_lerp(a.yaw,b.yaw,t)};
     position_control_track(control,config,&ref,pose,vx,vy,dt);
 }
@@ -367,6 +463,7 @@ void route_follow_tick_10ms(void)
     if (state == ROUTE_ADVANCE)
     {
         /* 上一拍位置环已到点并自动关 Run；这一拍换新目标并重新开 Run */
+        path_reset(); /* Replan after a local stop, never switch the whole route to stop mode. */
         route_set_goal((uint8)route_current_idx);
         motor_run_enabled = true;
         route_state = ROUTE_RUNNING;

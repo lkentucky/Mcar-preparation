@@ -16,71 +16,101 @@
   ],
   "buttons": [],
   "controls": {
-    "bind_ip": "192.168.0.116",
+    "bind_ip": "192.168.50.154",
     "bind_port": 8081,
-    "remote_ip": "192.168.0.108",
+    "remote_ip": "192.168.50.43",
     "remote_port": 5001,
     "max_samples": 1200,
     "imu_zoom": 1.0,
     "imu_quality": "精细",
     "mcar_mode": true,
-    "mcar_names": "ul_raw,ur_raw,dl_raw,dr_raw,ul_cmps,ur_cmps,dl_cmps,dr_cmps",
+    "mcar_names": "roll_deg,pitch_deg,yaw_deg,cmd_omega_radps,nav_yaw_deg,ul_cmps,ur_cmps,dl_cmps,dr_cmps,ul_target,ur_target,dl_target,dr_target",
     "mcar_period": 10,
     "plot_window": 10.1,
     "plot_refresh_hz": "60"
   },
   "rules": [
     {
-      "name": "ul_raw",
+      "name": "roll_deg",
       "data_type": "float32",
       "offset": 0,
       "byte_order": "little"
     },
     {
-      "name": "ur_raw",
+      "name": "pitch_deg",
       "data_type": "float32",
       "offset": 4,
       "byte_order": "little"
     },
     {
-      "name": "dl_raw",
+      "name": "yaw_deg",
       "data_type": "float32",
       "offset": 8,
       "byte_order": "little"
     },
     {
-      "name": "dr_raw",
+      "name": "cmd_omega_radps",
       "data_type": "float32",
       "offset": 12,
       "byte_order": "little"
     },
     {
-      "name": "ul_cmps",
+      "name": "nav_yaw_deg",
       "data_type": "float32",
       "offset": 16,
       "byte_order": "little"
     },
     {
-      "name": "ur_cmps",
+      "name": "ul_cmps",
       "data_type": "float32",
       "offset": 20,
       "byte_order": "little"
     },
     {
-      "name": "dl_cmps",
+      "name": "ur_cmps",
       "data_type": "float32",
       "offset": 24,
       "byte_order": "little"
     },
     {
-      "name": "dr_cmps",
+      "name": "dl_cmps",
       "data_type": "float32",
       "offset": 28,
+      "byte_order": "little"
+    },
+    {
+      "name": "dr_cmps",
+      "data_type": "float32",
+      "offset": 32,
+      "byte_order": "little"
+    },
+    {
+      "name": "ul_target",
+      "data_type": "float32",
+      "offset": 36,
+      "byte_order": "little"
+    },
+    {
+      "name": "ur_target",
+      "data_type": "float32",
+      "offset": 40,
+      "byte_order": "little"
+    },
+    {
+      "name": "dl_target",
+      "data_type": "float32",
+      "offset": 44,
+      "byte_order": "little"
+    },
+    {
+      "name": "dr_target",
+      "data_type": "float32",
+      "offset": 48,
       "byte_order": "little"
     }
   ],
   "plot_selected": [],
-  "active_page": "params",
+  "active_page": "plot",
   "view_yaw": -55.0,
   "view_elev": 30.0
 }

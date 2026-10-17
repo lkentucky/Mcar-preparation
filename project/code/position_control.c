@@ -344,7 +344,13 @@ void position_control_track(position_control_t *control,
     dx = world_vx - control->world_vx_cmps;
     dy = world_vy - control->world_vy_cmps;
     dv = hypotf(dx, dy);
-    max_dv = config->max_accel_cmps2 * dt;
+    /* Respect the same acceleration and braking budgets as the route
+     * profile, also while changing direction or correcting lateral error. */
+    float diag = fmaxf(0.2f,fminf(1.0f,config->diag_speed_k));
+    float accel = config->max_accel_cmps2 * diag;
+    if (dx*control->world_vx_cmps+dy*control->world_vy_cmps < 0.0f)
+        accel=fminf(accel,fminf(config->brake_ceiling_cmps2,accel*config->brake_limit));
+    max_dv = accel * dt;
     if (dv > max_dv) { dx *= max_dv / dv; dy *= max_dv / dv; }
     control->world_vx_cmps += dx;
     control->world_vy_cmps += dy;
