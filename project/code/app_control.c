@@ -4,6 +4,7 @@
 #include "PID.h"
 #include "PID_config.h"
 #include "app_navigation.h"
+#include "route_follow.h"
 
 #include <math.h>
 
@@ -141,7 +142,7 @@ void app_control_motor_tick_10ms(void)
             position_goal_t goal = motor_position_goal;
             position_config_t config = motor_position_config;
             app_navigation_get_snapshot(&pose);
-            position_control_update(&g_position, &config, &goal, &pose, 0.01f);//根据位置控制速度
+            route_follow_control_update(&g_position, &config, &goal, &pose, 0.01f);
         }
         if (g_position.output.status < 0 || g_position.output.status == POSITION_REACHED)
         {

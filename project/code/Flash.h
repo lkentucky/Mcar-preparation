@@ -57,6 +57,7 @@ typedef struct
     uint8 yaw_reversed;
 
     /* Route data only: runtime state and Run are never persisted. */
+    float route_blend_cm; /* v7: 0..20 cm, 0 = stop at each node */
     uint8 route_node_count;
     route_node_t route_nodes[ROUTE_MAX_NODES];
 } menu_flash_config_t;

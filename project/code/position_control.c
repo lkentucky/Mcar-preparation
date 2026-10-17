@@ -312,6 +312,58 @@ static float plan_yaw(position_control_t *control,
     return control->plan_vw_radps;
 }
 
+void position_control_track(position_control_t *control,
+                            const position_config_t *config,
+                            const position_goal_t *reference,
+                            const navigation_snapshot_t *pose,
+                            float world_vx, float world_vy, float dt)
+{
+    float theta, yaw_rate = 0.0f, dx, dy, dv, max_dv, speed, cs, sn;
+    if (!config_valid(config, reference) || !in_range(dt, 0.001f, 0.05f) ||
+        !isfinite(world_vx) || !isfinite(world_vy)) {
+        reject(control, POSITION_BAD_CONFIG);
+        return;
+    }
+    if (!pose->valid || !pose->bias_ready || pose->status != NAV_RUNNING ||
+        !in_range(pose->x_m, -1000.0f, 1000.0f) ||
+        !in_range(pose->y_m, -1000.0f, 1000.0f) || !isfinite(pose->yaw_deg) ||
+        !in_range(pose->vx_mps, -12.0f, 12.0f) ||
+        !in_range(pose->vy_mps, -12.0f, 12.0f)) {
+        reject(control, POSITION_NO_POSE);
+        return;
+    }
+    theta = wrap_degrees(pose->yaw_deg);
+    if (control->have_previous)
+        yaw_rate = wrap_degrees(theta - control->previous_yaw_deg) * DEG_TO_RAD / dt;
+    speed = hypotf(world_vx, world_vy);
+    if (speed > config->max_speed_cmps) {
+        world_vx *= config->max_speed_cmps / speed;
+        world_vy *= config->max_speed_cmps / speed;
+    }
+    /* Limit the vector, including direction changes, rather than scalar speed. */
+    dx = world_vx - control->world_vx_cmps;
+    dy = world_vy - control->world_vy_cmps;
+    dv = hypotf(dx, dy);
+    max_dv = config->max_accel_cmps2 * dt;
+    if (dv > max_dv) { dx *= max_dv / dv; dy *= max_dv / dv; }
+    control->world_vx_cmps += dx;
+    control->world_vy_cmps += dy;
+    control->plan_v_cmps = hypotf(control->world_vx_cmps, control->world_vy_cmps);
+    control->output.yaw_error_deg = wrap_degrees(reference->yaw_deg - theta);
+    control->output.omega_radps = plan_yaw(control, config,
+        control->output.yaw_error_deg, yaw_rate, control->plan_v_cmps > 2.0f, dt);
+    cs = cosf(theta * DEG_TO_RAD); sn = sinf(theta * DEG_TO_RAD);
+    control->output.vx_cmps = cs * control->world_vx_cmps + sn * control->world_vy_cmps;
+    control->output.vy_cmps = -sn * control->world_vx_cmps + cs * control->world_vy_cmps;
+    control->output.distance_cm = hypotf(reference->x_cm - pose->x_m * 100.0f,
+                                        reference->y_cm - pose->y_m * 100.0f);
+    control->output.status = POSITION_MOVING;
+    control->previous_goal = *reference;
+    control->previous_yaw_deg = theta;
+    control->have_previous = true;
+    control->settled_seconds = control->stall_seconds = control->yaw_stall_seconds = 0.0f;
+}
+
 void position_control_update(position_control_t *control,
                              const position_config_t *config,
                              const position_goal_t *goal,

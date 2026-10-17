@@ -1,16 +1,20 @@
-/** 多点路线跟随：按节点顺序调用现有位置外环逐点行驶。
+/** 多点路线跟随：中间节点圆滑通过，终点用现有位置环停车。
  * 节点在世界坐标（Navigation/Zero 坐标系）中定义，单位 cm 与度。
- * 每个节点到达后自动切换下一个；全部到达或故障自动停车。 */
+ * Blend_cm=0 时恢复逐点停车；故障自动停车。 */
 #ifndef MCAR_ROUTE_FOLLOW_H
 #define MCAR_ROUTE_FOLLOW_H
 
 #include <stdbool.h>
 #include <stdint.h>
 #include "zf_common_typedef.h"
+#include "position_control.h"
 
-#define ROUTE_MAX_NODES 50
+#define ROUTE_BLEND_DEFAULT_CM 2.0f
+#define ROUTE_BLEND_MIN_CM 0.1f
+
+#define ROUTE_MAX_NODES 10
 #define ROUTE_DEFAULT_NODE_COUNT 3
-#define ROUTE_DEFAULT_NODES {{0.0f,0.0f,0.0f},{20.0f,40.0f,0.0f},{50.0f,80.0f,0.0f}}
+#define ROUTE_DEFAULT_NODES {{0.0f,0.0f,0.0f},{100.0f,0.0f,0.0f},{100.0f,100.0f,0.0f},{0.0f,0.0f,0.0f}}
 
 enum {
     ROUTE_FAULT = -1,   /* 位置环故障（定位无效/参数非法），已停车 */
@@ -31,6 +35,14 @@ extern volatile int16_t route_node_count;        /* 生效节点数 1..ROUTE_MAX
 extern volatile int32_t route_state;             /* 上方枚举，Route/State 显示 */
 extern volatile int32_t route_current_idx;       /* 当前目标节点下标（0 起） */
 extern route_node_t route_nodes[ROUTE_MAX_NODES];
+/* Maximum nominal distance from an intermediate node; 0 = stop at every node.
+ * Geometry uses half this allowance to leave room for tracking error. */
+extern volatile float route_blend_cm;
+/* Called inside the position-mode motor tick, using the fresh encoder pose. */
+void route_follow_control_update(position_control_t *control,
+                                 const position_config_t *config,
+                                 const position_goal_t *goal,
+                                 const navigation_snapshot_t *pose, float dt);
 
 void route_follow_init(void);
 /* 10ms 周期调用（isr.c 中紧跟 app_control_motor_tick_10ms 之后） */

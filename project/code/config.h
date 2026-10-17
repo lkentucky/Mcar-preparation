@@ -47,7 +47,7 @@
 #endif
 #define IMU_WIFI_SSID            "ASC_Circuit"
 #define IMU_WIFI_PASSWORD        "1145141919810"
-#define IMU_WIFI_TARGET_IP       "192.168.50.174"
+#define IMU_WIFI_TARGET_IP       "192.168.50.154"
 
 #define IMU_WIFI_TARGET_PORT     "8081"
 #define IMU_WIFI_LOCAL_PORT      "5001"

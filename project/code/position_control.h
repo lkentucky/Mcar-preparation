@@ -45,7 +45,7 @@ typedef struct {
     float diag_speed_k;      /* 斜向降速系数：斜段按混合度缩放平移速度/加速度，1=不降速 */
 } position_config_t;
 
-#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 20.0f, 1.0f, 40.0f, 2.0f, 2.0f, 3.0f, \
+#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 320.0f, 1.0f, 180.0f, 2.0f, 0.5f, 0.5f, \
                                  0.90f, 450.0f, 40.0f, 1.40f, 10.0f, 0.25f, 0.45f, \
                                  0.22f, 0.22f, 0.36f, 0.15f, 1.0f}
 
@@ -82,6 +82,13 @@ typedef struct {
 } position_control_t;
 
 void position_control_reset(position_control_t *control);
+/* Continuous route input: world-frame velocity, continuously planned yaw.
+ * Keeps planner state across intermediate nodes; never reports REACHED. */
+void position_control_track(position_control_t *control,
+                            const position_config_t *config,
+                            const position_goal_t *reference,
+                            const navigation_snapshot_t *pose,
+                            float world_vx, float world_vy, float dt);
 /* Pure controller, called once per encoder tick. Invalid input returns zero
  * command with a negative status. */
 void position_control_update(position_control_t *control,

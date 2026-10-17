@@ -177,13 +177,14 @@ static void menu_create(void)
     Create_Menu_File_dynamic(pid_dr,"Ki",&DRpid.fKi,float_Box);
     Create_Menu_File_dynamic(pid_dr,"Kd",&DRpid.fKd,float_Box);
 
-    /* Route 路线跟随：按节点顺序调用位置外环逐点行驶。
+    /* Route 路线跟随：Blend_cm 控制中间点圆滑通过的偏差，0=逐点停车。
      * Nodes 为生效节点数；N?X_cm/N?Y_cm/N?Yaw 为节点坐标（Zero 坐标系）。
      * 超出节点数的槽位不执行，可留空。 */
     Menu_Item *route=Create_Menu_Folder_dynamic(&g_root,"Route");
     Create_Menu_File_dynamic(route,"Run",(void *)&route_run_flag,bool_Box);
     Create_Menu_File_dynamic(route,"Zero",&g_navigation_zero,bool_Box);
     Create_Menu_File_dynamic(route,"Nodes",(void *)&route_node_count,int16_Box);
+    Create_Menu_File_dynamic(route,"Blend_cm",(void *)&route_blend_cm,float_Box);
     Create_Menu_Readonly_dynamic(route,"Idx",(void *)&route_current_idx,int32_Box);
     Create_Menu_Readonly_dynamic(route,"State",(void *)&route_state,int32_Box);
     for(unsigned i=0;i<ROUTE_MAX_NODES;++i) {
@@ -398,6 +399,10 @@ static void menu_adjust(int direction)
         {
             value = menu_clamp(value, -20.0f, 20.0f);
         }
+        else if (g_pointer->data == (void *)&route_blend_cm) {
+            value = menu_clamp(value, 0.0f, 20.0f);
+            if (value > 0.0f && value < ROUTE_BLEND_MIN_CM) value = ROUTE_BLEND_MIN_CM;
+        }
         else if (route_follow_is_node_field(g_pointer->data))
         {
             /* Route 节点：X/Y ±10000cm，Yaw ±180°，允许负值 */
@@ -408,7 +413,8 @@ static void menu_adjust(int direction)
             value = menu_clamp(value, 0.0f, 1000.0f);
         }
         *(float *)g_pointer->data=value;
-        if(route_follow_is_node_field(g_pointer->data)) route_follow_config_edited();
+        if(route_follow_is_node_field(g_pointer->data) ||
+           g_pointer->data == (void *)&route_blend_cm) route_follow_config_edited();
     } else if(g_pointer->kind==int32_Box) {
         int step=(int)g_steps[g_step_index];
         uint32 primask;
