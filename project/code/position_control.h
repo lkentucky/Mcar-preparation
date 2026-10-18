@@ -29,7 +29,7 @@ typedef struct {
     float max_accel_cmps2;   /* 平移最大加速度（加速斜坡）cm/s² */
     float max_alpha_radps2;  /* 最大角加速度 rad/s² */
     float xy_tolerance_cm;   /* 位置到达容差，圈内限速蠕行、到切断半径砍零 */
-    float yaw_tolerance_deg; /* 航向到达容差，同时是航向规划死区 */
+    float yaw_tolerance_deg; /* arrival bound; hold deadband=min(0.5deg, tolerance/2) */
     /* ---- ivision 式规划参数（菜单 Position 页可改，随 SaveCfg 掉电保存） ---- */
     float brake_limit;       /* 刹车能力 = max_accel × 本比例 */
     float brake_ceiling_cmps2; /* 附着刹车上限 cm/s²，与上项取小 */
@@ -70,6 +70,8 @@ typedef struct {
     position_goal_t previous_goal;
     float world_vx_cmps, world_vy_cmps; /* 一阶滤波后的世界系速度（ivision alpha=0.25） */
     float previous_yaw_deg, settled_seconds;
+    float yaw_rate_filtered;
+    bool yaw_correcting; /* acquire at outer threshold, release at inner */
     bool have_previous;
     /* ivision 式规划器内部状态 */
     float plan_v_cmps;         /* 平移标量速度参考（Trajectory.current_v） */

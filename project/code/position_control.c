@@ -25,6 +25,9 @@
 #define POSITION_SETTLE_TIME_S 0.20f
 #define POSITION_REST_SPEED_CMPS 3.0f
 #define POSITION_REST_OMEGA_RADPS 0.10f
+/* Heading hold is tighter than arrival tolerance, including while translating. */
+#define POSITION_HEADING_HOLD_MAX_DEG 0.5f
+#define POSITION_YAW_RATE_TAU_S 0.03f
 
 /* ---------------- 规划参数默认值（ivision tuning 默认，适配 Mcar） ----------------
  * 以下宏只是兜底默认：实际取值来自 position_config_t 对应字段，可在车上
@@ -221,6 +224,16 @@ static float plan_translation(position_control_t *control,
 
 /* 航向角速度规划（ivision YawProfiled::calculate 全移植）。
  * 实测角速度由位姿航向差分得到（导航快照不含独立陀螺输出）。 */
+static float heading_hold_tolerance(const position_config_t *config)
+{
+    return fminf(POSITION_HEADING_HOLD_MAX_DEG, 0.5f * config->yaw_tolerance_deg);
+}
+
+static float heading_resume_tolerance(const position_config_t *config)
+{
+    return fminf(config->yaw_tolerance_deg, 2.0f * heading_hold_tolerance(config));
+}
+
 static float plan_yaw(position_control_t *control,
                       const position_config_t *config,
                       float yaw_error_deg, float yaw_rate_radps,
@@ -235,7 +248,11 @@ static float plan_yaw(position_control_t *control,
      * 转动——横向起步死区冲量、斜向滑差拧转等扰动落在容差内时以前是
      * 零抵抗，现在会被顶回去。双地板量化保证静止时输出严格为零，
      * 沉降到达判定与 YAW_STALLED 故障检测都不受影响。 */
-    if (abs_err <= config->yaw_tolerance_deg * DEG_TO_RAD)
+    if (abs_err <= heading_hold_tolerance(config) * DEG_TO_RAD)
+        control->yaw_correcting = false;
+    else if (abs_err >= heading_resume_tolerance(config) * DEG_TO_RAD)
+        control->yaw_correcting = true;
+    if (!control->yaw_correcting)
     {
         float damp = 0.0f, max_dv;
         if (fabsf(yaw_rate_radps) >= YAW_DEADBAND_DAMP_MIN_RATE_RADPS)
@@ -278,6 +295,12 @@ static float plan_yaw(position_control_t *control,
      * 蠕动式走走停停长时间收敛。 */
     stiction_vw = fminf(cfg_or(config->yaw_stiction_radps, 0.0f, 1.0f, YAW_STICTION_RADPS),
                         max_ang_vel);
+    /* Fade friction floor near alignment instead of a 0 -> 0.15 rad/s kick. */
+    {
+        float inner = heading_hold_tolerance(config) * DEG_TO_RAD;
+        float fade = fminf(1.0f, fmaxf(0.0f, (abs_err-inner)/(3.0f*DEG_TO_RAD)));
+        stiction_vw *= fade;
+    }
     if (stiction_vw > 0.0f)
     {
         if (translating) stiction_vw *= 0.4f;
@@ -320,7 +343,7 @@ void position_control_update(position_control_t *control,
     float ex, ey, yaw_error, yaw_rate = 0.0f;
     float theta, cs, sn, distance, v_ref, omega;
     float want_wx = 0.0f, want_wy = 0.0f, filtered_speed;
-    bool xy_inside, yaw_inside, resting, goal_changed, translating;
+    bool xy_inside, yaw_inside, heading_held, resting, goal_changed, translating;
     if (!config_valid(config, goal) || !in_range(dt, 0.001f, 0.05f)) {
         reject(control, POSITION_BAD_CONFIG);
         return;
@@ -354,6 +377,8 @@ void position_control_update(position_control_t *control,
         control->yaw_stall_seconds = 0.0f;
         control->plan_v_cmps = 0.0f;
         control->plan_vw_radps = 0.0f;
+        control->yaw_rate_filtered = 0.0f;
+        control->yaw_correcting = true;
         control->world_vx_cmps = 0.0f;
         control->world_vy_cmps = 0.0f;
         control->initial_distance_cm = distance;
@@ -367,6 +392,10 @@ void position_control_update(position_control_t *control,
                                     : 0.0f;
         }
     }
+    if (!goal_changed)
+        control->yaw_rate_filtered += dt/(POSITION_YAW_RATE_TAU_S+dt) *
+                                      (yaw_rate-control->yaw_rate_filtered);
+    yaw_rate = control->yaw_rate_filtered;
     control->previous_goal = *goal;
     control->previous_yaw_deg = theta;
     control->have_previous = true;
@@ -375,6 +404,7 @@ void position_control_update(position_control_t *control,
     control->output.yaw_error_deg = yaw_error;
     xy_inside = distance <= config->xy_tolerance_cm;
     yaw_inside = fabsf(yaw_error) <= config->yaw_tolerance_deg;
+    heading_held = false; /* updated after the hysteretic planner below */
     resting = hypotf(pose->vx_mps, pose->vy_mps) * 100.0f <= POSITION_REST_SPEED_CMPS &&
               fabsf(yaw_rate) <= POSITION_REST_OMEGA_RADPS;
 
@@ -398,6 +428,8 @@ void position_control_update(position_control_t *control,
     /* 航向：明显平移时按平移工况规划（阻尼/增益切换）。 */
     translating = v_ref > 2.0f;
     omega = plan_yaw(control, config, yaw_error, yaw_rate, translating, dt);
+    heading_held = !control->yaw_correcting &&
+                   fabsf(yaw_error) <= heading_resume_tolerance(config);
 
     /* 世界系 → 车体系输出，交给 Drive/轮速内环跟踪。 */
     theta *= DEG_TO_RAD;
@@ -406,8 +438,9 @@ void position_control_update(position_control_t *control,
     control->output.vy_cmps = -sn * control->world_vx_cmps + cs * control->world_vy_cmps;
     control->output.omega_radps = omega;
 
-    control->output.status = xy_inside && yaw_inside ? POSITION_SETTLING : POSITION_MOVING;
-    /* Arrival always requires XY and yaw tolerances together.
+    control->output.status = xy_inside && yaw_inside && heading_held ? POSITION_SETTLING : POSITION_MOVING;
+    /* Arrival requires heading hold as well as XY/yaw arrival tolerances.
+     * Even translational crawl stall must not bypass final heading alignment.
      * Translational crawl may settle inside both tolerances. Failure to turn
      * is a fault after 2s, never a successful waypoint/route advance. */
     {
@@ -424,7 +457,7 @@ void position_control_update(position_control_t *control,
                            fabsf(yaw_rate) < 0.02f &&
                            fabsf(control->plan_vw_radps) >= 0.05f;
         bool step = false;
-        if (xy_inside && yaw_inside) {
+        if (xy_inside && yaw_inside && heading_held) {
             if (resting && cmd_zero) {
                 control->stall_seconds = 0.0f;
                 control->settled_seconds += dt;
@@ -439,7 +472,7 @@ void position_control_update(position_control_t *control,
             control->settled_seconds = 0.0f;
             control->stall_seconds = 0.0f;
         }
-        if (xy_inside && !yaw_inside && yaw_stalled) control->yaw_stall_seconds += dt;
+        if (xy_inside && !heading_held && yaw_stalled) control->yaw_stall_seconds += dt;
         else control->yaw_stall_seconds = 0.0f;
         if (control->yaw_stall_seconds >= 2.0f) {
             control->output.status = POSITION_YAW_STALLED;
@@ -448,7 +481,7 @@ void position_control_update(position_control_t *control,
             control->world_vx_cmps = control->world_vy_cmps = 0.0f;
             return;
         }
-        if (xy_inside && yaw_inside && (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f ||
+        if (xy_inside && yaw_inside && heading_held && (control->settled_seconds >= POSITION_SETTLE_TIME_S - 0.00001f ||
             control->stall_seconds >= 0.30f)) {
             control->output.status = POSITION_REACHED;
             control->output.vx_cmps = control->output.vy_cmps = control->output.omega_radps = 0.0f;
