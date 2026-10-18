@@ -50,14 +50,6 @@ static size_t incoming_size;
 uint32 interrupt_global_disable(void) { assert(!irq_disabled); irq_disabled=1; return 7; }
 void interrupt_global_enable(uint32 mask) { assert(irq_disabled && mask==7); irq_disabled=0; }
 void app_navigation_get_snapshot(navigation_snapshot_t *out) { assert(irq_disabled); *out=nav; }
-static unsigned remote_goals, remote_stops;
-void route_follow_stop(void) { assert(irq_disabled); motor_run_enabled=false; }
-void app_control_remote_goal(float x,float y,float yaw) {
-    assert(irq_disabled); ++remote_goals;
-    motor_position_goal=(position_goal_t){x,y,yaw};
-    motor_pwm_test_enabled=false; motor_position_enabled=true; motor_run_enabled=true;
-}
-void app_control_remote_stop(void) { assert(irq_disabled); ++remote_stops; motor_run_enabled=false; }
 void app_control_get_position_snapshot(position_output_t *out) { assert(irq_disabled); *out=pos; }
 void motor_speed_debug_get_snapshot(motor_speed_debug_snapshot_t *out) { assert(irq_disabled); *out=motor; }
 void system_delay_ms(uint32 ms) { assert(!irq_disabled); (void)ms; }

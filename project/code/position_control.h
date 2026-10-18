@@ -29,7 +29,7 @@ typedef struct {
     float max_accel_cmps2;   /* 平移最大加速度（加速斜坡）cm/s² */
     float max_alpha_radps2;  /* 最大角加速度 rad/s² */
     float xy_tolerance_cm;   /* 位置到达容差，圈内限速蠕行、到切断半径砍零 */
-    float yaw_tolerance_deg; /* arrival bound; hold deadband=min(0.5deg, tolerance/2) */
+    float yaw_tolerance_deg; /* 航向到达容差，同时是航向规划死区 */
     /* ---- ivision 式规划参数（菜单 Position 页可改，随 SaveCfg 掉电保存） ---- */
     float brake_limit;       /* 刹车能力 = max_accel × 本比例 */
     float brake_ceiling_cmps2; /* 附着刹车上限 cm/s²，与上项取小 */
@@ -45,7 +45,7 @@ typedef struct {
     float diag_speed_k;      /* 斜向降速系数：斜段按混合度缩放平移速度/加速度，1=不降速 */
 } position_config_t;
 
-#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 20.0f, 1.0f, 40.0f, 2.0f, 2.0f, 3.0f, \
+#define POSITION_CONFIG_DEFAULT {2.0f, 0.2f, 2.0f, 320.0f, 1.0f, 180.0f, 2.0f, 0.5f, 0.5f, \
                                  0.90f, 450.0f, 40.0f, 1.40f, 10.0f, 0.25f, 0.45f, \
                                  0.22f, 0.22f, 0.36f, 0.15f, 1.0f}
 
@@ -70,8 +70,6 @@ typedef struct {
     position_goal_t previous_goal;
     float world_vx_cmps, world_vy_cmps; /* 一阶滤波后的世界系速度（ivision alpha=0.25） */
     float previous_yaw_deg, settled_seconds;
-    float yaw_rate_filtered;
-    bool yaw_correcting; /* acquire at outer threshold, release at inner */
     bool have_previous;
     /* ivision 式规划器内部状态 */
     float plan_v_cmps;         /* 平移标量速度参考（Trajectory.current_v） */
@@ -84,6 +82,13 @@ typedef struct {
 } position_control_t;
 
 void position_control_reset(position_control_t *control);
+/* Continuous route input: world-frame velocity, continuously planned yaw.
+ * Keeps planner state across intermediate nodes; never reports REACHED. */
+void position_control_track(position_control_t *control,
+                            const position_config_t *config,
+                            const position_goal_t *reference,
+                            const navigation_snapshot_t *pose,
+                            float world_vx, float world_vy, float dt);
 /* Pure controller, called once per encoder tick. Invalid input returns zero
  * command with a negative status. */
 void position_control_update(position_control_t *control,

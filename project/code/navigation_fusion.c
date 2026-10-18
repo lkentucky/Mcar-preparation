@@ -78,7 +78,7 @@ void navigation_fusion_imu(navigation_fusion_t *s, const navigation_imu_t *m)
         return;
     }
     for (unsigned i = 0; i < 3; ++i) {
-        /* 防止有限但超量程的值在平方/积分中溢出；当前硬件为 ±8g/±500dps。 */
+        /* 防止有限但超量程的值在平方/积分中溢出；当前硬件为 ±8g/±2000dps。 */
         if (!isfinite(m->accel_g[i]) || fabsf(m->accel_g[i]) > 16.0f ||
             !isfinite(m->gyro_dps[i]) || fabsf(m->gyro_dps[i]) > 2200.0f) {
             fault(s, NAV_IMU_FAULT);

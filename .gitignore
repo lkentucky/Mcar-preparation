@@ -7,3 +7,8 @@ __pycache__/
 tools/wifi_spi_udp_gui/build/
 tools/wifi_spi_udp_gui/dist/
 tools/wifi_spi_udp_gui/*.spec
+*.csv
+*.png
+tools/wifispi_tool/WiFiSPI_UDP_MCAR.workspace.json
+tools/wifispi_tool/WiFiSPI_UDP_MCAR.workspace.json.bak
+

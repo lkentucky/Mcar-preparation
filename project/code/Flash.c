@@ -13,14 +13,17 @@ volatile uint32 menu_flash_bad_word;
 volatile float menu_flash_stored_accel;
 static uint8 invalid_field(uint32 word) { menu_flash_bad_word=word; return 0U; }
 
-/* v5 adds eight wheel deadzones after the v4 block.
+/* v8 appends through-node curve extent; v7 appends the route blend allowance; v6 adds diagonal calibration.
+ * v5 adds eight wheel deadzones after the v4 block.
  * v4 adds yaw_stiction_radps (YawStic) after the v3 planner block. v3 has
  * the ivision-style planner parameters, v2 the route, v1 PID/navigation
  * with default nodes; older archives load with defaults for the missing
  * fields. Run and runtime state are never persisted. Unknown versions
  * are rejected. */
 #define MENU_FLASH_MAGIC 0x4D454E55U
-#define MENU_FLASH_VERSION 6U
+#define MENU_FLASH_VERSION 8U
+#define MENU_FLASH_VERSION_V7 7U
+#define MENU_FLASH_VERSION_V6 6U
 #define MENU_FLASH_VERSION_V5 5U
 #define MENU_FLASH_VERSION_V4 4U
 #define MENU_FLASH_VERSION_V3 3U
@@ -75,7 +78,11 @@ static uint8 invalid_field(uint32 word) { menu_flash_bad_word=word; return 0U; }
 #define MENU_FLASH_WORD_DIAG_SPEED_K (MENU_FLASH_WORD_DEAD_REV + MOTOR_WHEEL_COUNT)
 #define MENU_FLASH_WORD_DIAG_COMP (MENU_FLASH_WORD_DIAG_SPEED_K + 1U)
 #define MENU_FLASH_WORD_CHECKSUM_V5 (MENU_FLASH_WORD_DEAD_REV + MOTOR_WHEEL_COUNT)
-#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_DIAG_COMP + 1U)
+#define MENU_FLASH_WORD_CHECKSUM_V6 (MENU_FLASH_WORD_DIAG_COMP + 1U)
+#define MENU_FLASH_WORD_ROUTE_BLEND MENU_FLASH_WORD_CHECKSUM_V6
+#define MENU_FLASH_WORD_CHECKSUM_V7 (MENU_FLASH_WORD_ROUTE_BLEND + 1U)
+#define MENU_FLASH_WORD_ROUTE_FLOW MENU_FLASH_WORD_CHECKSUM_V7
+#define MENU_FLASH_WORD_CHECKSUM (MENU_FLASH_WORD_ROUTE_FLOW + 1U)
 #define MENU_FLASH_WORD_COUNT (MENU_FLASH_WORD_CHECKSUM + 1U)
 
 #define MENU_FLAG_YAW_REVERSED (1UL << 0)
@@ -107,6 +114,8 @@ static uint32 menu_flash_checksum(void)
     else if (version == MENU_FLASH_VERSION_V3) end = MENU_FLASH_WORD_CHECKSUM_V3;
     else if (version == MENU_FLASH_VERSION_V4) end = MENU_FLASH_WORD_CHECKSUM_V4;
     else if (version == MENU_FLASH_VERSION_V5) end = MENU_FLASH_WORD_CHECKSUM_V5;
+    else if (version == MENU_FLASH_VERSION_V6) end = MENU_FLASH_WORD_CHECKSUM_V6;
+    else if (version == MENU_FLASH_VERSION_V7) end = MENU_FLASH_WORD_CHECKSUM_V7;
     else end = MENU_FLASH_WORD_CHECKSUM;
 
     for (index = MENU_FLASH_WORD_KP_FIRST; index < end; index++)
@@ -126,9 +135,11 @@ static uint8 menu_flash_buffer_valid(void)
     else if (version == MENU_FLASH_VERSION_V3) check = MENU_FLASH_WORD_CHECKSUM_V3;
     else if (version == MENU_FLASH_VERSION_V4) check = MENU_FLASH_WORD_CHECKSUM_V4;
     else if (version == MENU_FLASH_VERSION_V5) check = MENU_FLASH_WORD_CHECKSUM_V5;
+    else if (version == MENU_FLASH_VERSION_V6) check = MENU_FLASH_WORD_CHECKSUM_V6;
+    else if (version == MENU_FLASH_VERSION_V7) check = MENU_FLASH_WORD_CHECKSUM_V7;
     else check = MENU_FLASH_WORD_CHECKSUM;
     return (flash_union_buffer[MENU_FLASH_WORD_MAGIC].uint32_type == MENU_FLASH_MAGIC &&
-            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V5 ||
+            (version == MENU_FLASH_VERSION || version == MENU_FLASH_VERSION_V7 || version == MENU_FLASH_VERSION_V6 || version == MENU_FLASH_VERSION_V5 ||
              version == MENU_FLASH_VERSION_V4 || version == MENU_FLASH_VERSION_V3 ||
              version == MENU_FLASH_VERSION_V2 || version == MENU_FLASH_LEGACY_VERSION) &&
             flash_union_buffer[check].uint32_type == menu_flash_checksum()) ? 1U : 0U;
@@ -190,6 +201,9 @@ static uint8 menu_flash_config_valid(const menu_flash_config_t *config)
         config->scale_x < 0.1f || config->scale_x > 5.0f) return invalid_field(MENU_FLASH_WORD_SCALE_X);
     if (!menu_flash_float_valid(config->scale_y) ||
         config->scale_y < 0.1f || config->scale_y > 5.0f) return invalid_field(MENU_FLASH_WORD_SCALE_Y);
+    if (!menu_flash_float_valid(config->route_blend_cm) || config->route_blend_cm < 0.0f || config->route_blend_cm > 20.0f ||
+        (config->route_blend_cm > 0.0f && config->route_blend_cm < ROUTE_BLEND_MIN_CM)) return invalid_field(MENU_FLASH_WORD_ROUTE_BLEND);
+    if (!menu_flash_float_valid(config->route_flow_cm) || config->route_flow_cm < 1.0f || config->route_flow_cm > 100.0f) return invalid_field(MENU_FLASH_WORD_ROUTE_FLOW);
     if (config->route_node_count < 1U || config->route_node_count > ROUTE_MAX_NODES) return invalid_field(MENU_FLASH_WORD_ROUTE_COUNT);
     for (wheel = 0U; wheel < ROUTE_MAX_NODES; wheel++)
     {
@@ -263,6 +277,8 @@ uint8 Data_save_to_flash(const menu_flash_config_t *config)
     /* v6 斜向两参数；v5 及更旧存档不含此块（槽位 71 在 v5 中是校验字） */
     flash_union_buffer[MENU_FLASH_WORD_DIAG_SPEED_K].uint32_type = menu_flash_float_to_word(config->diag_speed_k);
     flash_union_buffer[MENU_FLASH_WORD_DIAG_COMP].uint32_type = menu_flash_float_to_word(config->diag_comp);
+    flash_union_buffer[MENU_FLASH_WORD_ROUTE_BLEND].uint32_type = menu_flash_float_to_word(config->route_blend_cm);
+    flash_union_buffer[MENU_FLASH_WORD_ROUTE_FLOW].uint32_type = menu_flash_float_to_word(config->route_flow_cm);
     flash_union_buffer[MENU_FLASH_WORD_CHECKSUM].uint32_type = menu_flash_checksum();
 
     memcpy(expected,flash_union_buffer,sizeof(expected));
@@ -352,6 +368,8 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         }
     }
     if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION ||
+        flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V7 ||
+        flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V6 ||
         flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V5 ||
         flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V4 ||
         flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION_V3)
@@ -410,7 +428,7 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         }
     }
     /* v6 斜向两参数；v5 及更旧存档该槽位是校验字或不存在，取编译期默认值 */
-    if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type == MENU_FLASH_VERSION) {
+    if (flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type >= MENU_FLASH_VERSION_V6) {
         loaded.diag_speed_k = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_DIAG_SPEED_K].uint32_type);
         loaded.diag_comp = menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_DIAG_COMP].uint32_type);
     } else {
@@ -418,6 +436,12 @@ uint8 Data_load_from_flash(menu_flash_config_t *config)
         loaded.diag_speed_k = pos_defaults.diag_speed_k;
         loaded.diag_comp = NAV_DIAG_LATERAL_SCALE_DEFAULT;
     }
+    loaded.route_blend_cm = flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type >= MENU_FLASH_VERSION_V7
+        ? menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_ROUTE_BLEND].uint32_type)
+        : ROUTE_BLEND_DEFAULT_CM;
+    loaded.route_flow_cm = flash_union_buffer[MENU_FLASH_WORD_VERSION].uint32_type >= MENU_FLASH_VERSION
+        ? menu_flash_word_to_float(flash_union_buffer[MENU_FLASH_WORD_ROUTE_FLOW].uint32_type)
+        : ROUTE_FLOW_DEFAULT_CM;
     if (!menu_flash_config_valid(&loaded)) return 0U;
     *config = loaded;
     menu_flash_stored_accel=loaded.max_accel_cmps2;
@@ -478,6 +502,8 @@ uint8 menu_flash_save_current(void)
     config.scale_y = navigation_scale_y;
     config.yaw_reversed = navigation_yaw_reversed ? 1U : 0U;
 
+    config.route_blend_cm = route_blend_cm;
+    config.route_flow_cm = route_flow_cm;
     count = route_node_count;
     memcpy(config.route_nodes, route_nodes, sizeof(config.route_nodes));
     interrupt_global_enable(primask);
@@ -539,6 +565,8 @@ uint8 menu_flash_load_current(void)
     navigation_scale_y = config.scale_y;
     navigation_yaw_reversed = config.yaw_reversed ? true : false;
     /* 安装参数在 reset_state 时被快照进融合模块，加载后要重建一次定位起点 */
+    route_blend_cm = config.route_blend_cm;
+    route_flow_cm = config.route_flow_cm;
     route_node_count = config.route_node_count;
     memcpy(route_nodes, config.route_nodes, sizeof(route_nodes));
     route_current_idx = 0;

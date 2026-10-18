@@ -4,6 +4,7 @@
 #include "PID.h"
 #include "PID_config.h"
 #include "app_navigation.h"
+#include "route_follow.h"
 
 #include <math.h>
 
@@ -21,7 +22,6 @@ static bool g_previous_pwm_test_enabled;
 static bool g_previous_position_enabled;
 static bool g_position_was_running;
 static position_control_t g_position;
-static volatile bool g_remote_pending;
 
 void app_control_get_position_snapshot(position_output_t *out)
 {
@@ -52,23 +52,6 @@ static void stop_position(void)
     motor_pwm(0, 0, 0, 0);
 }
 
-/* Called with interrupts disabled: install all goal components atomically. */
-void app_control_remote_stop(void)
-{
-    g_remote_pending = false;
-    position_control_reset(&g_position);
-    stop_position();
-}
-
-void app_control_remote_goal(float x_cm, float y_cm, float yaw_deg)
-{
-    app_control_remote_stop();
-    motor_pwm_test_enabled = false;
-    motor_position_enabled = true;
-    motor_position_goal = (position_goal_t){x_cm, y_cm, yaw_deg};
-    g_remote_pending = true;
-}
-
 //限制车体速度
 static float clampf(float value, float low, float high)
 {
@@ -77,7 +60,6 @@ static float clampf(float value, float low, float high)
 
 void app_control_init(void)
 {
-    g_remote_pending = false;
     motor_init();
     encoder_init();
     PID_Init(&ULpid, &ULPidInitStruct);
@@ -123,11 +105,6 @@ void app_control_motor_tick_10ms(void)
         motor_pwm(0, 0, 0, 0);
         return;
     }
-    if (g_remote_pending && position_enabled && !pwm_test_enabled)
-    {
-        g_remote_pending = false;
-        motor_run_enabled = true;
-    }
     if (position_enabled && pwm_test_enabled)
     {
         /* Reject conflicting requests from code outside the menu as well. */
@@ -165,7 +142,7 @@ void app_control_motor_tick_10ms(void)
             position_goal_t goal = motor_position_goal;
             position_config_t config = motor_position_config;
             app_navigation_get_snapshot(&pose);
-            position_control_update(&g_position, &config, &goal, &pose, 0.01f);//根据位置控制速度
+            route_follow_control_update(&g_position, &config, &goal, &pose, 0.01f);
         }
         if (g_position.output.status < 0 || g_position.output.status == POSITION_REACHED)
         {

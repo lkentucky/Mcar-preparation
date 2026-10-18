@@ -21,8 +21,8 @@
 /* Body-axis odometry calibration: new = old * measured_distance / displayed_distance.
  * Leave at 1 until measured; Y multiplies the legacy Motor.h lateral factor.
  * These correct localization only, not encoder counts or wheel-speed PID units. */
-#define NAV_FORWARD_SCALE_DEFAULT      0.97f
-#define NAV_LEFT_SCALE_DEFAULT         1.04f
+#define NAV_FORWARD_SCALE_DEFAULT      1.011f
+#define NAV_LEFT_SCALE_DEFAULT         1.06f
 
 /* 斜向滚子滑差二次修正（菜单 DiagCmp）：麦轮斜向运动时滚子轴向滑动
  * 编码器不可见，实测横移增量被系统性多计。斜向时在 lateral_scale 之上
