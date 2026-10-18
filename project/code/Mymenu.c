@@ -19,12 +19,12 @@
 #define MENU_COLUMNS 30
 #define MENU_LINE_HEIGHT 16
 #define MENU_VISIBLE_LINES 7
-#define MENU_STEP_COUNT 5u
+#define MENU_STEP_COUNT 6u
 
 static Menu_Item g_root;
 static Menu_Item *g_pointer;
-static float g_steps[MENU_STEP_COUNT]={0.01f,0.1f,1.0f,10.0f,100.0f};
-static uint8_t g_step_index=2u;
+static float g_steps[MENU_STEP_COUNT]={0.001f,0.01f,0.1f,1.0f,10.0f,100.0f};
+static uint8_t g_step_index=3u;
 static volatile bool g_refresh_pending;
 static bool g_imu_recalibrate;
 static Menu_Item *g_encoder_folder;
